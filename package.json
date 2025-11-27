@@ -1,0 +1,54 @@
+{
+  "name": "wrx-generator-v2",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Plateforme de génération d'URLs raccourcies et de QR codes personnalisés",
+  "author": "ADLI Imrane",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ADLI-Imrane/wrx-generator-v2.git"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.14.2",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "test": "turbo run test",
+    "test:cov": "turbo run test:cov",
+    "clean": "turbo run clean && rimraf node_modules",
+    "prepare": "husky",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter api db:generate",
+    "db:migrate": "pnpm --filter api db:migrate",
+    "db:push": "pnpm --filter api db:push",
+    "db:studio": "pnpm --filter api db:studio"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.4.1",
+    "rimraf": "^6.0.1",
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

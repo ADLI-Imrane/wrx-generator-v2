@@ -1,0 +1,15 @@
+{
+  "extends": "../../packages/config/typescript/react.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@wrx/shared": ["../../packages/shared/src"],
+      "@wrx/shared/*": ["../../packages/shared/src/*"],
+      "@wrx/ui": ["../../packages/ui/src"],
+      "@wrx/ui/*": ["../../packages/ui/src/*"]
+    }
+  },
+  "include": ["src/**/*", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

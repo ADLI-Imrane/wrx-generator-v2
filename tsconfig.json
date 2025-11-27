@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./apps/api" },
+    { "path": "./apps/web" },
+    { "path": "./apps/extension" },
+    { "path": "./packages/shared" },
+    { "path": "./packages/ui" }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@wrx/config",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared configurations (TypeScript, ESLint, Tailwind)",
+  "exports": {
+    "./typescript/base": "./typescript/base.json",
+    "./typescript/react": "./typescript/react.json",
+    "./typescript/node": "./typescript/node.json",
+    "./eslint/base": "./eslint/base.js",
+    "./eslint/react": "./eslint/react.js",
+    "./eslint/node": "./eslint/node.js",
+    "./tailwind": "./tailwind/tailwind.config.js",
+    "./prettier": "./prettier/prettier.config.js"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "prettier": "^3.4.1",
+    "prettier-plugin-tailwindcss": "^0.6.9",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.6.3"
+  }
+}

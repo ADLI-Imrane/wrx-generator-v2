@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Node.js",
+  "extends": "./base.json",
+  "compilerOptions": {
+    /* Language and Environment */
+    "lib": ["ES2022"],
+    "target": "ES2022",
+
+    /* Modules */
+    "module": "CommonJS",
+    "moduleResolution": "node",
+
+    /* Emit */
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+
+    /* Interop */
+    "esModuleInterop": true,
+
+    /* Decorators for NestJS */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
