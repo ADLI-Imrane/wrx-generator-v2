@@ -1,161 +1,249 @@
-# WRX Generator V2.0
+# 🔗 WRX Generator V2.0
 
-> Plateforme de génération d'URLs raccourcies et de QR codes personnalisés
+<div align="center">
 
-## 🚀 Aperçu
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Node](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)
+![pnpm](https://img.shields.io/badge/pnpm-%3E%3D9.0.0-orange.svg)
 
-WRX Generator est une solution complète pour créer, gérer et suivre des liens raccourcis avec des QR codes personnalisables.
+**Plateforme complète de génération d'URLs raccourcies et de QR codes personnalisés**
 
-## 📦 Applications
+[Demo](https://wrx.link) · [Documentation](./docs) · [Report Bug](https://github.com/ADLI-Imrane/wrx-generator-v2/issues)
 
-| App              | Technologie         | Description                    |
-| ---------------- | ------------------- | ------------------------------ |
-| `apps/web`       | React + Vite        | Application web principale     |
-| `apps/mobile`    | Expo + React Native | Application mobile iOS/Android |
-| `apps/extension` | Manifest V3         | Extension Chrome               |
-| `apps/api`       | NestJS              | Backend API REST               |
-
-## 🏗️ Architecture
-
-Parfait ! Le repository est créé. Je passe à l'étape suivante.
-
-✅ Checklist de Démarrage
-Créer le repository GitHub
-Initialiser la structure du monorepo
-Configurer pnpm workspace
-Setup TypeScript config partagée
-Configurer ESLint + Prettier
-Setup Husky + lint-staged
-Créer le projet Supabase
-Configurer les variables d'environnement
-Implémenter le backend NestJS de base
-Créer la web app React
-Tests unitaires
-CI/CD GitHub Actions
-📍 Étape 2 : Initialiser la structure du monorepo
-Exécutez ces commandes dans PowerShell pour créer la structure complète du projet :
-
-Ensuite, copiez ce contenu dans le fichier .gitignore :
-
-Copiez ce contenu dans le fichier .nvmrc :
-
-Copiez ce contenu dans le fichier README.md :
-
-wrx-generator-v2/
-├── apps/
-│ ├── web/ # React + Vite
-│ ├── mobile/ # Expo + React Native
-│ ├── extension/ # Chrome Extension
-│ └── api/ # NestJS Backend
-├── packages/
-│ ├── shared/ # Types et utilitaires partagés
-│ ├── ui/ # Composants UI partagés
-│ └── config/ # Configurations partagées
-├── docs/ # Documentation
-└── supabase/ # Migrations et seeds
-
-## 🛠️ Prérequis
-
-- Node.js >= 20.x
-- pnpm >= 9.x
-- Docker (pour Supabase local)
-
-## 🚀 Installation
-
-```bash
-# Cloner le repository
-git clone https://github.com/ADLI-Imrane/wrx-generator-v2.git
-cd wrx-generator-v2
-
-# Installer les dépendances
-pnpm install
-
-# Configurer les variables d'environnement
-cp .env.example .env
-
-# Démarrer tous les services en développement
-pnpm dev
-
-Parfait ! Le repository est créé. Je passe à l'étape suivante.
-
-✅ Checklist de Démarrage
- Créer le repository GitHub
- Initialiser la structure du monorepo
- Configurer pnpm workspace
- Setup TypeScript config partagée
- Configurer ESLint + Prettier
- Setup Husky + lint-staged
- Créer le projet Supabase
- Configurer les variables d'environnement
- Implémenter le backend NestJS de base
- Créer la web app React
- Tests unitaires
- CI/CD GitHub Actions
-📍 Étape 2 : Initialiser la structure du monorepo
-Exécutez ces commandes dans PowerShell pour créer la structure complète du projet :
-
-Ensuite, copiez ce contenu dans le fichier .gitignore :
-
-Copiez ce contenu dans le fichier .nvmrc :
-
-Copiez ce contenu dans le fichier README.md :
-
-wrx-generator-v2/
-├── apps/
-│ ├── web/ # React + Vite
-│ ├── mobile/ # Expo + React Native
-│ ├── extension/ # Chrome Extension
-│ └── api/ # NestJS Backend
-├── packages/
-│ ├── shared/ # Types et utilitaires partagés
-│ ├── ui/ # Composants UI partagés
-│ └── config/ # Configurations partagées
-├── docs/ # Documentation
-└── supabase/ # Migrations et seeds
-
-📚 Documentation
-Architecture
-Guide de Contribution
-API Reference
-Guide de Déploiement
-Base de Données
-📄 Licence
-MIT © WRX Generator Team
+</div>
 
 ---
 
-### 📋 Vérification
+## ✨ Fonctionnalités
 
-Après avoir exécuté les commandes, votre structure devrait ressembler à ceci :
-wrx-generator-v2/
-├── .github/
-│ └── workflows/
-├── apps/
-│ ├── api/
-│ │ └── src/
-│ ├── extension/
-│ │ └── src/
-│ ├── mobile/
-│ │ └── src/
-│ └── web/
-│ └── src/
-├── docs/
-│ ├── API.md
-│ ├── ARCHITECTURE.md
-│ ├── CONTRIBUTING.md
-│ ├── DATABASE.md
-│ └── DEPLOYMENT.md
-├── packages/
-│ ├── config/
-│ ├── shared/
-│ │ └── src/
-│ └── ui/
-│ └── src/
-├── supabase/
-│ └── migrations/
-├── .env.example
-├── .gitignore
-├── .nvmrc
-└── README.md
+- 🔗 **URLs Raccourcies** - Créez des liens courts avec slugs personnalisés
+- 📊 **Analytics Complets** - Suivez les clics, géolocalisation, appareils, navigateurs
+- 🎨 **QR Codes Personnalisés** - Générez des QR codes avec couleurs et logos
+- 🔐 **Liens Protégés** - Protection par mot de passe et dates d'expiration
+- 💳 **Abonnements** - Plans Free, Pro et Enterprise via Stripe
+- 🌐 **Multi-plateforme** - Web, Mobile (iOS/Android), Extension Chrome
+
+---
+
+## 🏗️ Architecture
+
+Ce projet utilise une architecture **monorepo** avec pnpm workspaces et Turborepo.
 
 ```
+wrx-generator-v2/
+├── apps/
+│   ├── api/              # 🖥️  NestJS Backend API
+│   ├── web/              # 🌐 React + Vite Web App
+│   ├── mobile/           # 📱 Expo + React Native
+│   └── extension/        # 🧩 Chrome Extension (Manifest V3)
+├── packages/
+│   ├── shared/           # 📦 Types, constants, utilities partagés
+│   ├── ui/               # 🎨 Composants UI réutilisables
+│   └── config/           # ⚙️  Configs TypeScript, ESLint, Prettier
+├── supabase/
+│   ├── migrations/       # 🗄️  Migrations SQL
+│   └── seed.sql          # 🌱 Données de test
+└── docs/                 # 📚 Documentation complète
+```
+
+---
+
+## 📦 Stack Technique
+
+### Applications
+
+| App           | Stack                                | Description                   |
+| ------------- | ------------------------------------ | ----------------------------- |
+| **API**       | NestJS 10, Supabase, Stripe          | Backend REST API avec Swagger |
+| **Web**       | React 18, Vite, TailwindCSS, Zustand | Application web principale    |
+| **Mobile**    | Expo 52, React Native                | Apps iOS & Android natives    |
+| **Extension** | Manifest V3, React                   | Extension Chrome              |
+
+### Packages Partagés
+
+| Package       | Description                                          |
+| ------------- | ---------------------------------------------------- |
+| `@wrx/shared` | Types TypeScript, constantes, utilitaires            |
+| `@wrx/ui`     | Composants React réutilisables (Button, Input, Card) |
+| `@wrx/config` | Configurations ESLint, TypeScript, Prettier          |
+
+### Infrastructure
+
+- **Base de données** : PostgreSQL via Supabase
+- **Authentification** : Supabase Auth (Email, Google, GitHub)
+- **Stockage** : Supabase Storage (logos QR, avatars)
+- **Paiements** : Stripe (abonnements, webhooks)
+- **Monorepo** : pnpm workspaces + Turborepo
+
+---
+
+## 🚀 Démarrage Rapide
+
+### Prérequis
+
+- **Node.js** >= 20.0.0
+- **pnpm** >= 9.0.0
+- **Docker** (optionnel, pour Supabase local)
+
+### Installation
+
+```bash
+# 1. Cloner le repository
+git clone https://github.com/ADLI-Imrane/wrx-generator-v2.git
+cd wrx-generator-v2
+
+# 2. Installer les dépendances
+pnpm install
+
+# 3. Configurer les variables d'environnement
+cp .env.example .env
+# Éditer .env avec vos clés Supabase et Stripe
+
+# 4. Démarrer en mode développement
+pnpm dev
+```
+
+### Scripts Disponibles
+
+```bash
+# Développement
+pnpm dev              # Démarre tous les apps en parallèle
+pnpm dev --filter api # Démarre uniquement l'API
+
+# Build
+pnpm build            # Build tous les packages
+pnpm typecheck        # Vérifie les types TypeScript
+
+# Qualité de code
+pnpm lint             # Lint avec ESLint
+pnpm format           # Format avec Prettier
+
+# Tests
+pnpm test             # Exécute tous les tests
+pnpm test:cov         # Tests avec couverture
+
+# Base de données
+pnpm db:migrate       # Exécute les migrations
+pnpm db:studio        # Ouvre Supabase Studio
+```
+
+---
+
+## 🔧 Configuration
+
+### Variables d'Environnement
+
+Créez un fichier `.env` à la racine :
+
+```env
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# API
+API_URL=http://localhost:3000
+CORS_ORIGINS=http://localhost:5173
+```
+
+Voir [.env.example](./.env.example) pour la liste complète.
+
+---
+
+## 📖 API Reference
+
+L'API REST est documentée avec Swagger. En développement, accédez à :
+
+```
+http://localhost:3000/docs
+```
+
+### Endpoints Principaux
+
+| Méthode | Endpoint             | Description          |
+| ------- | -------------------- | -------------------- |
+| `POST`  | `/api/auth/register` | Inscription          |
+| `POST`  | `/api/auth/login`    | Connexion            |
+| `GET`   | `/api/links`         | Liste des liens      |
+| `POST`  | `/api/links`         | Créer un lien        |
+| `GET`   | `/api/qr`            | Liste des QR codes   |
+| `POST`  | `/api/qr`            | Générer un QR code   |
+| `GET`   | `/:slug`             | Redirection publique |
+
+Voir [docs/API.md](./docs/API.md) pour la documentation complète.
+
+---
+
+## 📊 Plans d'Abonnement
+
+| Fonctionnalité              | Free | Pro | Enterprise |
+| --------------------------- | :--: | :-: | :--------: |
+| Liens                       |  10  | 500 |     ∞      |
+| QR Codes                    |  5   | 200 |     ∞      |
+| Clics/mois                  |  1K  | 50K |     ∞      |
+| Slug personnalisé           |  ❌  | ✅  |     ✅     |
+| Protection par mot de passe |  ❌  | ✅  |     ✅     |
+| Analytics                   |  ❌  | ✅  |     ✅     |
+| Logo QR personnalisé        |  ❌  | ✅  |     ✅     |
+| API Access                  |  ❌  | ✅  |     ✅     |
+| Support prioritaire         |  ❌  | ❌  |     ✅     |
+
+---
+
+## 📚 Documentation
+
+| Document                                  | Description                      |
+| ----------------------------------------- | -------------------------------- |
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Architecture détaillée du projet |
+| [API.md](./docs/API.md)                   | Documentation de l'API REST      |
+| [DATABASE.md](./docs/DATABASE.md)         | Schéma et migrations de la BDD   |
+| [DEPLOYMENT.md](./docs/DEPLOYMENT.md)     | Guide de déploiement             |
+| [CONTRIBUTING.md](./docs/CONTRIBUTING.md) | Guide de contribution            |
+
+---
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Consultez le [Guide de Contribution](./docs/CONTRIBUTING.md).
+
+```bash
+# 1. Fork le projet
+# 2. Créer une branche feature
+git checkout -b feat/amazing-feature
+
+# 3. Commit avec Conventional Commits
+git commit -m "feat(api): add amazing feature"
+
+# 4. Push et créer une Pull Request
+git push origin feat/amazing-feature
+```
+
+### Conventional Commits
+
+Ce projet utilise les [Conventional Commits](https://www.conventionalcommits.org/) :
+
+- `feat`: Nouvelle fonctionnalité
+- `fix`: Correction de bug
+- `docs`: Documentation
+- `refactor`: Refactoring
+- `test`: Tests
+- `chore`: Maintenance
+
+---
+
+## 📄 Licence
+
+Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](./LICENSE) pour plus de détails.
+
+---
+
+<div align="center">
+
+**Fait avec ❤️ par [ADLI Imrane](https://github.com/ADLI-Imrane)**
+
+</div>
