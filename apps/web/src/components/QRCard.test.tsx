@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@/test/test-utils';
 import { QRCard } from '@/components/QRCard';
 import { mockQRCodes } from '@/test/mocks/api';
+import type { QRCode } from '@wrx/shared';
 
 describe('QRCard Component', () => {
-  const mockQR = mockQRCodes[0];
+  const mockQR = mockQRCodes[0] as QRCode;
+  const mockQRWifi = mockQRCodes[1] as QRCode;
   const defaultProps = {
     qr: mockQR,
     onDownload: vi.fn(),
@@ -36,7 +38,7 @@ describe('QRCard Component', () => {
   });
 
   it('should render WiFi type correctly', () => {
-    render(<QRCard {...defaultProps} qr={mockQRCodes[1]} />);
+    render(<QRCard {...defaultProps} qr={mockQRWifi} />);
 
     expect(screen.getByText('WiFi')).toBeInTheDocument();
   });
@@ -46,7 +48,7 @@ describe('QRCard Component', () => {
 
     // Find and click the more button
     const moreButtons = screen.getAllByRole('button');
-    const moreButton = moreButtons[moreButtons.length - 1]; // Last button should be more
+    const moreButton = moreButtons[moreButtons.length - 1]!; // Last button should be more
 
     fireEvent.click(moreButton);
 
@@ -61,7 +63,7 @@ describe('QRCard Component', () => {
 
     // Open the menu
     const moreButtons = screen.getAllByRole('button');
-    fireEvent.click(moreButtons[moreButtons.length - 1]);
+    fireEvent.click(moreButtons[moreButtons.length - 1]!);
 
     // Download options should appear
     expect(screen.getByText('PNG')).toBeInTheDocument();
@@ -74,7 +76,7 @@ describe('QRCard Component', () => {
 
     // Open the menu
     const moreButtons = screen.getAllByRole('button');
-    fireEvent.click(moreButtons[moreButtons.length - 1]);
+    fireEvent.click(moreButtons[moreButtons.length - 1]!);
 
     // Click PNG download
     fireEvent.click(screen.getByText('PNG'));
@@ -87,7 +89,7 @@ describe('QRCard Component', () => {
 
     // Open the menu
     const moreButtons = screen.getAllByRole('button');
-    fireEvent.click(moreButtons[moreButtons.length - 1]);
+    fireEvent.click(moreButtons[moreButtons.length - 1]!);
 
     // Click edit
     fireEvent.click(screen.getByText('Modifier'));
@@ -100,7 +102,7 @@ describe('QRCard Component', () => {
 
     // Open the menu
     const moreButtons = screen.getAllByRole('button');
-    fireEvent.click(moreButtons[moreButtons.length - 1]);
+    fireEvent.click(moreButtons[moreButtons.length - 1]!);
 
     // Click duplicate
     fireEvent.click(screen.getByText('Dupliquer'));
@@ -113,7 +115,7 @@ describe('QRCard Component', () => {
 
     // Open the menu
     const moreButtons = screen.getAllByRole('button');
-    fireEvent.click(moreButtons[moreButtons.length - 1]);
+    fireEvent.click(moreButtons[moreButtons.length - 1]!);
 
     // Click delete
     fireEvent.click(screen.getByText('Supprimer'));

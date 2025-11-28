@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@/test/test-utils';
 import { LinkCard } from '@/components/LinkCard';
 import { mockLinks } from '@/test/mocks/api';
+import type { Link } from '@wrx/shared';
 
 describe('LinkCard Component', () => {
-  const mockLink = mockLinks[0];
+  // Use non-null assertion since we know the array has items
+  const mockLink = mockLinks[0] as Link;
   const defaultProps = {
     link: mockLink,
     onCopy: vi.fn(),
