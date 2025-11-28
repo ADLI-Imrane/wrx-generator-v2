@@ -10,6 +10,12 @@
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "clean": "rimraf dist coverage"
   },
   "dependencies": {
@@ -28,19 +34,27 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^2.1.5",
+    "@vitest/ui": "^2.1.5",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.15.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.12.0",
+    "jsdom": "^25.0.1",
     "postcss": "^8.4.49",
     "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.15.0",
-    "vite": "^6.0.1"
+    "vite": "^6.0.1",
+    "vitest": "^2.1.5"
   }
 }
