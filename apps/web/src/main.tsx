@@ -1,4 +1,10 @@
-// Web App Entry Point
-// This file will be replaced when we implement the web app
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './styles/globals.css';
 
-export const WEB_VERSION = '2.0.0';
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);

@@ -13,6 +13,19 @@ export interface User {
   updatedAt: string;
 }
 
+// Profile type (from Supabase profiles table)
+export interface UserProfile {
+  id: string;
+  email?: string;
+  fullName?: string;
+  avatarUrl?: string;
+  tier: SubscriptionTier;
+  linksCreated: number;
+  qrCreated: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AuthSession {
   accessToken: string;
   refreshToken: string;

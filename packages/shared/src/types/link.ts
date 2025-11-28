@@ -6,36 +6,36 @@ export interface Link {
   slug: string;
   originalUrl: string;
   shortUrl: string;
-  passwordHash?: string;
-  expiresAt?: string;
-  clickCount: number;
-  isActive: boolean;
-  metadata?: LinkMetadata;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface LinkMetadata {
   title?: string;
   description?: string;
+  passwordHash?: string;
+  expiresAt?: string;
+  clicks: number;
+  isActive: boolean;
   tags?: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateLinkDto {
   originalUrl: string;
   slug?: string;
+  title?: string;
+  description?: string;
   password?: string;
   expiresAt?: string;
-  metadata?: LinkMetadata;
+  tags?: string[];
 }
 
 export interface UpdateLinkDto {
   originalUrl?: string;
   slug?: string;
+  title?: string;
+  description?: string;
   password?: string;
   expiresAt?: string;
   isActive?: boolean;
-  metadata?: LinkMetadata;
+  tags?: string[];
 }
 
 export interface Click {
