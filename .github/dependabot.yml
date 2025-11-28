@@ -1,0 +1,79 @@
+# Dependabot configuration
+version: 2
+
+updates:
+  # Root dependencies
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Europe/Paris
+    open-pull-requests-limit: 10
+    groups:
+      dev-dependencies:
+        patterns:
+          - '*'
+        dependency-type: development
+      production-dependencies:
+        patterns:
+          - '*'
+        dependency-type: production
+    labels:
+      - dependencies
+      - automerge
+    commit-message:
+      prefix: 'chore(deps):'
+
+  # Web app dependencies
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      react:
+        patterns:
+          - 'react*'
+          - '@types/react*'
+      testing:
+        patterns:
+          - 'vitest'
+          - '@testing-library/*'
+          - 'playwright'
+      ui:
+        patterns:
+          - 'tailwindcss'
+          - 'lucide-react'
+    labels:
+      - dependencies
+      - web
+
+  # API dependencies
+  - package-ecosystem: npm
+    directory: /apps/api
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      nestjs:
+        patterns:
+          - '@nestjs/*'
+      testing:
+        patterns:
+          - 'jest'
+          - '@types/jest'
+          - 'supertest'
+    labels:
+      - dependencies
+      - api
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - github-actions

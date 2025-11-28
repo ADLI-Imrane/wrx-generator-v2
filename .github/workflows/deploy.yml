@@ -1,0 +1,132 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  deploy-web:
+    name: Deploy Web App
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment || 'production' }}
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm --filter web build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_SHORT_URL_BASE: ${{ vars.VITE_SHORT_URL_BASE }}
+
+      - name: Deploy to Vercel
+        id: deploy
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./apps/web
+          vercel-args: ${{ inputs.environment == 'production' && '--prod' || '' }}
+
+  deploy-api:
+    name: Deploy API
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment || 'production' }}
+      url: ${{ vars.API_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build API
+        run: pnpm --filter api build
+
+      # Option 1: Deploy to Railway
+      - name: Deploy to Railway
+        if: ${{ vars.DEPLOY_TARGET == 'railway' }}
+        uses: bervProject/railway-deploy@main
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+          service: api
+
+      # Option 2: Deploy to Fly.io
+      - name: Deploy to Fly.io
+        if: ${{ vars.DEPLOY_TARGET == 'fly' }}
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Fly Deploy
+        if: ${{ vars.DEPLOY_TARGET == 'fly' }}
+        run: flyctl deploy --remote-only
+        working-directory: ./apps/api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [deploy-web, deploy-api]
+    if: always()
+    steps:
+      - name: Notify on success
+        if: ${{ needs.deploy-web.result == 'success' && needs.deploy-api.result == 'success' }}
+        run: |
+          echo "✅ Deployment successful!"
+          echo "Web: ${{ needs.deploy-web.outputs.url }}"
+          echo "API: ${{ vars.API_URL }}"
+
+      - name: Notify on failure
+        if: ${{ needs.deploy-web.result == 'failure' || needs.deploy-api.result == 'failure' }}
+        run: |
+          echo "❌ Deployment failed!"
+          exit 1
