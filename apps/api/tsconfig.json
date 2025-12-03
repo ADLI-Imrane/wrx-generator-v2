@@ -4,9 +4,7 @@
     "baseUrl": ".",
     "outDir": "./dist",
     "paths": {
-      "@/*": ["./src/*"],
-      "@wrx/shared": ["../../packages/shared/src"],
-      "@wrx/shared/*": ["../../packages/shared/src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*"],

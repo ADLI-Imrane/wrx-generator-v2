@@ -36,11 +36,24 @@ export class QrController {
   @ApiOperation({ summary: 'Get all QR codes for current user' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  findAll(@CurrentUser() user: User, @Query('page') page?: string, @Query('limit') limit?: string) {
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'type', required: false, type: String })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, type: String })
+  findAll(
+    @CurrentUser() user: User,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('type') type?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string
+  ) {
     return this.qrService.findAll(
       user.id,
       page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20
+      limit ? parseInt(limit, 10) : 20,
+      { search, type, sortBy, sortOrder }
     );
   }
 
@@ -79,11 +92,11 @@ export class QrController {
 
   @Get(':id/download')
   @ApiOperation({ summary: 'Download QR code image' })
-  @ApiQuery({ name: 'format', required: false, enum: ['png', 'svg'] })
+  @ApiQuery({ name: 'format', required: false, enum: ['png', 'svg', 'pdf'] })
   async download(
     @CurrentUser() user: User,
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('format') format: 'png' | 'svg' = 'png',
+    @Query('format') format: 'png' | 'svg' | 'pdf' = 'png',
     @Res() res: Response
   ) {
     const { filename, content, contentType } = await this.qrService.download(user.id, id, format);
@@ -93,9 +106,12 @@ export class QrController {
 
     if (format === 'svg') {
       res.send(content);
+    } else if (format === 'pdf') {
+      // content is already a Buffer for PDF
+      res.send(content);
     } else {
-      // Convert data URL to buffer
-      const base64Data = content.replace(/^data:image\/png;base64,/, '');
+      // Convert data URL to buffer for PNG
+      const base64Data = (content as string).replace(/^data:image\/png;base64,/, '');
       const buffer = Buffer.from(base64Data, 'base64');
       res.send(buffer);
     }

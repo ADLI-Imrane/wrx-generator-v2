@@ -1,6 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import type { QRCode, CreateQRCodeDto, UpdateQRCodeDto, PaginatedResponse } from '@wrx/shared';
+
+// Helper to get auth token
+async function getAuthToken(): Promise<string> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token || '';
+}
 
 interface QRFilters {
   page?: number;
@@ -19,6 +28,7 @@ export const qrKeys = {
   details: () => [...qrKeys.all, 'detail'] as const,
   detail: (id: string) => [...qrKeys.details(), id] as const,
   image: (id: string) => [...qrKeys.all, 'image', id] as const,
+  stats: (id: string) => [...qrKeys.all, 'stats', id] as const,
 };
 
 // Hook pour récupérer la liste des QR codes avec pagination
@@ -52,16 +62,35 @@ export function useQRCode(id: string) {
   });
 }
 
+// Hook pour récupérer les statistiques d'un QR code
+export function useQRCodeStats(id: string, timeRange: '7d' | '30d' | '90d' | 'all' = '30d') {
+  return useQuery({
+    queryKey: [...qrKeys.stats(id), timeRange],
+    queryFn: async () => {
+      return api.get<{
+        total_scans: number;
+        unique_scanners: number;
+        scans_by_day: { date: string; scans: number }[];
+        scans_by_country: { country: string; code: string; scans: number }[];
+        scans_by_device: { device: string; scans: number }[];
+        scans_by_os: { os: string; scans: number }[];
+      }>(`/qr/${id}/stats?timeRange=${timeRange}`);
+    },
+    enabled: !!id,
+  });
+}
+
 // Hook pour récupérer l'image d'un QR code
 export function useQRImage(id: string, format: 'png' | 'svg' = 'png') {
   return useQuery({
     queryKey: [...qrKeys.image(id), format],
     queryFn: async (): Promise<string> => {
+      const token = await getAuthToken();
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/qr/${id}/image?format=${format}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('auth-token') || ''}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -124,6 +153,10 @@ export function useDeleteQR() {
   });
 }
 
+// Alias for backward compatibility
+export const useDeleteQRCode = useDeleteQR;
+export const useUpdateQRCode = useUpdateQR;
+
 // Hook pour dupliquer un QR code
 export function useDuplicateQR() {
   const queryClient = useQueryClient();
@@ -154,11 +187,12 @@ export function useDownloadQR() {
       params.set('format', format);
       if (size) params.set('size', String(size));
 
+      const token = await getAuthToken();
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/qr/${id}/download?${params.toString()}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('auth-token') || ''}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );

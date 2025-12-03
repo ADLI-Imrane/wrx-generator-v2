@@ -6,6 +6,8 @@ import { LinksModule } from './modules/links/links.module';
 import { QrModule } from './modules/qr/qr.module';
 import { PublicModule } from './modules/public/public.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { SupabaseModule } from './common/supabase/supabase.module';
 import { HealthController } from './health.controller';
 
@@ -30,8 +32,11 @@ import { HealthController } from './health.controller';
     AuthModule,
     LinksModule,
     QrModule,
-    PublicModule,
+    AnalyticsModule,
+    BillingModule,
     WebhooksModule,
+    // PublicModule must be LAST because it has a catch-all route /:slug
+    PublicModule,
   ],
   controllers: [HealthController],
 })

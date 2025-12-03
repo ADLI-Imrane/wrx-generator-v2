@@ -14,4 +14,15 @@ export default [
       },
     },
   },
+  {
+    // Ignore E2E tests - Playwright's `use` function is not a React hook
+    ignores: ['e2e/**'],
+  },
+  {
+    // Test utilities can export non-components
+    files: ['src/test/**'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ];

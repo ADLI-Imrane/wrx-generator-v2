@@ -1,6 +1,25 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Layout, ProtectedRoute } from './components';
-import { LoginPage, RegisterPage, DashboardPage, LinksPage, QRCodesPage } from './pages';
+import {
+  LoginPage,
+  RegisterPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  AuthCallbackPage,
+  DashboardPage,
+  LinksPage,
+  CreateLinkPage,
+  EditLinkPage,
+  LinkStatsPage,
+  QRCodesPage,
+  CreateQRPage,
+  EditQRPage,
+  QRStatsPage,
+  AnalyticsPage,
+  SettingsPage,
+  HelpPage,
+  BillingPage,
+} from './pages';
 
 export const router = createBrowserRouter([
   // Routes publiques
@@ -14,15 +33,15 @@ export const router = createBrowserRouter([
   },
   {
     path: '/forgot-password',
-    element: <div>Forgot Password Page - TODO</div>,
+    element: <ForgotPasswordPage />,
   },
   {
     path: '/auth/callback',
-    element: <div>OAuth Callback - TODO</div>,
+    element: <AuthCallbackPage />,
   },
   {
     path: '/auth/reset-password',
-    element: <div>Reset Password Page - TODO</div>,
+    element: <ResetPasswordPage />,
   },
 
   // Routes protégées
@@ -51,15 +70,15 @@ export const router = createBrowserRouter([
           },
           {
             path: 'new',
-            element: <div>Create Link Page - TODO</div>,
+            element: <CreateLinkPage />,
           },
           {
             path: ':id/edit',
-            element: <div>Edit Link Page - TODO</div>,
+            element: <EditLinkPage />,
           },
           {
             path: ':id/stats',
-            element: <div>Link Stats Page - TODO</div>,
+            element: <LinkStatsPage />,
           },
         ],
       },
@@ -72,33 +91,33 @@ export const router = createBrowserRouter([
           },
           {
             path: 'new',
-            element: <div>Create QR Code Page - TODO</div>,
+            element: <CreateQRPage />,
           },
           {
             path: ':id/edit',
-            element: <div>Edit QR Code Page - TODO</div>,
+            element: <EditQRPage />,
           },
           {
             path: ':id/stats',
-            element: <div>QR Code Stats Page - TODO</div>,
+            element: <QRStatsPage />,
           },
         ],
       },
       {
         path: 'analytics',
-        element: <div>Analytics Page - TODO</div>,
+        element: <AnalyticsPage />,
       },
       {
         path: 'billing',
-        element: <div>Billing Page - TODO</div>,
+        element: <BillingPage />,
       },
       {
         path: 'settings',
-        element: <div>Settings Page - TODO</div>,
+        element: <SettingsPage />,
       },
       {
         path: 'help',
-        element: <div>Help Page - TODO</div>,
+        element: <HelpPage />,
       },
     ],
   },

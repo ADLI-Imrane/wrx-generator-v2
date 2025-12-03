@@ -78,9 +78,9 @@ export function useLink(id: string) {
 }
 
 // Hook pour récupérer les statistiques d'un lien
-export function useLinkStats(id: string) {
+export function useLinkStats(id: string, timeRange: '7d' | '30d' | '90d' | 'all' = '30d') {
   return useQuery({
-    queryKey: linkKeys.stats(id),
+    queryKey: [...linkKeys.stats(id), timeRange],
     queryFn: async () => {
       return api.get<{
         totalClicks: number;
@@ -88,7 +88,7 @@ export function useLinkStats(id: string) {
         clicksByCountry: { country: string; count: number }[];
         clicksByDevice: { device: string; count: number }[];
         clicksByBrowser: { browser: string; count: number }[];
-      }>(`/links/${id}/stats`);
+      }>(`/links/${id}/stats?timeRange=${timeRange}`);
     },
     enabled: !!id,
   });

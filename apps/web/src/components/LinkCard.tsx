@@ -18,7 +18,7 @@ export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR }: LinkC
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const shortUrl = `${import.meta.env.VITE_SHORT_URL_BASE || 'wrx.io'}/${link.slug}`;
+  const shortUrl = `${import.meta.env.VITE_SHORT_URL_BASE || 'http://localhost:3000/r'}/${link.slug}`;
 
   // Fermer le menu si on clique ailleurs
   useEffect(() => {
@@ -33,7 +33,8 @@ export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR }: LinkC
   }, []);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(`https://${shortUrl}`);
+    // shortUrl already includes the protocol (http:// or https://)
+    await navigator.clipboard.writeText(shortUrl);
     setCopied(true);
     onCopy?.(shortUrl);
     setTimeout(() => setCopied(false), 2000);
@@ -55,7 +56,7 @@ export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR }: LinkC
 
           <div className="mt-1 flex items-center gap-2">
             <a
-              href={`https://${shortUrl}`}
+              href={shortUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary-600 hover:text-primary-700 text-sm font-medium"
@@ -87,7 +88,7 @@ export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR }: LinkC
         {/* Actions */}
         <div className="flex items-center gap-1">
           <a
-            href={`https://${shortUrl}`}
+            href={shortUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-lg p-2 transition-colors hover:bg-gray-100"

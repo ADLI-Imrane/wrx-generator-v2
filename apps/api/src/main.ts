@@ -1,13 +1,23 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, RequestMethod } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true, // Enable raw body for Stripe webhooks
+  });
 
-  // Global prefix
-  app.setGlobalPrefix('api');
+  // Global prefix - public redirect routes are handled by PublicController with 'r' prefix
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'health', method: RequestMethod.GET },
+      { path: 'r/scan/:id', method: RequestMethod.GET },
+      { path: 'r/:slug', method: RequestMethod.GET },
+      { path: 'r/:slug/preview', method: RequestMethod.GET },
+      { path: 'r/:slug/verify-password', method: RequestMethod.POST },
+    ],
+  });
 
   // CORS
   app.enableCors({

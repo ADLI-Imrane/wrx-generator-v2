@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useUIStore } from '../stores/ui.store';
 import { useLogout } from '../hooks/useAuth';
-import { Menu, X, User, Settings, LogOut, Bell, Search } from 'lucide-react';
+import { Menu, User, Settings, LogOut, Bell, Search } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 export function Navbar() {
-  const { toggleSidebar, sidebarOpen } = useUIStore();
+  const { toggleSidebar } = useUIStore();
   const { mutate: logout, isPending: isLoggingOut } = useLogout();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -24,26 +24,28 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
-      <div className="flex h-16 items-center justify-between px-4">
+      <div className="flex h-16 items-center justify-between px-3 sm:px-4">
         {/* Logo et toggle sidebar */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={toggleSidebar}
             className="rounded-lg p-2 transition-colors hover:bg-gray-100"
-            aria-label={sidebarOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-label="Menu"
           >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            <Menu size={20} />
           </button>
           <Link to="/dashboard" className="flex items-center gap-2">
             <div className="bg-primary-600 flex h-8 w-8 items-center justify-center rounded-lg">
               <span className="text-sm font-bold text-white">W</span>
             </div>
-            <span className="text-lg font-semibold text-gray-900">WRX Generator</span>
+            <span className="hidden text-lg font-semibold text-gray-900 sm:inline">
+              WRX Generator
+            </span>
           </Link>
         </div>
 
-        {/* Barre de recherche */}
-        <div className="mx-8 hidden max-w-md flex-1 md:flex">
+        {/* Barre de recherche - Hidden on mobile */}
+        <div className="mx-4 hidden max-w-md flex-1 lg:flex">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
@@ -55,7 +57,12 @@ export function Navbar() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Search button for mobile */}
+          <button className="rounded-lg p-2 transition-colors hover:bg-gray-100 lg:hidden">
+            <Search size={20} className="text-gray-600" />
+          </button>
+
           {/* Notifications */}
           <button className="relative rounded-lg p-2 transition-colors hover:bg-gray-100">
             <Bell size={20} className="text-gray-600" />
@@ -78,7 +85,7 @@ export function Navbar() {
               <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
                 <div className="border-b border-gray-100 px-4 py-2">
                   <p className="font-medium text-gray-900">Mon compte</p>
-                  <p className="text-sm text-gray-500">user@example.com</p>
+                  <p className="truncate text-sm text-gray-500">user@example.com</p>
                 </div>
                 <nav className="py-2">
                   <Link

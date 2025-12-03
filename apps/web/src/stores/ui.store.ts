@@ -18,6 +18,8 @@ interface UIState {
   // Actions
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
+  openSidebar: () => void;
+  closeSidebar: () => void;
   toggleSidebarCollapsed: () => void;
 
   openCreateLinkModal: () => void;
@@ -46,6 +48,8 @@ export const useUIStore = create<UIState>((set) => ({
   // Sidebar actions
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+  openSidebar: () => set({ sidebarOpen: true }),
+  closeSidebar: () => set({ sidebarOpen: false }),
   toggleSidebarCollapsed: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
 
   // Create Link Modal

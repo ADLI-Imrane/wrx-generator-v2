@@ -9,6 +9,29 @@ import { CreateLinkDto, UpdateLinkDto } from './dto';
 import { generateSlug } from '@wrx/shared';
 import { SLUG_CONSTRAINTS, TIER_LIMITS } from '@wrx/shared';
 
+// Transform snake_case DB response to camelCase for frontend
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function transformLink(dbLink: any) {
+  const shortUrlDomain = process.env['SHORT_URL_DOMAIN'] || 'http://localhost:3000';
+  return {
+    id: dbLink.id,
+    userId: dbLink.user_id,
+    slug: dbLink.slug,
+    originalUrl: dbLink.original_url,
+    shortUrl: `${shortUrlDomain}/r/${dbLink.slug}`,
+    title: dbLink.title,
+    description: dbLink.description,
+    passwordHash: dbLink.password_hash,
+    expiresAt: dbLink.expires_at,
+    maxClicks: dbLink.max_clicks,
+    clicks: dbLink.clicks || 0,
+    isActive: dbLink.is_active,
+    tags: dbLink.tags || [],
+    createdAt: dbLink.created_at,
+    updatedAt: dbLink.updated_at,
+  };
+}
+
 @Injectable()
 export class LinksService {
   constructor(private supabaseService: SupabaseService) {}
@@ -70,32 +93,53 @@ export class LinksService {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return transformLink(data);
   }
 
-  async findAll(userId: string, page = 1, limit = 20) {
+  async findAll(
+    userId: string,
+    page = 1,
+    limit = 20,
+    filters: { search?: string; isActive?: boolean; sortBy?: string; sortOrder?: string } = {}
+  ) {
     const supabase = this.supabaseService.getAdminClient();
     const offset = (page - 1) * limit;
 
-    const { data, error, count } = await supabase
-      .from('links')
-      .select('*', { count: 'exact' })
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    let query = supabase.from('links').select('*', { count: 'exact' }).eq('user_id', userId);
+
+    // Apply search filter
+    if (filters.search) {
+      query = query.or(
+        `title.ilike.%${filters.search}%,slug.ilike.%${filters.search}%,original_url.ilike.%${filters.search}%`
+      );
+    }
+
+    // Apply isActive filter
+    if (filters.isActive !== undefined) {
+      query = query.eq('is_active', filters.isActive);
+    }
+
+    // Apply sorting
+    const sortColumn =
+      filters.sortBy === 'clicks' ? 'clicks' : filters.sortBy === 'title' ? 'title' : 'created_at';
+    const ascending = filters.sortOrder === 'asc';
+    query = query.order(sortColumn, { ascending });
+
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
 
     if (error) {
       throw new BadRequestException(error.message);
     }
 
     return {
-      data,
-      meta: {
-        total: count,
-        page,
-        limit,
-        totalPages: Math.ceil((count || 0) / limit),
-      },
+      data: (data || []).map(transformLink),
+      total: count || 0,
+      page,
+      limit,
+      totalPages: Math.ceil((count || 0) / limit),
     };
   }
 
@@ -113,7 +157,7 @@ export class LinksService {
       throw new NotFoundException('Link not found');
     }
 
-    return data;
+    return transformLink(data);
   }
 
   async update(userId: string, id: string, dto: UpdateLinkDto) {
@@ -144,7 +188,7 @@ export class LinksService {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return transformLink(data);
   }
 
   async remove(userId: string, id: string) {
@@ -182,7 +226,7 @@ export class LinksService {
 
     // Aggregate stats
     const stats = {
-      totalClicks: link.clicks_count,
+      totalClicks: link.clicks,
       uniqueClicks: new Set(clicks?.map((c) => c.ip_address)).size,
       recentClicks: clicks,
       byCountry: this.aggregateBy(clicks || [], 'country'),

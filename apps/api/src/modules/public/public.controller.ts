@@ -2,12 +2,54 @@ import { Controller, Get, Param, Query, Req, Res, Post, Body, HttpStatus } from 
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { PublicService } from './public.service';
+import { QrService } from '../qr/qr.service';
 
 @ApiTags('public')
-@Controller()
+@Controller('r')
 export class PublicController {
-  constructor(private publicService: PublicService) {}
+  constructor(
+    private publicService: PublicService,
+    private qrService: QrService
+  ) {}
 
+  // IMPORTANT: Routes with static paths must come BEFORE dynamic :slug routes
+  @Get('scan/:id')
+  @ApiOperation({ summary: 'Track QR code scan and redirect to content' })
+  async scanQR(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
+    const scanData = {
+      ipAddress: this.getClientIp(req),
+      userAgent: req.headers['user-agent'],
+      ...this.parseUserAgent(req.headers['user-agent'] || ''),
+    };
+
+    try {
+      const { content, type } = await this.qrService.trackScan(id, scanData);
+
+      // If it's a URL type, redirect
+      if (type === 'url' && content.startsWith('http')) {
+        return res.redirect(HttpStatus.MOVED_PERMANENTLY, content);
+      }
+
+      // For other types, return the content
+      return res.json({ content, type });
+    } catch {
+      return res.status(HttpStatus.NOT_FOUND).json({ message: 'QR code not found' });
+    }
+  }
+
+  @Get(':slug/preview')
+  @ApiOperation({ summary: 'Get link preview without redirecting' })
+  preview(@Param('slug') slug: string) {
+    return this.publicService.getLinkPreview(slug);
+  }
+
+  @Post(':slug/verify-password')
+  @ApiOperation({ summary: 'Verify password for protected link' })
+  verifyPassword(@Param('slug') slug: string, @Body('password') password: string) {
+    return this.publicService.checkPassword(slug, password);
+  }
+
+  // Dynamic :slug route must be LAST to avoid catching static routes
   @Get(':slug')
   @ApiOperation({ summary: 'Redirect to original URL' })
   @ApiQuery({ name: 'password', required: false, description: 'Password for protected links' })
@@ -17,11 +59,6 @@ export class PublicController {
     @Req() req: Request,
     @Res() res: Response
   ) {
-    // Skip API routes
-    if (['api', 'health', 'docs'].includes(slug)) {
-      return res.status(HttpStatus.NOT_FOUND).json({ message: 'Not found' });
-    }
-
     const referrerHeader = req.headers['referer'] || req.headers['referrer'];
     const clickData = {
       linkId: '', // Will be set by service
@@ -45,18 +82,6 @@ export class PublicController {
       }
       throw error;
     }
-  }
-
-  @Get(':slug/preview')
-  @ApiOperation({ summary: 'Get link preview without redirecting' })
-  preview(@Param('slug') slug: string) {
-    return this.publicService.getLinkPreview(slug);
-  }
-
-  @Post(':slug/verify-password')
-  @ApiOperation({ summary: 'Verify password for protected link' })
-  verifyPassword(@Param('slug') slug: string, @Body('password') password: string) {
-    return this.publicService.checkPassword(slug, password);
   }
 
   private getClientIp(req: Request): string {

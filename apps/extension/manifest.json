@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "WRX Generator",
+  "version": "2.0.0",
+  "description": "Quickly generate short URLs and QR codes from any webpage",
+  "permissions": ["activeTab", "storage", "contextMenus"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "WRX Generator"
+  },
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  }
+}

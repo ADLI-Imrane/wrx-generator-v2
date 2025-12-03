@@ -23,8 +23,8 @@
     "noEmitOnError": true,
 
     /* JavaScript Support */
-    "allowJs": true,
-    "checkJs": true,
+    "allowJs": false,
+    "checkJs": false,
 
     /* Interop Constraints */
     "esModuleInterop": true,

@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PublicController } from './public.controller';
 import { PublicService } from './public.service';
+import { QrModule } from '../qr/qr.module';
 
 @Module({
+  imports: [QrModule],
   controllers: [PublicController],
   providers: [PublicService],
 })

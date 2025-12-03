@@ -34,11 +34,29 @@ export class LinksController {
   @ApiOperation({ summary: 'Get all links for current user' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  findAll(@CurrentUser() user: User, @Query('page') page?: string, @Query('limit') limit?: string) {
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, type: String })
+  findAll(
+    @CurrentUser() user: User,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('isActive') isActive?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string
+  ) {
     return this.linksService.findAll(
       user.id,
       page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20
+      limit ? parseInt(limit, 10) : 20,
+      {
+        search,
+        isActive: isActive === undefined ? undefined : isActive === 'true',
+        sortBy,
+        sortOrder,
+      }
     );
   }
 

@@ -167,9 +167,11 @@ export function QRCard({ qr, onDownload, onEdit, onDelete, onDuplicate }: QRCard
               <BarChart2 size={14} />
               {qr.scans || 0} scans
             </Link>
-            <span>
-              Créé {formatDistanceToNow(new Date(qr.createdAt), { addSuffix: true, locale: fr })}
-            </span>
+            {qr.createdAt && !isNaN(new Date(qr.createdAt).getTime()) && (
+              <span>
+                Créé {formatDistanceToNow(new Date(qr.createdAt), { addSuffix: true, locale: fr })}
+              </span>
+            )}
           </div>
         </div>
       </div>
