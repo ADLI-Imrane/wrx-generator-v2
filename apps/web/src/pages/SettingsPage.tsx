@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
 import { useUpdateProfile, useUpdatePassword, useLogout } from '../hooks/useAuth';
+import { useSubscription, useUsage } from '../hooks/useBilling';
 import {
   User,
   Mail,
@@ -14,6 +16,8 @@ import {
   LogOut,
   Shield,
   CreditCard,
+  ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
 
@@ -21,7 +25,12 @@ type SettingsTab = 'profile' | 'security' | 'notifications' | 'billing' | 'dange
 
 export function SettingsPage() {
   const { user, profile } = useAuthStore();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+
+  // Billing data
+  const { data: subscription, isLoading: isLoadingSubscription } = useSubscription();
+  const { data: usage, isLoading: isLoadingUsage } = useUsage();
 
   // Profile form
   const [fullName, setFullName] = useState(profile?.fullName || '');
@@ -366,40 +375,115 @@ export function SettingsPage() {
                 <p className="text-sm text-gray-600">Gérez votre abonnement et vos paiements</p>
               </div>
 
-              <div className="rounded-lg border border-gray-200 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="inline-block rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
-                      Plan Gratuit
-                    </span>
-                    <p className="mt-2 text-gray-600">50 liens et 10 QR codes par mois</p>
-                  </div>
-                  <button className="btn btn-primary">Passer à Pro</button>
+              {isLoadingSubscription ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="text-primary-600 h-8 w-8 animate-spin" />
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span
+                        className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${
+                          subscription?.tier === 'business'
+                            ? 'bg-purple-100 text-purple-700'
+                            : subscription?.tier === 'pro'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-green-100 text-green-700'
+                        }`}
+                      >
+                        {subscription?.tier === 'business'
+                          ? 'Plan Business'
+                          : subscription?.tier === 'pro'
+                            ? 'Plan Pro'
+                            : 'Plan Gratuit'}
+                      </span>
+                      <p className="mt-2 text-gray-600">
+                        {subscription?.plan?.limits ? (
+                          <>
+                            {subscription.plan.limits.links === -1
+                              ? 'Liens illimités'
+                              : `${subscription.plan.limits.links} liens`}
+                            {' et '}
+                            {subscription.plan.limits.qrCodes === -1
+                              ? 'QR codes illimités'
+                              : `${subscription.plan.limits.qrCodes} QR codes`}
+                            {' par mois'}
+                          </>
+                        ) : (
+                          '10 liens et 5 QR codes par mois'
+                        )}
+                      </p>
+                      {subscription?.currentPeriodEnd && subscription.tier !== 'free' && (
+                        <p className="mt-1 text-xs text-gray-500">
+                          {subscription.cancelAtPeriodEnd
+                            ? `Se termine le ${new Date(subscription.currentPeriodEnd).toLocaleDateString('fr-FR')}`
+                            : subscription.scheduledDowngrade
+                              ? `Passage au plan ${subscription.scheduledDowngrade.tier === 'pro' ? 'Pro' : subscription.scheduledDowngrade.tier} le ${new Date(subscription.scheduledDowngrade.date).toLocaleDateString('fr-FR')}`
+                              : `Prochain renouvellement: ${new Date(subscription.currentPeriodEnd).toLocaleDateString('fr-FR')}`}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => navigate('/billing')}
+                      className="btn btn-primary flex items-center gap-2"
+                    >
+                      {subscription?.tier === 'free' ? 'Passer à Pro' : "Gérer l'abonnement"}
+                      <ExternalLink size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <h3 className="mb-4 font-medium text-gray-900">Utilisation ce mois</h3>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Liens créés</span>
-                      <span className="font-medium">12 / 50</span>
+                {isLoadingUsage ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Liens créés</span>
+                        <span className="font-medium">
+                          {usage?.links?.used ?? 0} /{' '}
+                          {usage?.links?.limit === -1 ? '∞' : (usage?.links?.limit ?? 10)}
+                        </span>
+                      </div>
+                      <div className="mt-1 h-2 rounded-full bg-gray-200">
+                        <div
+                          className="bg-primary-600 h-2 rounded-full transition-all"
+                          style={{ width: `${Math.min(usage?.links?.percentage ?? 0, 100)}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="mt-1 h-2 rounded-full bg-gray-200">
-                      <div className="bg-primary-600 h-2 rounded-full" style={{ width: '24%' }} />
+                    <div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">QR codes créés</span>
+                        <span className="font-medium">
+                          {usage?.qrCodes?.used ?? 0} /{' '}
+                          {usage?.qrCodes?.limit === -1 ? '∞' : (usage?.qrCodes?.limit ?? 5)}
+                        </span>
+                      </div>
+                      <div className="mt-1 h-2 rounded-full bg-gray-200">
+                        <div
+                          className="h-2 rounded-full bg-purple-600 transition-all"
+                          style={{ width: `${Math.min(usage?.qrCodes?.percentage ?? 0, 100)}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">QR codes créés</span>
-                      <span className="font-medium">3 / 10</span>
-                    </div>
-                    <div className="mt-1 h-2 rounded-full bg-gray-200">
-                      <div className="h-2 rounded-full bg-purple-600" style={{ width: '30%' }} />
-                    </div>
-                  </div>
-                </div>
+                )}
+              </div>
+
+              <div className="border-t pt-4">
+                <button
+                  onClick={() => navigate('/billing')}
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                >
+                  Voir l'historique de facturation →
+                </button>
               </div>
             </div>
           )}

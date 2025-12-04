@@ -26,7 +26,7 @@ export class BillingController {
   @Post('checkout')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a Stripe checkout session' })
+  @ApiOperation({ summary: 'Subscribe to a plan or update existing subscription' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -38,17 +38,26 @@ export class BillingController {
       required: ['priceId'],
     },
   })
-  async createCheckoutSession(
+  async subscribeToPlan(
     @CurrentUser() user: User,
     @Body() body: { priceId: string; successUrl?: string; cancelUrl?: string }
   ) {
-    return this.billingService.createCheckoutSession(
+    return this.billingService.subscribeToPlan(
       user.id,
       user.email || '',
       body.priceId,
       body.successUrl,
       body.cancelUrl
     );
+  }
+
+  @Post('reactivate')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reactivate a cancelled subscription' })
+  async reactivateSubscription(@CurrentUser() user: User) {
+    return this.billingService.reactivateSubscription(user.id);
   }
 
   @Post('portal')
@@ -98,6 +107,69 @@ export class BillingController {
   @ApiOperation({ summary: 'Cancel current subscription' })
   async cancelSubscription(@CurrentUser() user: User) {
     return this.billingService.cancelSubscription(user.id);
+  }
+
+  @Post('change-plan')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change subscription plan (upgrade or downgrade)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        priceId: { type: 'string', description: 'New Stripe price ID' },
+      },
+      required: ['priceId'],
+    },
+  })
+  async changePlan(@CurrentUser() user: User, @Body() body: { priceId: string }) {
+    return this.billingService.changePlan(user.id, body.priceId);
+  }
+
+  @Post('preview-plan-change')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Preview cost of plan change before confirming' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        priceId: { type: 'string', description: 'Target Stripe price ID' },
+      },
+      required: ['priceId'],
+    },
+  })
+  async previewPlanChange(@CurrentUser() user: User, @Body() body: { priceId: string }) {
+    return this.billingService.previewPlanChange(user.id, body.priceId);
+  }
+
+  @Post('complete-upgrade')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Complete upgrade after Stripe payment' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'Stripe checkout session ID' },
+      },
+      required: ['sessionId'],
+    },
+  })
+  async completeUpgrade(@CurrentUser() user: User, @Body() body: { sessionId: string }) {
+    return this.billingService.completeUpgrade(user.id, body.sessionId);
+  }
+
+  @Post('downgrade-to-free')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Downgrade to free plan' })
+  async downgradeToFree(@CurrentUser() user: User) {
+    return this.billingService.downgradeToFree(user.id);
   }
 
   @Get('plans')

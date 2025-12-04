@@ -18,6 +18,11 @@ import {
   useCustomerPortal,
   useCancelSubscription,
   useSyncSubscription,
+  useChangePlan,
+  useDowngradeToFree,
+  usePreviewPlanChange,
+  useCompleteUpgrade,
+  PlanChangePreview,
 } from '../hooks/useBilling';
 import { toast } from 'react-hot-toast';
 
@@ -37,6 +42,9 @@ export function BillingPage() {
   const [searchParams] = useSearchParams();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradePreview, setUpgradePreview] = useState<PlanChangePreview | null>(null);
+  const [pendingPriceId, setPendingPriceId] = useState<string | null>(null);
 
   // API hooks
   const { data: plans = [], isLoading: plansLoading } = usePlans();
@@ -47,6 +55,10 @@ export function BillingPage() {
   const customerPortal = useCustomerPortal();
   const cancelSubscription = useCancelSubscription();
   const syncSubscription = useSyncSubscription();
+  const changePlan = useChangePlan();
+  const downgradeToFree = useDowngradeToFree();
+  const previewPlanChange = usePreviewPlanChange();
+  const completeUpgrade = useCompleteUpgrade();
 
   // Handle success/cancel from Stripe
   useEffect(() => {
@@ -62,6 +74,26 @@ export function BillingPage() {
       });
     } else if (searchParams.get('canceled') === 'true') {
       toast.error('Paiement annulé.');
+    } else if (searchParams.get('upgrade') === 'success') {
+      // Upgrade payment completed - finalize the upgrade
+      const sessionId = searchParams.get('session_id');
+      if (sessionId) {
+        completeUpgrade.mutate(sessionId, {
+          onSuccess: (data) => {
+            toast.success(data.message);
+            // Clear URL params
+            window.history.replaceState({}, '', '/billing');
+          },
+          onError: (error) => {
+            console.error('Upgrade error:', error);
+            toast.error('Erreur lors de la finalisation. Cliquez sur Sync pour réessayer.');
+          },
+        });
+      } else {
+        toast.error('Session ID manquant. Cliquez sur Sync pour mettre à jour.');
+      }
+    } else if (searchParams.get('upgrade') === 'canceled') {
+      toast.error('Mise à niveau annulée.');
     }
   }, [searchParams]);
 
@@ -89,12 +121,105 @@ export function BillingPage() {
     return limit.toString();
   };
 
-  const handleSelectPlan = (priceId: string | null) => {
+  // Get button label based on plan comparison
+  const getButtonLabel = (targetPlanId: string, currentTier: string) => {
+    const tierOrder = { free: 0, pro: 1, business: 2 };
+    const targetOrder = tierOrder[targetPlanId as keyof typeof tierOrder] ?? 0;
+    const currentOrder = tierOrder[currentTier as keyof typeof tierOrder] ?? 0;
+
+    if (targetOrder > currentOrder) {
+      return 'Passer à ce plan';
+    } else if (targetOrder < currentOrder) {
+      return 'Rétrograder';
+    }
+    return 'Choisir ce plan';
+  };
+
+  // Handle plan selection - upgrade, downgrade, or new subscription
+  const handleSelectPlan = async (planId: string, priceId: string | null) => {
+    const currentTier = subscription?.tier || 'free';
+
+    // If selecting free plan (downgrade to free)
+    if (planId === 'free') {
+      if (currentTier === 'free') {
+        toast.error('Vous êtes déjà sur le plan gratuit.');
+        return;
+      }
+      // Downgrade to free
+      downgradeToFree.mutate(undefined, {
+        onSuccess: (data) => {
+          toast.success(data.message);
+        },
+        onError: () => {
+          toast.error('Erreur lors du passage au plan gratuit.');
+        },
+      });
+      return;
+    }
+
     if (!priceId) {
       toast.error('Ce plan ne nécessite pas de paiement.');
       return;
     }
-    createCheckout.mutate(priceId);
+
+    // If user has an active paid subscription, show preview modal
+    if (subscription?.hasCustomer && currentTier !== 'free') {
+      setPendingPriceId(priceId);
+      previewPlanChange.mutate(priceId, {
+        onSuccess: (preview) => {
+          setUpgradePreview(preview);
+          setShowUpgradeModal(true);
+        },
+        onError: (error) => {
+          console.error('Preview error:', error);
+          // If preview fails, still allow the change
+          changePlan.mutate(priceId, {
+            onSuccess: (data) => {
+              toast.success(data.message);
+            },
+            onError: (err) => {
+              console.error('Change plan error:', err);
+              const errorMessage = (err as Error)?.message || 'Erreur lors du changement de plan.';
+              toast.error(errorMessage);
+            },
+          });
+        },
+      });
+    } else {
+      // New subscription
+      createCheckout.mutate(priceId);
+    }
+  };
+
+  // Confirm plan change after preview
+  const handleConfirmPlanChange = () => {
+    if (!pendingPriceId) return;
+
+    changePlan.mutate(pendingPriceId, {
+      onSuccess: (data) => {
+        // Check if we need to redirect to Stripe for payment
+        if (data.requiresPayment && data.url) {
+          toast.success('Redirection vers le paiement...');
+          window.location.href = data.url;
+        } else {
+          toast.success(data.message);
+          setShowUpgradeModal(false);
+          setUpgradePreview(null);
+          setPendingPriceId(null);
+        }
+      },
+      onError: (error) => {
+        console.error('Change plan error:', error);
+        const errorMessage = (error as Error)?.message || 'Erreur lors du changement de plan.';
+        toast.error(errorMessage);
+      },
+    });
+  };
+
+  const handleCancelUpgrade = () => {
+    setShowUpgradeModal(false);
+    setUpgradePreview(null);
+    setPendingPriceId(null);
   };
 
   const handleManageBilling = () => {
@@ -163,11 +288,24 @@ export function BillingPage() {
                   })}
                 </span>
               </p>
-              {subscription.cancelAtPeriodEnd && (
+              {subscription.scheduledDowngrade ? (
+                <p className="mt-1 text-sm text-orange-600">
+                  Passage au plan{' '}
+                  {subscription.scheduledDowngrade.tier === 'pro'
+                    ? 'Pro'
+                    : subscription.scheduledDowngrade.tier}{' '}
+                  prévu le{' '}
+                  {new Date(subscription.scheduledDowngrade.date).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
+              ) : subscription.cancelAtPeriodEnd ? (
                 <p className="mt-1 text-sm text-red-600">
                   Annulation prévue à la fin de la période
                 </p>
-              )}
+              ) : null}
             </div>
           )}
 
@@ -360,8 +498,14 @@ export function BillingPage() {
                 </ul>
 
                 <button
-                  onClick={() => handleSelectPlan(plan.priceId)}
-                  disabled={isCurrentPlan || createCheckout.isPending}
+                  onClick={() => handleSelectPlan(plan.id, plan.priceId)}
+                  disabled={
+                    isCurrentPlan ||
+                    createCheckout.isPending ||
+                    changePlan.isPending ||
+                    downgradeToFree.isPending ||
+                    previewPlanChange.isPending
+                  }
                   className={`w-full rounded-lg py-2.5 font-medium transition-colors ${
                     isCurrentPlan
                       ? 'cursor-not-allowed bg-gray-100 text-gray-400'
@@ -372,9 +516,12 @@ export function BillingPage() {
                 >
                   {isCurrentPlan
                     ? 'Plan actuel'
-                    : createCheckout.isPending
+                    : createCheckout.isPending ||
+                        changePlan.isPending ||
+                        downgradeToFree.isPending ||
+                        previewPlanChange.isPending
                       ? 'Chargement...'
-                      : 'Choisir ce plan'}
+                      : getButtonLabel(plan.id, subscription?.tier || 'free')}
                 </button>
               </div>
             );
@@ -426,7 +573,7 @@ export function BillingPage() {
               <thead>
                 <tr className="border-b border-gray-200 text-left text-sm text-gray-500">
                   <th className="pb-3 font-medium">Date</th>
-                  <th className="pb-3 font-medium">Numéro</th>
+                  <th className="pb-3 font-medium">Description</th>
                   <th className="pb-3 font-medium">Montant</th>
                   <th className="pb-3 font-medium">Statut</th>
                   <th className="pb-3 font-medium"></th>
@@ -442,7 +589,14 @@ export function BillingPage() {
                         year: 'numeric',
                       })}
                     </td>
-                    <td className="py-3 text-gray-600">{invoice.number}</td>
+                    <td className="py-3 text-gray-600">
+                      <div>
+                        <span className="font-medium">{invoice.number}</span>
+                        {invoice.description && (
+                          <p className="text-xs text-gray-500">{invoice.description}</p>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3 font-medium text-gray-900">
                       {invoice.amount} {invoice.currency}
                     </td>
@@ -464,7 +618,7 @@ export function BillingPage() {
                       </span>
                     </td>
                     <td className="py-3">
-                      {invoice.pdfUrl && (
+                      {invoice.pdfUrl ? (
                         <a
                           href={invoice.pdfUrl}
                           target="_blank"
@@ -473,7 +627,9 @@ export function BillingPage() {
                         >
                           Télécharger
                         </a>
-                      )}
+                      ) : invoice.type === 'payment' ? (
+                        <span className="text-xs text-gray-400">Paiement unique</span>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -501,6 +657,80 @@ export function BillingPage() {
                 className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
               >
                 Annuler mon abonnement
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade/Downgrade Confirmation Modal */}
+      {showUpgradeModal && upgradePreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {upgradePreview.isUpgrade ? 'Confirmer la mise à niveau' : 'Confirmer le changement'}
+            </h3>
+
+            <div className="mt-4 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Plan actuel</span>
+                <span className="font-medium text-gray-900">
+                  {upgradePreview.currentPlan} ({upgradePreview.currentPrice} MAD/mois)
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Nouveau plan</span>
+                <span className="font-medium text-gray-900">
+                  {upgradePreview.newPlan} ({upgradePreview.newPrice} MAD/mois)
+                </span>
+              </div>
+
+              {upgradePreview.isUpgrade && (
+                <div className="border-t border-gray-200 pt-3">
+                  <div className="flex justify-between text-lg font-bold">
+                    <span className="text-gray-900">À payer maintenant</span>
+                    <span className="text-primary-600">
+                      {upgradePreview.difference} {upgradePreview.currency}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">Différence entre les deux plans</p>
+                </div>
+              )}
+
+              <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
+                <p>{upgradePreview.message}</p>
+                {!upgradePreview.isUpgrade && (
+                  <p className="mt-2 font-medium text-orange-600">
+                    ⚠️ Vous conserverez l'accès à toutes les fonctionnalités{' '}
+                    {upgradePreview.currentPlan} jusqu'au{' '}
+                    {new Date(upgradePreview.nextBillingDate).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={handleCancelUpgrade}
+                className="btn btn-outline flex-1"
+                disabled={changePlan.isPending}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleConfirmPlanChange}
+                disabled={changePlan.isPending}
+                className="btn bg-primary-600 hover:bg-primary-700 flex-1 text-white disabled:opacity-50"
+              >
+                {changePlan.isPending
+                  ? 'Traitement...'
+                  : upgradePreview.isUpgrade
+                    ? `Payer ${upgradePreview.difference} MAD`
+                    : 'Confirmer'}
               </button>
             </div>
           </div>
