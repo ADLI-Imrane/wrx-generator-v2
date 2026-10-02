@@ -35,6 +35,8 @@ npm-debug.log*
 pnpm-debug.log*
 
 # Testing
+test-results/
+playwright-report/
 coverage/
 .nyc_output/
 
