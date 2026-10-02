@@ -21,8 +21,8 @@
 - 📊 **Analytics Complets** - Suivez les clics, géolocalisation, appareils, navigateurs
 - 🎨 **QR Codes Personnalisés** - Générez des QR codes avec couleurs et logos
 - 🔐 **Liens Protégés** - Protection par mot de passe et dates d'expiration
-- 💳 **Abonnements** - Plans Free, Pro et Enterprise via Stripe
-- 🌐 **Multi-plateforme** - Web, Mobile (iOS/Android), Extension Chrome
+- 💳 **Abonnements** - Plans Free, Pro et Business via Stripe
+- 🌐 **Multi-plateforme** - Web; Mobile et Extension Chrome sont encore en développement
 
 ---
 
@@ -57,8 +57,8 @@ wrx-generator-v2/
 | ------------- | ------------------------------------ | ----------------------------- |
 | **API**       | NestJS 10, Supabase, Stripe          | Backend REST API avec Swagger |
 | **Web**       | React 18, Vite, TailwindCSS, Zustand | Application web principale    |
-| **Mobile**    | Expo 52, React Native                | Apps iOS & Android natives    |
-| **Extension** | Manifest V3, React                   | Extension Chrome              |
+| **Mobile**    | Expo 52, React Native                | Structure initiale            |
+| **Extension** | Manifest V3, React                   | Prototype Chrome              |
 
 ### Packages Partagés
 
@@ -100,8 +100,10 @@ pnpm install
 cp .env.example .env
 # Éditer .env avec vos clés Supabase et Stripe
 
-# 4. Démarrer en mode développement
-pnpm dev
+# 4. Construire le package partagé et démarrer API + Web dans deux terminaux
+pnpm --filter @wrx/shared build
+pnpm --filter @wrx/api dev
+pnpm --filter @wrx/web dev
 ```
 
 ### Scripts Disponibles
@@ -109,7 +111,7 @@ pnpm dev
 ```bash
 # Développement
 pnpm dev              # Démarre tous les apps en parallèle
-pnpm dev --filter api # Démarre uniquement l'API
+pnpm --filter @wrx/api dev # Démarre uniquement l'API
 
 # Build
 pnpm build            # Build tous les packages
@@ -124,8 +126,8 @@ pnpm test             # Exécute tous les tests
 pnpm test:cov         # Tests avec couverture
 
 # Base de données
-pnpm db:migrate       # Exécute les migrations
-pnpm db:studio        # Ouvre Supabase Studio
+supabase db reset      # Réinitialise uniquement la base locale (efface ses données)
+supabase status        # Affiche les URLs et clés locales
 ```
 
 ---
@@ -181,17 +183,17 @@ Voir [docs/API.md](./docs/API.md) pour la documentation complète.
 
 ## 📊 Plans d'Abonnement
 
-| Fonctionnalité              | Free | Pro | Enterprise |
-| --------------------------- | :--: | :-: | :--------: |
-| Liens                       |  10  | 500 |     ∞      |
-| QR Codes                    |  5   | 200 |     ∞      |
-| Clics/mois                  |  1K  | 50K |     ∞      |
-| Slug personnalisé           |  ❌  | ✅  |     ✅     |
-| Protection par mot de passe |  ❌  | ✅  |     ✅     |
-| Analytics                   |  ❌  | ✅  |     ✅     |
-| Logo QR personnalisé        |  ❌  | ✅  |     ✅     |
-| API Access                  |  ❌  | ✅  |     ✅     |
-| Support prioritaire         |  ❌  | ❌  |     ✅     |
+| Fonctionnalité              | Free | Pro | Business |
+| --------------------------- | :--: | :-: | :------: |
+| Liens                       |  10  | 100 |    ∞     |
+| QR Codes                    |  5   | 50  |    ∞     |
+| Clics/mois                  |  1K  | 10K |    ∞     |
+| Slug personnalisé           |  ❌  | ✅  |    ✅    |
+| Protection par mot de passe |  ❌  | ✅  |    ✅    |
+| Analytics                   |  ❌  | ✅  |    ✅    |
+| Logo QR personnalisé        |  ❌  | ✅  |    ✅    |
+| API Access                  |  ❌  | ✅  |    ✅    |
+| Support prioritaire         |  ❌  | ❌  |    ✅    |
 
 ---
 

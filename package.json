@@ -27,11 +27,7 @@
     "test:cov": "turbo run test:cov",
     "clean": "turbo run clean && rimraf node_modules",
     "prepare": "husky",
-    "typecheck": "turbo run typecheck",
-    "db:generate": "pnpm --filter api db:generate",
-    "db:migrate": "pnpm --filter api db:migrate",
-    "db:push": "pnpm --filter api db:push",
-    "db:studio": "pnpm --filter api db:studio"
+    "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

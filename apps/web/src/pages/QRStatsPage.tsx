@@ -88,41 +88,14 @@ export function QRStatsPage() {
     );
   }
 
-  // Generate mock stats for demonstration (replace with real API data)
-  const mockStats: QRStatsData = (stats as unknown as QRStatsData) || {
-    totalScans: qrCode.scans || 0,
-    uniqueScanners: Math.floor((qrCode.scans || 0) * 0.65),
-    scansByDay: Array.from({ length: 30 }, (_, i) => ({
-      date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0] as string,
-      scans: Math.floor(Math.random() * 30),
-    })),
-    scansByCountry: [
-      { country: 'France', code: 'FR', scans: 280 },
-      { country: 'États-Unis', code: 'US', scans: 150 },
-      { country: 'Canada', code: 'CA', scans: 95 },
-      { country: 'Belgique', code: 'BE', scans: 60 },
-      { country: 'Suisse', code: 'CH', scans: 45 },
-    ],
-    scansByDevice: [
-      { device: 'Mobile', scans: 520 },
-      { device: 'Desktop', scans: 80 },
-      { device: 'Tablet', scans: 30 },
-    ],
-    scansByOS: [
-      { os: 'iOS', scans: 320 },
-      { os: 'Android', scans: 280 },
-      { os: 'Windows', scans: 20 },
-      { os: 'macOS', scans: 10 },
-    ],
-    scanLocations: [
-      { city: 'Paris', country: 'FR', lat: 48.8566, lng: 2.3522, scans: 120 },
-      { city: 'Lyon', country: 'FR', lat: 45.764, lng: 4.8357, scans: 85 },
-      { city: 'New York', country: 'US', lat: 40.7128, lng: -74.006, scans: 65 },
-      { city: 'Montreal', country: 'CA', lat: 45.5017, lng: -73.5673, scans: 55 },
-      { city: 'Marseille', country: 'FR', lat: 43.2965, lng: 5.3698, scans: 45 },
-    ],
+  const mockStats: QRStatsData = stats || {
+    totalScans: 0,
+    uniqueScanners: 0,
+    scansByDay: [],
+    scansByCountry: [],
+    scansByDevice: [],
+    scansByOS: [],
+    scanLocations: [],
   };
 
   const maxDailyScans = Math.max(...mockStats.scansByDay.map((d) => d.scans), 1);

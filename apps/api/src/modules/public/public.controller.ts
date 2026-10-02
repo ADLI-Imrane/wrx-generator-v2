@@ -27,7 +27,7 @@ export class PublicController {
 
       // If it's a URL type, redirect
       if (type === 'url' && content.startsWith('http')) {
-        return res.redirect(HttpStatus.MOVED_PERMANENTLY, content);
+        return res.redirect(HttpStatus.FOUND, content);
       }
 
       // For other types, return the content
@@ -70,7 +70,7 @@ export class PublicController {
 
     try {
       const { url } = await this.publicService.redirect(slug, clickData, password);
-      return res.redirect(HttpStatus.MOVED_PERMANENTLY, url);
+      return res.redirect(HttpStatus.FOUND, url);
     } catch (error) {
       if (error instanceof Error && error.message === 'This link is password protected') {
         // Return a page or redirect to password entry

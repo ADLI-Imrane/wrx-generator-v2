@@ -68,12 +68,13 @@ export function useQRCodeStats(id: string, timeRange: '7d' | '30d' | '90d' | 'al
     queryKey: [...qrKeys.stats(id), timeRange],
     queryFn: async () => {
       return api.get<{
-        total_scans: number;
-        unique_scanners: number;
-        scans_by_day: { date: string; scans: number }[];
-        scans_by_country: { country: string; code: string; scans: number }[];
-        scans_by_device: { device: string; scans: number }[];
-        scans_by_os: { os: string; scans: number }[];
+        totalScans: number;
+        uniqueScanners: number;
+        scansByDay: { date: string; scans: number }[];
+        scansByCountry: { country: string; code: string; scans: number }[];
+        scansByDevice: { device: string; scans: number }[];
+        scansByOS: { os: string; scans: number }[];
+        scanLocations: { city: string; country: string; lat: number; lng: number; scans: number }[];
       }>(`/qr/${id}/stats?timeRange=${timeRange}`);
     },
     enabled: !!id,
@@ -85,26 +86,7 @@ export function useQRImage(id: string, format: 'png' | 'svg' = 'png') {
   return useQuery({
     queryKey: [...qrKeys.image(id), format],
     queryFn: async (): Promise<string> => {
-      const token = await getAuthToken();
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/qr/${id}/image?format=${format}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch QR image');
-      }
-
-      if (format === 'svg') {
-        return response.text();
-      }
-
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
+      return api.get<string>(`/qr/${id}/image?format=${format}`);
     },
     enabled: !!id,
   });
@@ -189,7 +171,7 @@ export function useDownloadQR() {
 
       const token = await getAuthToken();
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/qr/${id}/download?${params.toString()}`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/qr/${id}/download?${params.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

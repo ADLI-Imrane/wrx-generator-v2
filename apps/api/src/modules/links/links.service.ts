@@ -41,7 +41,7 @@ export class LinksService {
 
     // Check user's tier and link limits
     const userLimits = await this.checkUserLimits(userId);
-    if (userLimits.linksCount >= userLimits.maxLinks) {
+    if (userLimits.maxLinks >= 0 && userLimits.linksCount >= userLimits.maxLinks) {
       throw new ForbiddenException('Link limit reached for your plan');
     }
 

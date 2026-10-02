@@ -31,9 +31,9 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     prioritySupport: false,
   },
   pro: {
-    maxLinks: 500,
-    maxQRCodes: 200,
-    maxClicksPerMonth: 50000,
+    maxLinks: 100,
+    maxQRCodes: 50,
+    maxClicksPerMonth: 10000,
     customSlug: true,
     passwordProtection: true,
     customQrLogo: true,
@@ -42,6 +42,19 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     expirationDates: true,
     bulkOperations: false,
     prioritySupport: false,
+  },
+  business: {
+    maxLinks: -1,
+    maxQRCodes: -1,
+    maxClicksPerMonth: -1,
+    customSlug: true,
+    passwordProtection: true,
+    customQrLogo: true,
+    analytics: true,
+    apiAccess: true,
+    expirationDates: true,
+    bulkOperations: true,
+    prioritySupport: true,
   },
   enterprise: {
     maxLinks: -1, // unlimited

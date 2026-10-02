@@ -94,7 +94,7 @@ export class QrService {
 
     // Check user's tier and QR limits
     const userLimits = await this.checkUserLimits(userId);
-    if (userLimits.qrCount >= userLimits.maxQrs) {
+    if (userLimits.maxQrs >= 0 && userLimits.qrCount >= userLimits.maxQrs) {
       throw new ForbiddenException('QR code limit reached for your plan');
     }
 
@@ -259,6 +259,50 @@ export class QrService {
     }
   }
 
+  async getStats(userId: string, id: string, timeRange: '7d' | '30d' | '90d' | 'all' = '30d') {
+    await this.findOne(userId, id);
+    const days = { '7d': 7, '30d': 30, '90d': 90, all: 0 }[timeRange] ?? 30;
+    const since = days ? new Date(Date.now() - days * 86400000).toISOString() : null;
+    let query = this.supabaseService
+      .getAdminClient()
+      .from('scans')
+      .select('scanned_at, ip_address, country, country_code, device, os')
+      .eq('qr_code_id', id)
+      .order('scanned_at', { ascending: false });
+    if (since) query = query.gte('scanned_at', since);
+    const { data, error } = await query;
+    if (error) throw new BadRequestException(error.message);
+    const scans = data || [];
+    const group = (values: string[]) => {
+      const counts = new Map<string, number>();
+      for (const value of values) counts.set(value, (counts.get(value) || 0) + 1);
+      return [...counts].map(([key, count]) => ({ key, count }));
+    };
+    return {
+      totalScans: scans.length,
+      uniqueScanners: new Set(scans.map((scan) => scan.ip_address).filter(Boolean)).size,
+      scansByDay: group(scans.map((scan) => scan.scanned_at.slice(0, 10)))
+        .map(({ key, count }) => ({ date: key, scans: count }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+      scansByCountry: group(scans.map((scan) => scan.country || 'Unknown')).map(
+        ({ key, count }) => ({
+          country: key,
+          code: scans.find((scan) => scan.country === key)?.country_code || 'XX',
+          scans: count,
+        })
+      ),
+      scansByDevice: group(scans.map((scan) => scan.device || 'Unknown')).map(({ key, count }) => ({
+        device: key,
+        scans: count,
+      })),
+      scansByOS: group(scans.map((scan) => scan.os || 'Unknown')).map(({ key, count }) => ({
+        os: key,
+        scans: count,
+      })),
+      scanLocations: [],
+    };
+  }
+
   async update(userId: string, id: string, dto: UpdateQrDto) {
     const supabase = this.supabaseService.getAdminClient();
 
@@ -345,7 +389,7 @@ export class QrService {
     const qr = await this.findById(id);
 
     // Record scan in scans table
-    await supabase.from('scans').insert({
+    const { error: scanError } = await supabase.from('scans').insert({
       qr_code_id: id,
       ip_address: scanData.ipAddress,
       user_agent: scanData.userAgent,
@@ -353,13 +397,10 @@ export class QrService {
       browser: scanData.browser,
       os: scanData.os,
     });
+    if (scanError) throw new BadRequestException(scanError.message);
 
-    // Increment scan count
-    const currentScans = qr.scans_count || 0;
-    await supabase
-      .from('qr_codes')
-      .update({ scans_count: currentScans + 1 })
-      .eq('id', id);
+    const { error: countError } = await supabase.rpc('increment_qr_scan_count', { qr_id: id });
+    if (countError) throw new BadRequestException(countError.message);
 
     // Return the content/URL to redirect to
     return {

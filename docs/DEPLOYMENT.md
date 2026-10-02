@@ -1,0 +1,7 @@
+# Local setup and deployment
+
+Use Node.js 20 and pnpm 9.14.2 (the version pinned in `package.json`). Install with `pnpm install --frozen-lockfile`. Start local Supabase with `supabase start`, then read its URL and keys with `supabase status`. Copy `apps/api/.env.example` to `apps/api/.env` and `apps/web/.env.example` to `apps/web/.env`, replacing placeholders. The API needs `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` and Stripe test credentials for billing. The web app needs `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_API_URL=http://localhost:3000`. Set `VITE_SHORT_URL_BASE=http://localhost:3000/r`. Keep the service-role key out of web variables.
+
+Run `pnpm --filter @wrx/shared build`, then start `pnpm --filter @wrx/api dev` and `pnpm --filter @wrx/web dev` in separate terminals. Visit `http://localhost:5173`; check `http://localhost:3000/health` and `http://localhost:3000/docs`. The repository's `pnpm dev` starts all apps, including the unfinished mobile and extension packages, so the filtered commands are simpler for first local testing.
+
+Before a merge, run `pnpm build`, `pnpm typecheck` and `pnpm test`. CI runs one 15-minute job only for code changes in pull requests targeting `main`, or when started manually. Documentation-only changes do not trigger CI. Automatic deploy and release workflows were disabled; deployment requires a manual workflow run and configured hosting secrets. Review the deploy workflow and target environment before using it; it has not been verified against live hosting.

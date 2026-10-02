@@ -1,6 +1,6 @@
 // User types
 
-export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
+export type SubscriptionTier = 'free' | 'pro' | 'business' | 'enterprise';
 
 export interface User {
   id: string;

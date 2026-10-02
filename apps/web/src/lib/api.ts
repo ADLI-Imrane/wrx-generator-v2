@@ -106,4 +106,4 @@ class ApiClient {
   }
 }
 
-export const api = new ApiClient(`${API_URL}`);
+export const api = new ApiClient(`${API_URL.replace(/\/$/, '')}/api`);

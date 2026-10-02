@@ -63,6 +63,16 @@ export class QrController {
     return this.qrService.findOne(user.id, id);
   }
 
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Get QR scan statistics' })
+  getStats(
+    @CurrentUser() user: User,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('timeRange') timeRange: '7d' | '30d' | '90d' | 'all' = '30d'
+  ) {
+    return this.qrService.getStats(user.id, id, timeRange);
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update a QR code' })
   update(

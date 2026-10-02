@@ -55,7 +55,7 @@ export function CreateLinkPage() {
 
     createLink(data, {
       onSuccess: (link) => {
-        const shortUrl = `${import.meta.env.VITE_SHORT_URL_BASE || 'http://localhost:3000'}/${link.slug}`;
+        const shortUrl = `${import.meta.env.VITE_SHORT_URL_BASE || 'http://localhost:3000/r'}/${link.slug}`;
         setCreatedLink({ shortUrl, slug: link.slug });
       },
     });

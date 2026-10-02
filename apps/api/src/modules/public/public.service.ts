@@ -48,7 +48,7 @@ export class PublicService {
     }
 
     // Check max clicks
-    if (link.max_clicks && link.clicks_count >= link.max_clicks) {
+    if (link.max_clicks && link.clicks >= link.max_clicks) {
       throw new GoneException('This link has reached its maximum number of clicks');
     }
 
@@ -68,12 +68,6 @@ export class PublicService {
       ...clickData,
       linkId: link.id,
     });
-
-    // Increment click count
-    await supabase
-      .from('links')
-      .update({ clicks_count: link.clicks_count + 1 })
-      .eq('id', link.id);
 
     return {
       url: link.original_url,
@@ -133,7 +127,7 @@ export class PublicService {
   private async recordClick(data: ClickData) {
     const supabase = this.supabaseService.getAdminClient();
 
-    await supabase.from('clicks').insert({
+    const { error } = await supabase.from('clicks').insert({
       link_id: data.linkId,
       ip_address: data.ipAddress,
       user_agent: data.userAgent,
@@ -144,6 +138,7 @@ export class PublicService {
       browser: data.browser,
       os: data.os,
     });
+    if (error) throw error;
   }
 
   private async verifyPassword(password: string, hash: string): Promise<boolean> {
