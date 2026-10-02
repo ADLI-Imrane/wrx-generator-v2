@@ -1,10 +1,13 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDown, ArrowUpRight, ArrowRight, Check, Copy, Plus, ScanLine } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, ArrowRight, Check, Copy, Plus } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import '../styles/landing.css';
+import '../styles/connection-studio.css';
+import { ConnectionStage } from '../components/landing/ConnectionStage';
+import { CampaignGallery } from '../components/landing/CampaignGallery';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -58,29 +61,28 @@ export function LandingPage() {
     const media = gsap.matchMedia();
     const context = gsap.context(() => {
       media.add('(prefers-reduced-motion: no-preference)', () => {
-        gsap.from('.hero-line > span', {
-          yPercent: 110,
-          rotate: 3,
-          duration: 1.15,
-          stagger: 0.13,
-          ease: 'power4.out',
-        });
-        gsap.from('.hero-object', {
-          y: 70,
-          rotate: -10,
+        gsap.from('.campaign-heading h2', {
+          y: 80,
           opacity: 0,
-          duration: 1.4,
+          duration: 1,
           ease: 'power3.out',
-          delay: 0.2,
+          scrollTrigger: { trigger: '.campaign-heading', start: 'top 85%' },
         });
-        gsap.to('.hero-ticket', {
-          y: -14,
-          rotate: 2,
-          duration: 3,
-          repeat: -1,
-          yoyo: true,
-          ease: 'sine.inOut',
-        });
+        gsap.fromTo(
+          '.connection-manifesto p span',
+          { opacity: 0.18 },
+          {
+            opacity: 1,
+            stagger: 0.12,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: '.connection-manifesto',
+              start: 'top 75%',
+              end: 'bottom 65%',
+              scrub: 0.5,
+            },
+          }
+        );
       });
       media.add(
         '(min-width: 900px) and (min-height: 600px) and (prefers-reduced-motion: no-preference)',
@@ -137,6 +139,7 @@ export function LandingPage() {
           wrx<span>®</span>
         </a>
         <nav aria-label="Navigation principale">
+          <a href="#campaigns">Le studio ↘</a>
           <a href="#experience">
             Le produit <span>↘</span>
           </a>
@@ -147,61 +150,18 @@ export function LandingPage() {
         </Link>
       </header>
 
-      <section id="top" className="wrx-hero">
-        <div className="hero-kicker">
-          <span className="status-dot" /> SMALL LINK. BIG ENERGY.
-          <span className="hero-edition">LIENS COURTS & QR CODES / V.02</span>
-        </div>
-        <div className="hero-layout">
-          <div className="hero-editorial">
-            <h1>
-              <span className="hero-line">
-                <span>Un petit lien.</span>
-              </span>
-              <span className="hero-line">
-                <span>Un grand</span>
-              </span>
-              <span className="hero-line">
-                <span>
-                  <i>déclic.</i>
-                  <span className="headline-asterisk" aria-hidden="true">
-                    ✳
-                  </span>
-                </span>
-              </span>
-            </h1>
-            <div className="hero-intro">
-              <p>
-                Du papier à l’écran. De l’idée à l’action.
-                <br />
-                Créez des liens courts et des QR codes
-                <br className="desktop-break" /> qui donnent une suite à vos idées.
-              </p>
-              <Link className="wrx-button" to="/register">
-                Créer mon premier lien <ArrowUpRight size={20} />
-              </Link>
-            </div>
-          </div>
-          <div className="hero-object">
-            <div className="object-grid" aria-hidden="true" />
-            <span className="object-coordinate">FIG. 001 / THE CONNECTION</span>
-            <div className="ticket-shadow" aria-hidden="true" />
-            <ScanTicket hero />
-            <span className="object-sticker">
-              SCAN ME
-              <br />
-              <ScanLine size={23} />
-            </span>
-            <span className="object-caption">Un vrai QR. Une infinité de départs.</span>
-          </div>
-        </div>
-        <div className="hero-bottom">
-          <span>FAIT POUR ÊTRE PARTAGÉ.</span>
-          <a href="#experience">
-            Faites défiler. Connectez les points. <ArrowDown size={17} />
-          </a>
-          <span>01 / 04</span>
-        </div>
+      <ConnectionStage />
+      <CampaignGallery />
+      <section className="connection-manifesto" aria-label="Notre idée">
+        <span className="section-label">PETIT FORMAT. GRANDES POSSIBILITÉS.</span>
+        <p>
+          {'Entre votre idée et leur prochain déclic, il ne devrait y avoir qu’un scan.'
+            .split(' ')
+            .map((word, index) => (
+              <span key={index}>{word} </span>
+            ))}
+        </p>
+        <span className="manifesto-signature">THAT’S THE WRX EFFECT. ↗</span>
       </section>
 
       <div className="wrx-ticker" aria-hidden="true">

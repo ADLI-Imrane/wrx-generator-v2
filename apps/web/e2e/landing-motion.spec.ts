@@ -1,5 +1,46 @@
 import { test, expect } from '@playwright/test';
 
+test('hero responds to pointer movement and flips with keyboard', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  const card = page.getByRole('button', { name: 'Retourner le QR interactif' });
+  await expect(card).toBeVisible();
+  await page.mouse.move(1200, 350);
+  await expect
+    .poll(() => page.locator('.stage-tilt').evaluate((el) => getComputedStyle(el).transform))
+    .not.toBe('none');
+  await card.focus();
+  await page.keyboard.press('Enter');
+  await expect(card).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Enter');
+  await expect(card).toHaveAttribute('aria-pressed', 'false');
+  expect(errors).toEqual([]);
+});
+
+test('campaign gallery supports drag, keyboard and navigation buttons', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const rail = page.locator('.campaign-rail');
+  await rail.scrollIntoViewIfNeeded();
+  const box = (await rail.boundingBox())!;
+  await page.mouse.move(1000, box.y + 160);
+  await page.mouse.down();
+  await page.mouse.move(400, box.y + 160, { steps: 15 });
+  await page.mouse.up();
+  await expect.poll(() => rail.evaluate((el) => el.scrollLeft)).toBeGreaterThan(400);
+  await rail.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect.poll(() => rail.evaluate((el) => el.scrollLeft)).toBeLessThan(10);
+  await page.getByRole('button', { name: 'Campagne suivante' }).click();
+  await expect.poll(() => rail.evaluate((el) => el.scrollLeft)).toBeGreaterThan(500);
+  await rail.evaluate((el) => {
+    el.scrollLeft = el.scrollWidth;
+  });
+  await expect(page.locator('.campaign-controls > span')).toContainText('04');
+});
+
 test('desktop scroll moves all three scenes and releases the page', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
