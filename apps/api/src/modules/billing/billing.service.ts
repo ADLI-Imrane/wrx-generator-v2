@@ -1,4 +1,10 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
@@ -15,8 +21,15 @@ import Stripe from 'stripe';
 @Injectable()
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
-  private stripe: Stripe;
+  private stripeClient: Stripe | null = null;
   private supabase;
+
+  private get stripe(): Stripe {
+    if (!this.stripeClient) {
+      throw new ServiceUnavailableException('Stripe billing is not configured');
+    }
+    return this.stripeClient;
+  }
 
   // Plan configurations (prices in MAD - Moroccan Dirhams)
   private readonly plans = [
@@ -79,9 +92,12 @@ export class BillingService {
   ];
 
   constructor() {
-    this.stripe = new Stripe(process.env['STRIPE_SECRET_KEY'] || '', {
-      apiVersion: '2025-02-24.acacia',
-    });
+    const stripeSecretKey = process.env['STRIPE_SECRET_KEY'];
+    if (stripeSecretKey) {
+      this.stripeClient = new Stripe(stripeSecretKey, {
+        apiVersion: '2025-02-24.acacia',
+      });
+    }
 
     this.supabase = createClient(
       process.env['SUPABASE_URL'] || '',
