@@ -31,6 +31,80 @@ html {
   color: transparent;
 }
 
+.qr-story {
+  background:
+    radial-gradient(circle at 78% 48%, rgba(34, 211, 238, 0.12), transparent 28rem),
+    linear-gradient(180deg, #070b19 0%, #0a1022 45%, #070b19 100%);
+}
+
+.qr-stage::before {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+  content: '';
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
+}
+
+.qr-orbit {
+  position: absolute;
+  border: 1px solid;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.qr-orbit-one {
+  width: 19rem;
+  height: 19rem;
+  animation: qr-orbit 12s linear infinite;
+}
+
+.qr-orbit-two {
+  width: 27rem;
+  height: 27rem;
+  animation: qr-orbit 18s linear infinite reverse;
+}
+
+.qr-scan-line {
+  position: absolute;
+  right: 0.75rem;
+  left: 0.75rem;
+  height: 2px;
+  box-shadow: 0 0 16px currentColor;
+  animation: qr-scan 2.8s ease-in-out infinite;
+}
+
+@keyframes qr-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes qr-scan {
+  0%,
+  100% {
+    top: 14%;
+    opacity: 0.2;
+  }
+  50% {
+    top: 82%;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .qr-orbit,
+  .qr-scan-line {
+    animation: none;
+  }
+}
+
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
