@@ -51,7 +51,7 @@ export function App() {
       <AuthProvider>
         <RouterProvider router={router} />
       </AuthProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 }

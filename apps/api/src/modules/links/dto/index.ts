@@ -42,6 +42,8 @@ export class CreateLinkDto {
   @ApiPropertyOptional({ example: 'secretpassword' })
   @IsOptional()
   @IsString()
+  @MinLength(8)
+  @MaxLength(128)
   password?: string;
 
   @ApiPropertyOptional({ example: 1000 })

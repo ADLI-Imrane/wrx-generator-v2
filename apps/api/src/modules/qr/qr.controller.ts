@@ -49,12 +49,14 @@ export class QrController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string
   ) {
-    return this.qrService.findAll(
-      user.id,
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20,
-      { search, type, sortBy, sortOrder }
-    );
+    const safePage = Math.max(1, Math.min(parseInt(page || '1', 10) || 1, 10_000));
+    const safeLimit = Math.max(1, Math.min(parseInt(limit || '20', 10) || 20, 100));
+    return this.qrService.findAll(user.id, safePage, safeLimit, {
+      search,
+      type,
+      sortBy,
+      sortOrder,
+    });
   }
 
   @Get(':id')

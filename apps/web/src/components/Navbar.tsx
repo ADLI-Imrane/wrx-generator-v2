@@ -3,9 +3,11 @@ import { useUIStore } from '../stores/ui.store';
 import { useLogout } from '../hooks/useAuth';
 import { Menu, User, Settings, LogOut, Bell, Search } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useAuthStore } from '../stores/auth.store';
 
 export function Navbar() {
   const { toggleSidebar } = useUIStore();
+  const { user, profile } = useAuthStore();
   const { mutate: logout, isPending: isLoggingOut } = useLogout();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -23,22 +25,22 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
       <div className="flex h-16 items-center justify-between px-3 sm:px-4">
         {/* Logo et toggle sidebar */}
         <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={toggleSidebar}
-            className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+            className="rounded-xl p-2 transition-colors hover:bg-slate-100"
             aria-label="Menu"
           >
             <Menu size={20} />
           </button>
           <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="bg-primary-600 flex h-8 w-8 items-center justify-center rounded-lg">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 shadow-md shadow-cyan-500/20">
               <span className="text-sm font-bold text-white">W</span>
             </div>
-            <span className="hidden text-lg font-semibold text-gray-900 sm:inline">
+            <span className="hidden text-lg font-semibold tracking-tight text-slate-950 sm:inline">
               WRX Generator
             </span>
           </Link>
@@ -51,7 +53,7 @@ export function Navbar() {
             <input
               type="text"
               placeholder="Rechercher..."
-              className="focus:ring-primary-500 w-full rounded-lg border-0 bg-gray-100 py-2 pl-10 pr-4 transition-colors focus:bg-white focus:ring-2"
+              className="focus:ring-primary-500 w-full rounded-xl border-0 bg-slate-100 py-2 pl-10 pr-4 transition-colors focus:bg-white focus:ring-2"
             />
           </div>
         </div>
@@ -59,12 +61,12 @@ export function Navbar() {
         {/* Actions */}
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Search button for mobile */}
-          <button className="rounded-lg p-2 transition-colors hover:bg-gray-100 lg:hidden">
+          <button className="rounded-xl p-2 transition-colors hover:bg-slate-100 lg:hidden">
             <Search size={20} className="text-gray-600" />
           </button>
 
           {/* Notifications */}
-          <button className="relative rounded-lg p-2 transition-colors hover:bg-gray-100">
+          <button className="relative rounded-xl p-2 transition-colors hover:bg-slate-100">
             <Bell size={20} className="text-gray-600" />
             <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"></span>
           </button>
@@ -73,19 +75,19 @@ export function Navbar() {
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-2 rounded-lg p-2 transition-colors hover:bg-gray-100"
+              className="flex items-center gap-2 rounded-xl p-2 transition-colors hover:bg-slate-100"
             >
-              <div className="bg-primary-100 flex h-8 w-8 items-center justify-center rounded-full">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-50">
                 <User size={18} className="text-primary-600" />
               </div>
             </button>
 
             {/* Dropdown */}
             {isProfileOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
+              <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-slate-200 bg-white py-2 shadow-xl shadow-slate-900/10">
                 <div className="border-b border-gray-100 px-4 py-2">
-                  <p className="font-medium text-gray-900">Mon compte</p>
-                  <p className="truncate text-sm text-gray-500">user@example.com</p>
+                  <p className="font-medium text-slate-900">{profile?.fullName || 'Mon compte'}</p>
+                  <p className="truncate text-sm text-slate-500">{user?.email || ''}</p>
                 </div>
                 <nav className="py-2">
                   <Link

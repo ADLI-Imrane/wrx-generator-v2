@@ -47,17 +47,20 @@ export class LinksController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string
   ) {
-    return this.linksService.findAll(
-      user.id,
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20,
-      {
-        search,
-        isActive: isActive === undefined ? undefined : isActive === 'true',
-        sortBy,
-        sortOrder,
-      }
-    );
+    const safePage = Math.max(1, Math.min(parseInt(page || '1', 10) || 1, 10_000));
+    const safeLimit = Math.max(1, Math.min(parseInt(limit || '20', 10) || 20, 100));
+    return this.linksService.findAll(user.id, safePage, safeLimit, {
+      search,
+      isActive: isActive === undefined ? undefined : isActive === 'true',
+      sortBy,
+      sortOrder,
+    });
+  }
+
+  @Post(':id/duplicate')
+  @ApiOperation({ summary: 'Duplicate a link with a new short URL' })
+  duplicate(@CurrentUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
+    return this.linksService.duplicate(user.id, id);
   }
 
   @Get(':id')

@@ -16,3 +16,4 @@ export { AnalyticsPage } from './AnalyticsPage';
 export { SettingsPage } from './SettingsPage';
 export { HelpPage } from './HelpPage';
 export { BillingPage } from './BillingPage';
+export { LandingPage } from './LandingPage';

@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import { Layout, ProtectedRoute } from './components';
 import {
   LoginPage,
@@ -19,9 +19,11 @@ import {
   SettingsPage,
   HelpPage,
   BillingPage,
+  LandingPage,
 } from './pages';
 
 export const router = createBrowserRouter([
+  { path: '/', element: <LandingPage /> },
   // Routes publiques
   {
     path: '/login',
@@ -53,10 +55,6 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      {
-        index: true,
-        element: <Navigate to="/dashboard" replace />,
-      },
       {
         path: 'dashboard',
         element: <DashboardPage />,

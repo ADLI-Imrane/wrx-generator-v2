@@ -8,6 +8,10 @@ import { SupabaseService } from '../../common/supabase/supabase.service';
 import { CreateLinkDto, UpdateLinkDto } from './dto';
 import { generateSlug } from '@wrx/shared';
 import { SLUG_CONSTRAINTS, TIER_LIMITS } from '@wrx/shared';
+import { promisify } from 'node:util';
+import { randomBytes, scrypt as scryptCallback } from 'node:crypto';
+
+const scrypt = promisify(scryptCallback);
 
 // Transform snake_case DB response to camelCase for frontend
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,7 +25,6 @@ function transformLink(dbLink: any) {
     shortUrl: `${shortUrlDomain}/r/${dbLink.slug}`,
     title: dbLink.title,
     description: dbLink.description,
-    passwordHash: dbLink.password_hash,
     expiresAt: dbLink.expires_at,
     maxClicks: dbLink.max_clicks,
     clicks: dbLink.clicks || 0,
@@ -206,6 +209,29 @@ export class LinksService {
     return { message: 'Link deleted successfully' };
   }
 
+  async duplicate(userId: string, id: string) {
+    const link = await this.findOne(userId, id);
+    const supabase = this.supabaseService.getAdminClient();
+    const slug = await this.generateUniqueSlug();
+    const { data, error } = await supabase
+      .from('links')
+      .insert({
+        user_id: userId,
+        slug,
+        original_url: link.originalUrl,
+        title: link.title ? `${link.title} (copie)` : null,
+        description: link.description,
+        expires_at: link.expiresAt,
+        max_clicks: link.maxClicks,
+        is_active: link.isActive,
+      })
+      .select()
+      .single();
+
+    if (error) throw new BadRequestException(error.message);
+    return transformLink(data);
+  }
+
   async getStats(userId: string, id: string) {
     const supabase = this.supabaseService.getAdminClient();
 
@@ -298,11 +324,8 @@ export class LinksService {
   }
 
   private async hashPassword(password: string): Promise<string> {
-    // In production, use bcrypt or argon2
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    const salt = randomBytes(16).toString('hex');
+    const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
+    return `scrypt$${salt}$${derivedKey.toString('hex')}`;
   }
 }

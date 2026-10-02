@@ -6,6 +6,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../common/supabase/supabase.service';
+import { promisify } from 'node:util';
+import { scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
+
+const scrypt = promisify(scryptCallback);
 
 interface ClickData {
   linkId: string;
@@ -142,11 +146,11 @@ export class PublicService {
   }
 
   private async verifyPassword(password: string, hash: string): Promise<boolean> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const computedHash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-    return computedHash === hash;
+    const [algorithm, salt, storedKey] = hash.split('$');
+    if (algorithm !== 'scrypt' || !salt || !storedKey) return false;
+
+    const computedKey = (await scrypt(password, salt, 64)) as Buffer;
+    const expectedKey = Buffer.from(storedKey, 'hex');
+    return expectedKey.length === computedKey.length && timingSafeEqual(expectedKey, computedKey);
   }
 }
