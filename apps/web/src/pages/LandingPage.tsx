@@ -1,114 +1,64 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDown, ArrowUpRight, ArrowRight, Check, Copy, Plus } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { ArrowDown, ArrowUpRight, ArrowRight, Plus } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { DestinationWorkbench } from '../components/landing/DestinationWorkbench';
 import '../styles/landing.css';
-import '../styles/connection-studio.css';
-import { ConnectionStage } from '../components/landing/ConnectionStage';
-import { CampaignGallery } from '../components/landing/CampaignGallery';
 
 gsap.registerPlugin(ScrollTrigger);
-
-const palettes = [
-  { name: 'Acid', paper: '#e4ff54', ink: '#202217' },
-  { name: 'Lavande', paper: '#c9b9ff', ink: '#352453' },
-  { name: 'Corail', paper: '#ffad91', ink: '#54291f' },
+const questions = [
+  [
+    'Que puis-je faire sans compte ?',
+    'L’atelier ci-dessus crée un QR code direct pour votre URL. Vous pouvez le télécharger en SVG et l’utiliser immédiatement. Il n’est pas enregistré et sa destination ne peut pas être modifiée après impression.',
+  ],
+  [
+    'Quelle différence avec un QR dynamique ?',
+    'Un QR dynamique passe par un lien géré dans votre espace WRX. Vous pouvez y changer la destination sans réimprimer le code. Créez un compte pour gérer vos liens, vos QR codes et leurs statistiques.',
+  ],
+  [
+    'Est-ce que les liens et les QR codes fonctionnent ensemble ?',
+    'Oui. Un lien court se partage dans un message ou une publication ; un QR code fait le passage depuis un support physique. Retrouvez les deux dans le même espace.',
+  ],
 ];
-
-function ScanTicket({ paper = '#e4ff54', ink = '#202217', hero = false }) {
-  return (
-    <div
-      className={`scan-ticket ${hero ? 'hero-ticket' : ''}`}
-      style={{ background: paper, color: ink }}
-    >
-      <div className="ticket-top">
-        <b>WRX®</b>
-        <span>OFFLINE → ONLINE</span>
-      </div>
-      <div className="ticket-code">
-        <QRCodeSVG
-          value="https://github.com/ADLI-Imrane/wrx-generator-v2"
-          size={220}
-          fgColor={ink}
-          bgColor={paper}
-          marginSize={2}
-          level="M"
-        />
-      </div>
-      <div className="ticket-title">
-        GOOD THINGS
-        <br />
-        START HERE. <ArrowUpRight />
-      </div>
-      <div className="ticket-tear" />
-      <div className="ticket-bottom">
-        <span>SCAN TO CONNECT</span>
-        <span>001—WRX</span>
-      </div>
-    </div>
-  );
-}
 
 export function LandingPage() {
   const root = useRef<HTMLElement>(null);
-  const [paletteIndex, setPaletteIndex] = useState(0);
-  const [copied, setCopied] = useState(false);
-  const palette = palettes[paletteIndex] ?? palettes[0]!;
-
   useLayoutEffect(() => {
     const media = gsap.matchMedia();
     const context = gsap.context(() => {
       media.add('(prefers-reduced-motion: no-preference)', () => {
-        gsap.from('.campaign-heading h2', {
-          y: 80,
+        gsap.from('.home-title > span', {
+          y: 24,
           opacity: 0,
-          duration: 1,
+          stagger: 0.09,
+          duration: 0.75,
           ease: 'power3.out',
-          scrollTrigger: { trigger: '.campaign-heading', start: 'top 85%' },
         });
-        gsap.fromTo(
-          '.connection-manifesto p span',
-          { opacity: 0.18 },
-          {
-            opacity: 1,
-            stagger: 0.12,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: '.connection-manifesto',
-              start: 'top 75%',
-              end: 'bottom 65%',
-              scrub: 0.5,
-            },
-          }
-        );
       });
       media.add(
-        '(min-width: 900px) and (min-height: 600px) and (prefers-reduced-motion: no-preference)',
+        '(min-width: 900px) and (min-height: 650px) and (prefers-reduced-motion: no-preference)',
         () => {
-          const track = root.current?.querySelector<HTMLElement>('.journey-track');
+          const rail = root.current?.querySelector<HTMLElement>('.journey-track');
           const viewport = root.current?.querySelector<HTMLElement>('.journey-viewport');
-          if (!track || !viewport) return;
-          const travel = () => track.scrollWidth - viewport.clientWidth;
-          const timeline = gsap.timeline({
+          if (!rail || !viewport) return;
+          const distance = () => rail.scrollWidth - viewport.clientWidth;
+          gsap.to(rail, {
+            x: () => -distance(),
+            ease: 'none',
             scrollTrigger: {
               id: 'wrx-journey',
               trigger: '.journey',
               start: 'top top',
-              end: () => `+=${travel()}`,
+              end: () => `+=${distance()}`,
               pin: true,
-              scrub: 0.65,
+              scrub: 0.5,
               invalidateOnRefresh: true,
-              anticipatePin: 1,
             },
           });
-          timeline.to(track, { x: () => -travel(), ease: 'none' }, 0);
-          timeline.to('.journey-progress span', { scaleX: 1, ease: 'none' }, 0);
         }
       );
     }, root);
-    // Refresh after font metrics settle; context cleanup also removes pin spacers on navigation.
     let mounted = true;
     void document.fonts.ready.then(() => {
       if (mounted) ScrollTrigger.refresh();
@@ -120,344 +70,282 @@ export function LandingPage() {
     };
   }, []);
 
-  const copyDemo = async () => {
-    try {
-      await navigator.clipboard.writeText('https://github.com/ADLI-Imrane/wrx-generator-v2');
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  };
-
   return (
-    <main ref={root} className="wrx-site">
-      <a className="wrx-skip" href="#experience">
-        Aller à la démo
+    <main className="wrx-home" ref={root}>
+      <a href="#atelier" className="home-skip">
+        Aller à l’atelier QR
       </a>
-      <header className="wrx-nav">
-        <a className="wrx-wordmark" href="#top" aria-label="WRX Generator accueil">
-          wrx<span>®</span>
+      <header className="home-nav">
+        <a href="#top" className="home-logo" aria-label="WRX Generator accueil">
+          wrx<span>↗</span>
         </a>
         <nav aria-label="Navigation principale">
-          <a href="#campaigns">Le studio ↘</a>
-          <a href="#experience">
-            Le produit <span>↘</span>
-          </a>
-          <a href="#possibilities">Les possibilités</a>
+          <a href="#atelier">L’atelier</a>
+          <a href="#experience">Le principe</a>
+          <a href="#questions">Les réponses</a>
         </nav>
-        <Link className="nav-login" to="/login">
-          Mon espace <ArrowUpRight size={17} />
+        <Link className="home-login" to="/login">
+          Mon espace <ArrowUpRight size={16} />
         </Link>
       </header>
-
-      <ConnectionStage />
-      <CampaignGallery />
-      <section className="connection-manifesto" aria-label="Notre idée">
-        <span className="section-label">PETIT FORMAT. GRANDES POSSIBILITÉS.</span>
-        <p>
-          {'Entre votre idée et leur prochain déclic, il ne devrait y avoir qu’un scan.'
-            .split(' ')
-            .map((word, index) => (
-              <span key={index}>{word} </span>
-            ))}
-        </p>
-        <span className="manifesto-signature">THAT’S THE WRX EFFECT. ↗</span>
-      </section>
-
-      <div className="wrx-ticker" aria-hidden="true">
-        <div>
-          {Array.from({ length: 4 }, (_, i) => (
-            <span key={i}>
-              LESS FRICTION <b>✳</b> MORE CONNECTION <b>↗</b>{' '}
-            </span>
-          ))}
+      <section className="home-intro" id="top">
+        <div className="intro-label">
+          <span className="registration-mark" aria-hidden="true" /> LIENS COURTS. QR CODES.
+          NOUVELLES DIRECTIONS.
         </div>
+        <div className="intro-composition">
+          <h1 className="home-title">
+            <span>Chaque scan,</span>
+            <span>
+              une <i>suite.</i>
+              <ArrowUpRight aria-hidden="true" />
+            </span>
+          </h1>
+          <div className="intro-copy">
+            <p>
+              Une carte, une affiche, un message. <br />
+              Donnez à chaque point de contact <br />
+              une destination qui compte.
+            </p>
+            <a href="#atelier">
+              Commencez par votre lien <ArrowDown size={17} />
+            </a>
+          </div>
+        </div>
+      </section>
+      <DestinationWorkbench />
+      <div className="home-bridge">
+        <span>LE BON FORMAT, AU BON ENDROIT.</span>
+        <p>
+          À scanner dans la vraie vie.
+          <br />
+          <i>À partager partout ailleurs.</i>
+        </p>
+        <span>
+          01 — 03 <ArrowDown size={18} />
+        </span>
       </div>
-
-      <section
-        id="experience"
-        className="journey"
-        aria-label="Du lien au scan : démonstration interactive"
-      >
-        <div className="journey-header">
-          <span>LE PRODUIT, EN MOUVEMENT</span>
-          <span className="journey-hint">
-            SCROLLEZ POUR EXPLORER <ArrowRight size={16} />
-          </span>
-          <a href="#possibilities">Passer la démo ↗</a>
+      <section id="experience" className="journey" aria-label="Un lien, du support au résultat">
+        <div className="journey-top">
+          <span>UN LIEN. TOUT UN PARCOURS.</span>
+          <a href="#workspace">
+            Passer le parcours <ArrowUpRight size={15} />
+          </a>
         </div>
         <div className="journey-viewport">
           <div className="journey-track">
-            <article className="journey-panel panel-link">
-              <div className="panel-copy">
-                <span className="section-label">01 / SIMPLIFIER</span>
+            <article className="journey-panel panel-paper">
+              <div className="journey-copy">
+                <span className="home-eyebrow">01 / LE POINT DE DÉPART</span>
                 <h2>
-                  Moins long.
+                  Le monde n’a
                   <br />
-                  <i>Plus fort.</i>
+                  pas de bouton.
+                  <br />
+                  <i>Ajoutez-en un.</i>
                 </h2>
                 <p>
-                  Votre prochaine campagne mérite mieux qu’une URL à rallonge. Faites court. Faites
-                  mémorable.
+                  Sur un menu, un colis ou une affiche, un QR code donne une suite à ce que l’on a
+                  sous les yeux.
                 </p>
-                <span className="panel-footnote">UN LIEN. UNE DESTINATION. ZÉRO DÉTOUR.</span>
+                <span className="journey-bottom-label">
+                  SUPPORT PHYSIQUE → DESTINATION DIGITALE
+                </span>
               </div>
-              <div className="link-composition">
-                <span className="composition-label">LINK LAB / DÉMONSTRATION</span>
-                <div className="long-url">
-                  https://votre-marque.com/collection/été?campagne=2026
+              <div className="paper-scene" aria-label="Exemple d’affiche avec emplacement QR">
+                <div className="paper-poster">
+                  <span>LES RENDEZ-VOUS DU QUARTIER</span>
+                  <strong>
+                    ON SE
+                    <br />
+                    RETROUVE
+                    <br />
+                    <i>ICI.</i>
+                  </strong>
+                  <div className="poster-route">
+                    <span className="finder-mark" aria-hidden="true">
+                      ↗
+                    </span>
+                    <p>
+                      Votre QR ici.
+                      <br />
+                      <b>La suite sur votre écran.</b>
+                    </p>
+                  </div>
                 </div>
-                <div className="connector-line">
-                  <ArrowDown />
-                </div>
-                <div className="short-url">
-                  <span>
-                    wrx.ma/<b>hello</b>
-                  </span>
-                  <button
-                    onClick={() => void copyDemo()}
-                    aria-label="Copier le lien de démonstration"
-                  >
-                    {copied ? <Check /> : <Copy />}
-                  </button>
-                </div>
-                <span className="copy-caption">
-                  {copied ? 'Lien du projet copié !' : 'Un format court. Une impression durable.'}
-                </span>
-                <span className="link-spark" aria-hidden="true">
-                  ✳
-                </span>
+                <span className="scene-note">CONCEPT D’AFFICHE / WRX</span>
               </div>
             </article>
-            <article className="journey-panel panel-brand">
-              <div className="panel-copy">
-                <span className="section-label">02 / SIGNER</span>
+            <article className="journey-panel panel-route">
+              <div className="journey-copy">
+                <span className="home-eyebrow">02 / LA DESTINATION</span>
                 <h2>
-                  Votre code.
+                  Vos plans changent.
                   <br />
-                  <i>Vos codes.</i>
+                  Votre QR ?<br />
+                  <i>Il reste.</i>
                 </h2>
                 <p>
-                  Sur une affiche, un packaging ou une carte. Votre identité continue au-delà du
-                  premier scan.
+                  Avec un QR dynamique créé dans votre espace, changez la destination. Les supports
+                  déjà imprimés continuent de fonctionner.
                 </p>
-                <div className="palette-picker" aria-label="Couleur du QR de démonstration">
-                  {palettes.map((item, index) => (
-                    <button
-                      key={item.name}
-                      onClick={() => setPaletteIndex(index)}
-                      aria-label={`Palette ${item.name}`}
-                      aria-pressed={index === paletteIndex}
-                      style={{ background: item.paper }}
-                    >
-                      {index === paletteIndex && <Check size={18} />}
-                    </button>
-                  ))}
-                  <span>{palette.name} / Essayez une couleur</span>
-                </div>
-              </div>
-              <div className="brand-composition">
-                <span className="brand-outline" aria-hidden="true">
-                  MAKE
-                  <br />
-                  IT YOURS.
-                </span>
-                <ScanTicket paper={palette.paper} ink={palette.ink} />
-              </div>
-            </article>
-            <article className="journey-panel panel-impact">
-              <div className="panel-copy">
-                <span className="section-label">03 / COMPRENDRE</span>
-                <h2>
-                  Un scan.
-                  <br />
-                  <i>Et après ?</i>
-                </h2>
-                <p>
-                  Suivez les clics et les scans. Repérez ce qui fonctionne et donnez une nouvelle
-                  direction à votre campagne.
-                </p>
-                <Link className="wrx-button" to="/register">
-                  Passer à l’action <ArrowUpRight size={20} />
+                <Link to="/register" className="home-text-link">
+                  Créer un QR dynamique <ArrowUpRight size={18} />
                 </Link>
               </div>
-              <div className="impact-composition">
-                <div className="impact-heading">
-                  <span>SUMMER DROP ↗</span>
-                  <span>APERÇU DÉMO</span>
+              <div className="route-scene">
+                <span className="route-label">LE PRINCIPE DU QR DYNAMIQUE</span>
+                <div className="route-source">
+                  <span className="finder-mark" aria-hidden="true">
+                    ↗
+                  </span>
+                  <span>
+                    Votre QR imprimé<b>Le point d’entrée reste le même.</b>
+                  </span>
                 </div>
-                <span className="impact-metric">
-                  2,847<span> scans</span>
-                </span>
-                <div className="impact-chart" aria-label="Exemple de graphique de scans">
-                  {[24, 34, 28, 47, 39, 58, 51, 72, 60, 81, 73, 98].map((height, i) => (
-                    <div key={i} style={{ height: `${height}%` }} />
+                <div className="route-path" aria-hidden="true">
+                  <span />
+                  <ArrowDown />
+                </div>
+                <div className="route-destination old">
+                  <span>01</span>
+                  <s>La collection printemps</s>
+                  <span>ARCHIVÉE</span>
+                </div>
+                <div className="route-destination current">
+                  <span>02</span>
+                  <b>La collection été</b>
+                  <ArrowUpRight />
+                </div>
+                <p>
+                  Une modification dans WRX.
+                  <br />
+                  Aucune réimpression.
+                </p>
+              </div>
+            </article>
+            <article className="journey-panel panel-signal">
+              <div className="journey-copy">
+                <span className="home-eyebrow">03 / LE RETOUR</span>
+                <h2>
+                  Partagez.
+                  <br />
+                  Observez.
+                  <br />
+                  <i>Ajustez.</i>
+                </h2>
+                <p>
+                  Retrouvez les clics et les scans de vos campagnes. Comparez les résultats pour
+                  décider de la suite.
+                </p>
+                <Link className="home-text-link" to="/register">
+                  Retrouver mes campagnes <ArrowUpRight size={18} />
+                </Link>
+              </div>
+              <div className="signal-sheet">
+                <div>
+                  <span>LECTURE DE CAMPAGNE</span>
+                  <span>ILLUSTRATION</span>
+                </div>
+                <h3>
+                  Qu’est-ce qui
+                  <br />
+                  fait venir les gens ?
+                </h3>
+                <div
+                  className="signal-bars"
+                  aria-label="Graphique illustratif, sans données réelles"
+                >
+                  {[28, 44, 36, 62, 51, 76, 58, 85, 69, 95].map((height, index) => (
+                    <span key={index} style={{ height: `${height}%` }} />
                   ))}
                 </div>
-                <div className="impact-axis">
-                  <span>LUN</span>
-                  <span>DIM</span>
+                <div className="signal-axis">
+                  <span>LE PREMIER PARTAGE</span>
+                  <ArrowRight size={18} />
+                  <span>LA SUITE</span>
                 </div>
-                <div className="impact-summary">
-                  <span>Chaque interaction compte.</span>
-                  <ArrowUpRight size={34} />
-                </div>
+                <p>
+                  Clics des liens <span>+</span> Scans des QR <span>→</span> Une vue d’ensemble
+                </p>
               </div>
             </article>
           </div>
         </div>
-        <div className="journey-progress" aria-hidden="true">
-          <span />
-        </div>
       </section>
-
-      <section id="possibilities" className="possibilities">
-        <div className="section-heading">
-          <span className="section-label">LE MONDE EST VOTRE SUPPORT.</span>
-          <h2>
-            De petites portes.
-            <br />
-            <i>Partout.</i>
-          </h2>
-          <p>
-            Vos idées ne vivent pas que sur un écran.
-            <br />
-            Créez le passage entre les deux mondes.
-          </p>
-        </div>
-        <div className="use-case-grid">
-          <article className="use-case case-coffee">
-            <div className="case-art">
-              <div className="coffee-lid" />
-              <div className="coffee-cup">
-                <span>
-                  DAILY
-                  <br />
-                  <b>DOSE.</b>
-                </span>
-                <QRCodeSVG value="https://example.com/menu" size={64} bgColor="transparent" />
-              </div>
-              <span className="case-float">UN CAFÉ. UNE CONNEXION.</span>
-            </div>
-            <div className="case-caption">
-              <h3>À chaque comptoir.</h3>
-              <span>
-                MENUS & COMMERCES <ArrowUpRight size={18} />
-              </span>
-            </div>
-          </article>
-          <article className="use-case case-poster">
-            <div className="case-art">
-              <div className="event-poster">
-                <span>AFTER HOURS®</span>
-                <b>
-                  SEE
-                  <br />
-                  YOU
-                  <br />
-                  <i>THERE.</i>
-                </b>
-                <div>
-                  <span>
-                    FRIDAY
-                    <br />
-                    23:00 — LATE
-                  </span>
-                  <QRCodeSVG value="https://example.com/event" size={52} bgColor="transparent" />
-                </div>
-              </div>
-            </div>
-            <div className="case-caption">
-              <h3>À chaque rendez-vous.</h3>
-              <span>
-                ÉVÉNEMENTS & CULTURE <ArrowUpRight size={18} />
-              </span>
-            </div>
-          </article>
-          <article className="use-case case-package">
-            <div className="case-art">
-              <div className="package-box">
-                <span className="package-brand">
-                  a little
-                  <br />
-                  <i>more.</i>
-                </span>
-                <div className="package-label">
-                  <QRCodeSVG
-                    value="https://example.com/collection"
-                    size={70}
-                    bgColor="transparent"
-                  />
-                  <span>
-                    OPEN A<br />
-                    NEW WORLD ↗
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="case-caption">
-              <h3>À chaque découverte.</h3>
-              <span>
-                MARQUES & PACKAGING <ArrowUpRight size={18} />
-              </span>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="wrx-faq">
+      <section className="workspace-section" id="workspace">
         <div>
-          <span className="section-label">BON À SAVOIR</span>
+          <span className="home-eyebrow">LE QUOTIDIEN, SIMPLIFIÉ.</span>
           <h2>
-            Simple.
+            Votre prochain lien.
             <br />
-            <i>Vraiment.</i>
+            Et tous ceux
+            <br />
+            <i>d’après.</i>
           </h2>
+          <Link className="home-button" to="/register">
+            Créer mon espace WRX <ArrowUpRight size={18} />
+          </Link>
         </div>
-        <div className="faq-list">
+        <div className="workspace-list">
           {[
             [
-              'Puis-je modifier la destination de mon QR code ?',
-              'Oui. Un QR code dynamique pointe vers une destination que vous pouvez modifier depuis votre espace, sans avoir à réimprimer votre support.',
+              '01',
+              'Raccourcir.',
+              'Des liens courts et personnalisés, faciles à reconnaître et à partager.',
             ],
             [
-              'Comment suivre les résultats ?',
-              'Retrouvez les clics de vos liens et les scans de vos QR codes dans votre tableau de bord pour comparer vos campagnes.',
+              '02',
+              'Personnaliser.',
+              'Des QR codes qui trouvent leur place sur vos supports et dans votre identité.',
             ],
             [
-              'Par où commencer ?',
-              'Créez votre compte, ajoutez votre première destination, puis partagez votre lien court ou téléchargez votre QR code.',
+              '03',
+              'Garder la main.',
+              'Vos destinations, vos campagnes et leurs statistiques dans un même espace.',
             ],
-          ].map(([question, answer]) => (
+          ].map(([number, title, copy]) => (
+            <div key={number}>
+              <span>{number}</span>
+              <div>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </div>
+              <ArrowUpRight size={20} />
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="home-faq" id="questions">
+        <span className="home-eyebrow">AVANT DE VOUS LANCER.</span>
+        <div>
+          {questions.map(([question, answer]) => (
             <details key={question}>
               <summary>
                 {question}
-                <Plus size={20} />
+                <Plus size={19} />
               </summary>
               <p>{answer}</p>
             </details>
           ))}
         </div>
       </section>
-
-      <footer className="wrx-footer">
-        <div className="footer-top">
-          <span className="section-label">À VOUS DE JOUER.</span>
-          <Link to="/register">
-            Make the
+      <footer className="home-footer">
+        <div>
+          <span className="home-eyebrow">UNE ADRESSE. DES POSSIBILITÉS.</span>
+          <a href="#atelier">
+            À vous
             <br />
-            <i>connection.</i>
+            de faire <i>le lien.</i>
             <ArrowUpRight />
-          </Link>
+          </a>
         </div>
-        <div className="footer-bottom">
-          <a className="wrx-wordmark" href="#top">
-            wrx<span>®</span>
-          </a>
+        <div className="home-footer-bottom">
+          <span className="home-logo">
+            wrx<span>↗</span>
+          </span>
           <span>© {new Date().getFullYear()} WRX GENERATOR</span>
-          <a href="#top">
-            Retour en haut <ArrowUpRight size={17} />
-          </a>
+          <a href="#top">Retour en haut ↑</a>
         </div>
       </footer>
     </main>

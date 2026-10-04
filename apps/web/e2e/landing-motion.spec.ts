@@ -1,54 +1,59 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
-test('hero responds to pointer movement and flips with keyboard', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+test('workbench validates URLs, updates QR, copies the same destination and downloads SVG', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  const card = page.getByRole('button', { name: 'Retourner le QR interactif' });
-  await expect(card).toBeVisible();
-  await page.mouse.move(1200, 350);
-  await expect
-    .poll(() => page.locator('.stage-tilt').evaluate((el) => getComputedStyle(el).transform))
-    .not.toBe('none');
-  await card.focus();
+  const input = page.getByLabel('Votre destination', { exact: true });
+  await expect(input).toBeVisible();
+  const originalQr = await page.locator('.pass-code svg').innerHTML();
+  await input.fill('javascript:alert(1)');
+  await page.getByRole('button', { name: 'Générer mon QR' }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  expect(await page.locator('.pass-code svg').innerHTML()).toBe(originalQr);
+  const destination = 'https://example.com/menu?source=wrx';
+  await input.fill(destination);
+  await page.getByRole('button', { name: 'Générer mon QR' }).click();
+  await expect(page.getByRole('status')).toContainText('Votre QR est prêt');
+  expect(await page.locator('.pass-code svg').innerHTML()).not.toBe(originalQr);
+  await page.getByLabel('Une courte invitation').fill('Découvrez notre menu');
+  await expect(page.locator('.pass-invitation')).toContainText('Découvrez notre menu');
+  await page.getByRole('button', { name: 'Palette Corail' }).click();
+  await expect(page.getByRole('button', { name: 'Palette Corail' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  await page.getByRole('button', { name: 'Retourner le QR', exact: true }).focus();
   await page.keyboard.press('Enter');
-  await expect(card).toHaveAttribute('aria-pressed', 'true');
-  await page.keyboard.press('Enter');
-  await expect(card).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.qr-pass-back')).toHaveAttribute('aria-hidden', 'false');
+  await expect(page.locator('.qr-pass-back p')).toHaveText(destination);
+  await page.getByRole('button', { name: 'Copier la destination' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(destination);
+  const downloadEvent = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Télécharger le QR' }).click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toBe('wrx-qr.svg');
+  const contents = await readFile((await download.path())!, 'utf8');
+  expect(contents).toContain('<svg');
+  expect(contents).toContain('#fa714f');
   expect(errors).toEqual([]);
 });
 
-test('campaign gallery supports drag, keyboard and navigation buttons', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
-  const rail = page.locator('.campaign-rail');
-  await rail.scrollIntoViewIfNeeded();
-  const box = (await rail.boundingBox())!;
-  await page.mouse.move(1000, box.y + 160);
-  await page.mouse.down();
-  await page.mouse.move(400, box.y + 160, { steps: 15 });
-  await page.mouse.up();
-  await expect.poll(() => rail.evaluate((el) => el.scrollLeft)).toBeGreaterThan(400);
-  await rail.focus();
-  await page.keyboard.press('ArrowLeft');
-  await expect.poll(() => rail.evaluate((el) => el.scrollLeft)).toBeLessThan(10);
-  await page.getByRole('button', { name: 'Campagne suivante' }).click();
-  await expect.poll(() => rail.evaluate((el) => el.scrollLeft)).toBeGreaterThan(500);
-  await rail.evaluate((el) => {
-    el.scrollLeft = el.scrollWidth;
-  });
-  await expect(page.locator('.campaign-controls > span')).toContainText('04');
-});
-
-test('desktop scroll moves all three scenes and releases the page', async ({ page }) => {
+test('desktop journey reaches all scenes, releases and cleans up on navigation', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await expect(page.locator('.pin-spacer')).toHaveCount(1);
   const start = await page
     .locator('.pin-spacer')
     .evaluate((node) => node.getBoundingClientRect().top + window.scrollY);
-  for (const [index, selector] of ['.panel-link', '.panel-brand', '.panel-impact'].entries()) {
+  for (const [index, selector] of ['.panel-paper', '.panel-route', '.panel-signal'].entries()) {
     await page.evaluate(
       (y) => window.scrollTo({ top: y, behavior: 'instant' }),
       start + 1440 * index
@@ -57,47 +62,36 @@ test('desktop scroll moves all three scenes and releases the page', async ({ pag
       .poll(async () => Math.abs((await page.locator(selector).boundingBox())!.x))
       .toBeLessThan(3);
   }
-  await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), start + 1440);
-  await page.getByRole('button', { name: 'Palette Lavande' }).click();
-  await expect(page.getByRole('button', { name: 'Palette Lavande' })).toHaveAttribute(
-    'aria-pressed',
-    'true'
-  );
-  await expect(page.locator('.brand-composition .scan-ticket')).toHaveCSS(
-    'background-color',
-    'rgb(201, 185, 255)'
-  );
-  await page.evaluate(
-    (y) => window.scrollTo({ top: y, behavior: 'instant' }),
-    start + 1440 * 2 + 950
-  );
-  await expect(page.getByRole('heading', { name: 'De petites portes. Partout.' })).toBeInViewport();
+  await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), start + 2880 + 950);
+  await expect(page.locator('.workspace-section h2')).toBeInViewport();
   await page.goto('/login');
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
   await page.goBack();
   await expect(page.locator('.pin-spacer')).toHaveCount(1);
 });
 
-test('mobile displays every scene without horizontal overflow', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
-  await expect(page.locator('.pin-spacer')).toHaveCount(0);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true
-  );
-  for (const panel of await page.locator('.journey-panel').all()) {
-    await panel.scrollIntoViewIfNeeded();
-    const box = await panel.boundingBox();
-    expect(box?.x).toBe(0);
-    expect(box?.width).toBe(390);
-  }
-});
+for (const width of [390, 768]) {
+  test(`layout at ${width}px exposes the complete story without overflow`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/');
+    await expect(page.locator('.destination-workbench')).toBeVisible();
+    await expect(page.locator('.pin-spacer')).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true
+    );
+    for (const panel of await page.locator('.journey-panel').all()) {
+      expect((await panel.boundingBox())?.width).toBe(width);
+    }
+  });
+}
 
-test('reduced motion exposes the complete story without pinning', async ({ page }) => {
+test('reduced motion keeps all content and QR flip usable without pinning', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
   await expect(page.locator('.journey-track')).toHaveCSS('display', 'block');
-  await expect(page.locator('.wrx-ticker > div')).toHaveCSS('animation-name', 'none');
+  await page.getByRole('button', { name: 'Retourner le QR', exact: true }).click();
+  await expect(page.locator('.qr-pass-back')).toHaveAttribute('aria-hidden', 'false');
+  await expect(page.locator('.qr-pass-inner')).toHaveCSS('transition-duration', '0s');
 });
