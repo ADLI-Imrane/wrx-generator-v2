@@ -38,7 +38,8 @@ export function chooseDestination(
 ): string {
   const target = deviceTarget(ctx.os);
   for (const rule of link.rules) {
-    if (rule.type === 'country' && ctx.country && rule.countries.includes(ctx.country.toUpperCase())) return withUtm(rule.url, link.utm);
+    if (rule.type === 'country' && ctx.country && rule.countries.includes(ctx.country.toUpperCase()))
+      return withUtm(rule.url, link.utm);
     if (rule.type === 'device' && rule.devices.includes(target)) return withUtm(rule.url, link.utm);
   }
   if (link.variants.length) {

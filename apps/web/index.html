@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WRX — short links, QR codes and a network that answers</title>
+    <meta name="description" content="Shorten links, design dynamic QR codes, see who clicks in real time, and connect with people, startups and companies." />
+    <meta name="theme-color" content="#14213D" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:title" content="WRX" />
+    <meta property="og:description" content="Smart short links, dynamic QR codes, real-time analytics and a professional network." />
+    <meta property="og:image" content="/og.png" />
+    <script>
+      try {
+        const t = localStorage.getItem('wrx-theme');
+        if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

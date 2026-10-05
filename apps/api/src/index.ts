@@ -20,7 +20,12 @@ export const app = new Hono<AppEnv>();
 app.use('/api/*', secureHeaders({ crossOriginResourcePolicy: 'same-origin' }));
 // Cookie auth + JSON-only mutations: a cross-site form post cannot send application/json without CORS preflight.
 app.use('/api/*', async (c, next) => {
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(c.req.method) && c.req.header('content-length') !== '0' && c.req.header('content-type') && !c.req.header('content-type')!.includes('application/json'))
+  if (
+    !['GET', 'HEAD', 'OPTIONS'].includes(c.req.method) &&
+    c.req.header('content-length') !== '0' &&
+    c.req.header('content-type') &&
+    !c.req.header('content-type')!.includes('application/json')
+  )
     throw new HttpError(415, 'unsupported_media_type', 'Send requests as application/json');
   await next();
 });
@@ -37,7 +42,9 @@ api.route('/public', pub);
 api.route('/connect', connect);
 api.get('/openapi.json', (c) => c.json(openapi));
 api.get('/docs', swaggerUI({ url: '/api/v1/openapi.json', title: 'WRX API' }));
-api.all('*', () => { throw new HttpError(404, 'not_found', 'No such endpoint'); });
+api.all('*', () => {
+  throw new HttpError(404, 'not_found', 'No such endpoint');
+});
 app.route('/api/v1', api);
 
 // Short links live at the root: /abc123. Anything that is not a known slug falls through to the React app.

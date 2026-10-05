@@ -12,7 +12,11 @@ export const bio = new Hono<AppEnv>();
 bio.use('*', requireAuth);
 
 bio.get('/', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM bio_pages WHERE user_id = ? ORDER BY created_at DESC').bind(c.get('session').userId).all<BioRow>();
+  const { results } = await c.env.DB.prepare(
+    'SELECT * FROM bio_pages WHERE user_id = ? ORDER BY created_at DESC',
+  )
+    .bind(c.get('session').userId)
+    .all<BioRow>();
   return c.json({ items: results.map((r) => toBio(r, originOf(c))) });
 });
 
@@ -31,7 +35,9 @@ bio.post('/', async (c) => {
 
 bio.put('/:id', async (c) => {
   const { userId } = c.get('session');
-  const cur = await c.env.DB.prepare('SELECT * FROM bio_pages WHERE id = ? AND user_id = ?').bind(c.req.param('id'), userId).first<BioRow>();
+  const cur = await c.env.DB.prepare('SELECT * FROM bio_pages WHERE id = ? AND user_id = ?')
+    .bind(c.req.param('id'), userId)
+    .first<BioRow>();
   if (!cur) throw notFound('Page');
   const input = parse(BioInputSchema, await body(c.req));
   if (input.handle !== cur.handle) await assertHandleFree(c.env.DB, input.handle);
@@ -45,17 +51,34 @@ bio.put('/:id', async (c) => {
 });
 
 bio.delete('/:id', async (c) => {
-  const r = await c.env.DB.prepare('DELETE FROM bio_pages WHERE id = ? AND user_id = ?').bind(c.req.param('id'), c.get('session').userId).run();
+  const r = await c.env.DB.prepare('DELETE FROM bio_pages WHERE id = ? AND user_id = ?')
+    .bind(c.req.param('id'), c.get('session').userId)
+    .run();
   if (!r.meta.changes) throw notFound('Page');
   return c.body(null, 204);
 });
 
-const columns = (i: BioInput) => [
-  i.handle, i.kind, i.title, i.headline, i.bio, i.avatar ?? null, i.theme, i.location, i.industry,
-  JSON.stringify(i.skills), JSON.stringify(i.openTo), i.discoverable ? 1 : 0, JSON.stringify(i.card ?? {}), JSON.stringify(i.links),
-] as const;
+const columns = (i: BioInput) =>
+  [
+    i.handle,
+    i.kind,
+    i.title,
+    i.headline,
+    i.bio,
+    i.avatar ?? null,
+    i.theme,
+    i.location,
+    i.industry,
+    JSON.stringify(i.skills),
+    JSON.stringify(i.openTo),
+    i.discoverable ? 1 : 0,
+    JSON.stringify(i.card ?? {}),
+    JSON.stringify(i.links),
+  ] as const;
 
 async function assertHandleFree(db: D1Database, handle: string) {
   if (await db.prepare('SELECT 1 FROM bio_pages WHERE handle = ?').bind(handle).first())
-    throw new HttpError(409, 'handle_taken', `@${handle} is already taken`, { handle: 'Already taken — try another one' });
+    throw new HttpError(409, 'handle_taken', `@${handle} is already taken`, {
+      handle: 'Already taken — try another one',
+    });
 }

@@ -32,7 +32,8 @@ export const requireAuth: MiddlewareHandler<AppEnv> = async (c, next) => {
 
 /** Mutations from the shared demo account are allowed but some account-level ones are not. */
 export const blockDemo: MiddlewareHandler<AppEnv> = async (c, next) => {
-  if (c.get('session').isDemo) throw new HttpError(403, 'demo_read_only', 'This action is disabled in the demo workspace');
+  if (c.get('session').isDemo)
+    throw new HttpError(403, 'demo_read_only', 'This action is disabled in the demo workspace');
   await next();
 };
 
@@ -46,7 +47,9 @@ async function resolveSession(c: Context<AppEnv>): Promise<Session | null> {
       .bind(hash)
       .first<{ id: string; user_id: string; is_demo: number }>();
     if (!row) return null;
-    c.executionCtx.waitUntil(c.env.DB.prepare('UPDATE api_keys SET last_used_at = ? WHERE id = ?').bind(nowIso(), row.id).run());
+    c.executionCtx.waitUntil(
+      c.env.DB.prepare('UPDATE api_keys SET last_used_at = ? WHERE id = ?').bind(nowIso(), row.id).run(),
+    );
     return { userId: row.user_id, via: 'api-key', isDemo: !!row.is_demo };
   }
   const token = getCookie(c, COOKIE);

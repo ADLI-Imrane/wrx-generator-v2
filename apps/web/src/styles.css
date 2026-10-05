@@ -1,0 +1,128 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/instrument-sans';
+@import '@fontsource-variable/jetbrains-mono';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  WRX identity — "signals on a route".
+  Ink (navy) carries the type, Paper is the cool ground, Route (electric blue) is anything you can act on,
+  and Signal (amber) is spent on one thing per screen: the thing that is live right now.
+*/
+@theme {
+  --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+  --color-ink: #14213d;
+  --color-ink-2: #2b3a5c;
+  --color-paper: #f5f6fa;
+  --color-route: #3a5bff;
+  --color-route-deep: #2541d8;
+  --color-signal: #ffb703;
+  --color-mint: #12a383;
+  --color-coral: #e5484d;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --shadow-lift: 0 1px 0 rgb(20 33 61 / 0.04), 0 8px 24px -12px rgb(20 33 61 / 0.18);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --raised: #eef1f8;
+  --line: #dfe3ee;
+  --fg: #14213d;
+  --muted: #56627e;
+  --faint: #8a94ab;
+  --accent: #3a5bff;
+  --accent-soft: #e6ebff;
+  color-scheme: light;
+}
+.dark {
+  --bg: #0b1222;
+  --surface: #111a2e;
+  --raised: #18233b;
+  --line: #24314f;
+  --fg: #e9edf6;
+  --muted: #a3aec7;
+  --faint: #6f7b97;
+  --accent: #7d93ff;
+  --accent-soft: #1d2a52;
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-bg font-sans text-fg;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--color-signal) 55%, transparent);
+    color: var(--color-ink);
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-[var(--radius-card)] border border-line bg-surface;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .module-grid {
+    background-image: radial-gradient(circle at center, var(--line) 1.2px, transparent 1.4px);
+    background-size: 14px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

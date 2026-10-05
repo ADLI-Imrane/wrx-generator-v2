@@ -4,9 +4,12 @@ import { chooseDestination, availability } from '../src/lib/route';
 import { fillSeries } from '../src/routes/analytics';
 import { hashPassword, verifyPassword } from '../src/lib/crypto';
 
-const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
-const PIXEL = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36';
-const MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+const IPHONE =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+const PIXEL =
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36';
+const MAC =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 describe('parseUA', () => {
   it('classifies phones, desktops and bots', () => {
@@ -35,10 +38,13 @@ describe('slugs', () => {
 describe('chooseDestination', () => {
   const base = { url: 'https://main.test/', utm: null, rules: [], variants: [] };
   it('applies country rules before device rules', () => {
-    const link = { ...base, rules: [
-      { type: 'country' as const, countries: ['MA'], url: 'https://ma.test/' },
-      { type: 'device' as const, devices: ['ios' as const], url: 'https://ios.test/' },
-    ] };
+    const link = {
+      ...base,
+      rules: [
+        { type: 'country' as const, countries: ['MA'], url: 'https://ma.test/' },
+        { type: 'device' as const, devices: ['ios' as const], url: 'https://ios.test/' },
+      ],
+    };
     expect(chooseDestination(link, { country: 'MA', os: 'iOS' })).toBe('https://ma.test/');
     expect(chooseDestination(link, { country: 'FR', os: 'iOS' })).toBe('https://ios.test/');
     expect(chooseDestination(link, { country: 'FR', os: 'Windows' })).toBe('https://main.test/');
@@ -49,14 +55,30 @@ describe('chooseDestination', () => {
     expect(chooseDestination(link, {}, () => 0.5)).toBe('https://main.test/');
   });
   it('adds UTM parameters to the winning URL', () => {
-    expect(chooseDestination({ ...base, url: 'https://main.test/?a=1', utm: { source: 'ig', campaign: 'spring' } }, {}))
-      .toBe('https://main.test/?a=1&utm_source=ig&utm_campaign=spring');
+    expect(
+      chooseDestination(
+        { ...base, url: 'https://main.test/?a=1', utm: { source: 'ig', campaign: 'spring' } },
+        {},
+      ),
+    ).toBe('https://main.test/?a=1&utm_source=ig&utm_campaign=spring');
     expect(withUtm('https://x.test/', null)).toBe('https://x.test/');
   });
 });
 
 describe('availability', () => {
-  const link = { id: 'l', userId: 'u', url: 'x', utm: null, rules: [], variants: [], expiresAt: null, maxClicks: null, clicks: 0, hasPassword: false, archived: false };
+  const link = {
+    id: 'l',
+    userId: 'u',
+    url: 'x',
+    utm: null,
+    rules: [],
+    variants: [],
+    expiresAt: null,
+    maxClicks: null,
+    clicks: 0,
+    hasPassword: false,
+    archived: false,
+  };
   it('reports why a link is closed', () => {
     expect(availability(link)).toBeNull();
     expect(availability({ ...link, archived: true })).toBe('archived');

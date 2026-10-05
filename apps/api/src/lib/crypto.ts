@@ -38,7 +38,10 @@ export async function sha256Hex(input: string): Promise<string> {
 
 /** URL-safe random token. */
 export function randomToken(bytes = 24) {
-  return b64(crypto.getRandomValues(new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return b64(crypto.getRandomValues(new Uint8Array(bytes)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
 export const newId = (prefix: string) => `${prefix}_${randomToken(12)}`;

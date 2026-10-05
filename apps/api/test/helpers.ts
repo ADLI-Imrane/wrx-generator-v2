@@ -10,7 +10,13 @@ export class Client {
     const res = await SELF.fetch(`${BASE}${path}`, {
       method,
       redirect: 'manual',
-      headers: { ...(body !== undefined ? { 'content-type': 'application/json' } : {}), ...(this.cookie ? { cookie: this.cookie } : {}), 'cf-connecting-ip': this.ip, ...this.headers, ...extra },
+      headers: {
+        ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
+        ...(this.cookie ? { cookie: this.cookie } : {}),
+        'cf-connecting-ip': this.ip,
+        ...this.headers,
+        ...extra,
+      },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
     const set = res.headers.get('set-cookie');
@@ -26,7 +32,11 @@ export class Client {
 let n = 0;
 export async function signedIn() {
   const c = new Client();
-  const r = await c.json('POST', '/api/v1/auth/register', { name: 'Test User', email: `user${++n}-${Date.now()}@test.dev`, password: 'correct-horse' });
+  const r = await c.json('POST', '/api/v1/auth/register', {
+    name: 'Test User',
+    email: `user${++n}-${Date.now()}@test.dev`,
+    password: 'correct-horse',
+  });
   if (r.status !== 201) throw new Error(JSON.stringify(r.body));
   return c;
 }

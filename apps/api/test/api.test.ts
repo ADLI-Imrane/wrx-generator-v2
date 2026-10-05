@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { env } from 'cloudflare:test';
 import { Client, signedIn } from './helpers';
 
-const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1';
+const IPHONE =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1';
 
 describe('auth', () => {
   it('registers, reads the session and logs out', async () => {
@@ -27,12 +28,16 @@ describe('auth', () => {
   it('slows down brute force on login', async () => {
     const c = new Client();
     const codes: number[] = [];
-    for (let i = 0; i < 11; i++) codes.push((await c.json('POST', '/api/v1/auth/login', { email: 'x@test.dev', password: 'y' })).status);
+    for (let i = 0; i < 11; i++)
+      codes.push((await c.json('POST', '/api/v1/auth/login', { email: 'x@test.dev', password: 'y' })).status);
     expect(codes.at(-1)).toBe(429);
   });
 
   it('does not reveal which part of the credentials was wrong', async () => {
-    const r = await new Client().json('POST', '/api/v1/auth/login', { email: 'nobody@test.dev', password: 'x' });
+    const r = await new Client().json('POST', '/api/v1/auth/login', {
+      email: 'nobody@test.dev',
+      password: 'x',
+    });
     expect(r.status).toBe(401);
     expect(r.body.error.message).toBe('Email or password is incorrect');
   });
@@ -44,7 +49,11 @@ describe('links', () => {
     const bad = await c.json('POST', '/api/v1/links', { url: 'not a url' });
     expect(bad.status).toBe(422);
     expect(bad.body.error.fields.url).toBeTruthy();
-    const ok = await c.json('POST', '/api/v1/links', { url: 'https://example.com/a', title: 'A', tags: ['x'] });
+    const ok = await c.json('POST', '/api/v1/links', {
+      url: 'https://example.com/a',
+      title: 'A',
+      tags: ['x'],
+    });
     expect(ok.status).toBe(201);
     expect(ok.body.slug).toHaveLength(6);
     expect(ok.body.shortUrl).toBe(`https://wrx.test/${ok.body.slug}`);
@@ -53,8 +62,12 @@ describe('links', () => {
   it('refuses taken and reserved slugs', async () => {
     const c = await signedIn();
     await c.json('POST', '/api/v1/links', { url: 'https://example.com', slug: 'taken-one' });
-    expect((await c.json('POST', '/api/v1/links', { url: 'https://example.com', slug: 'taken-one' })).status).toBe(409);
-    expect((await c.json('POST', '/api/v1/links', { url: 'https://example.com', slug: 'api' })).status).toBe(422);
+    expect(
+      (await c.json('POST', '/api/v1/links', { url: 'https://example.com', slug: 'taken-one' })).status,
+    ).toBe(409);
+    expect((await c.json('POST', '/api/v1/links', { url: 'https://example.com', slug: 'api' })).status).toBe(
+      422,
+    );
   });
 
   it('keeps users isolated from each other', async () => {
@@ -67,7 +80,11 @@ describe('links', () => {
 
   it('searches, filters by tag and archives', async () => {
     const c = await signedIn();
-    await c.json('POST', '/api/v1/links', { url: 'https://example.com/1', title: 'Alpha launch', tags: ['launch'] });
+    await c.json('POST', '/api/v1/links', {
+      url: 'https://example.com/1',
+      title: 'Alpha launch',
+      tags: ['launch'],
+    });
     const two = (await c.json('POST', '/api/v1/links', { url: 'https://example.com/2', title: 'Beta' })).body;
     expect((await c.json('GET', '/api/v1/links?q=alpha')).body.total).toBe(1);
     expect((await c.json('GET', '/api/v1/links?tag=launch')).body.items[0].title).toBe('Alpha launch');
@@ -78,9 +95,13 @@ describe('links', () => {
 
   it('imports links in bulk and reports bad rows', async () => {
     const c = await signedIn();
-    const r = await c.json('POST', '/api/v1/links/bulk', { rows: [{ url: 'https://ok.test' }, { url: 'https://ok2.test', tags: 'a|b' }] });
+    const r = await c.json('POST', '/api/v1/links/bulk', {
+      rows: [{ url: 'https://ok.test' }, { url: 'https://ok2.test', tags: 'a|b' }],
+    });
     expect(r.body.created).toBe(2);
-    const bad = await c.json('POST', '/api/v1/links/bulk', { rows: [{ url: 'https://ok3.test', slug: 'api' }] });
+    const bad = await c.json('POST', '/api/v1/links/bulk', {
+      rows: [{ url: 'https://ok3.test', slug: 'api' }],
+    });
     expect(bad.body.failed[0].row).toBe(1);
   });
 });
@@ -88,8 +109,13 @@ describe('links', () => {
 describe('redirects', () => {
   it('redirects, records the click and feeds analytics', async () => {
     const c = await signedIn();
-    const link = (await c.json('POST', '/api/v1/links', { url: 'https://example.com/landing', utm: { source: 'test' } })).body;
-    const res = await new Client().req('GET', `/${link.slug}?r=qr`, undefined, { 'user-agent': IPHONE, referer: 'https://www.instagram.com/p/1' });
+    const link = (
+      await c.json('POST', '/api/v1/links', { url: 'https://example.com/landing', utm: { source: 'test' } })
+    ).body;
+    const res = await new Client().req('GET', `/${link.slug}?r=qr`, undefined, {
+      'user-agent': IPHONE,
+      referer: 'https://www.instagram.com/p/1',
+    });
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe('https://example.com/landing?utm_source=test');
     await new Promise((r) => setTimeout(r, 50));
@@ -102,7 +128,12 @@ describe('redirects', () => {
 
   it('routes iPhones with device rules', async () => {
     const c = await signedIn();
-    const link = (await c.json('POST', '/api/v1/links', { url: 'https://example.com', rules: [{ type: 'device', devices: ['ios'], url: 'https://apps.apple.com/x' }] })).body;
+    const link = (
+      await c.json('POST', '/api/v1/links', {
+        url: 'https://example.com',
+        rules: [{ type: 'device', devices: ['ios'], url: 'https://apps.apple.com/x' }],
+      })
+    ).body;
     const res = await new Client().req('GET', `/${link.slug}`, undefined, { 'user-agent': IPHONE });
     expect(res.headers.get('location')).toBe('https://apps.apple.com/x');
   });
@@ -114,12 +145,19 @@ describe('redirects', () => {
 
   it('protects links with a password', async () => {
     const c = await signedIn();
-    const link = (await c.json('POST', '/api/v1/links', { url: 'https://secret.test/', password: 'opensesame' })).body;
+    const link = (
+      await c.json('POST', '/api/v1/links', { url: 'https://secret.test/', password: 'opensesame' })
+    ).body;
     expect(link.hasPassword).toBe(true);
     const res = await new Client().req('GET', `/${link.slug}`);
     expect(res.headers.get('location')).toBe(`/unlock/${link.slug}`);
-    expect((await new Client().json('POST', `/api/v1/public/unlock/${link.slug}`, { password: 'nope' })).status).toBe(401);
-    expect((await new Client().json('POST', `/api/v1/public/unlock/${link.slug}`, { password: 'opensesame' })).body.url).toBe('https://secret.test/');
+    expect(
+      (await new Client().json('POST', `/api/v1/public/unlock/${link.slug}`, { password: 'nope' })).status,
+    ).toBe(401);
+    expect(
+      (await new Client().json('POST', `/api/v1/public/unlock/${link.slug}`, { password: 'opensesame' })).body
+        .url,
+    ).toBe('https://secret.test/');
   });
 
   it('closes links that reached their click limit', async () => {
@@ -143,7 +181,11 @@ describe('qr codes, bio pages and api keys', () => {
 
   it('publishes a bio page and counts views', async () => {
     const c = await signedIn();
-    const r = await c.json('POST', '/api/v1/bio', { handle: 'imrane', title: 'Imrane', links: [{ label: 'Site', url: 'https://example.com' }] });
+    const r = await c.json('POST', '/api/v1/bio', {
+      handle: 'imrane',
+      title: 'Imrane',
+      links: [{ label: 'Site', url: 'https://example.com' }],
+    });
     expect(r.status).toBe(201);
     const pub = await new Client().json('GET', '/api/v1/public/bio/imrane');
     expect(pub.body.title).toBe('Imrane');
@@ -159,7 +201,9 @@ describe('qr codes, bio pages and api keys', () => {
     expect((await api.json('GET', '/api/v1/keys')).status).toBe(403);
     const list = (await c.json('GET', '/api/v1/keys')).body.items;
     expect(list[0]).not.toHaveProperty('secret');
-    expect((await new Client({ authorization: 'Bearer wrx_wrong' }).json('GET', '/api/v1/links')).status).toBe(401);
+    expect(
+      (await new Client({ authorization: 'Bearer wrx_wrong' }).json('GET', '/api/v1/links')).status,
+    ).toBe(401);
   });
 });
 
@@ -174,7 +218,9 @@ describe('demo workspace', () => {
     expect(stats.total).toBeGreaterThan(1500);
     expect(stats.countries[0].key).toBe('MA');
     expect((await c.json('POST', '/api/v1/keys', { name: 'x' })).status).toBe(403);
-    const users = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE is_demo = 1').first<{ n: number }>();
+    const users = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE is_demo = 1').first<{
+      n: number;
+    }>();
     expect(users!.n).toBe(2);
   });
 });
@@ -186,15 +232,26 @@ describe('api surface', () => {
     expect(r.body.paths['/links'].post).toBeTruthy();
   });
   it('rejects non-JSON mutations', async () => {
-    const res = await new Client().req('POST', '/api/v1/auth/login', undefined, { 'content-type': 'application/x-www-form-urlencoded', 'content-length': '3' });
+    const res = await new Client().req('POST', '/api/v1/auth/login', undefined, {
+      'content-type': 'application/x-www-form-urlencoded',
+      'content-length': '3',
+    });
     expect(res.status).toBe(415);
   });
 });
 
 describe('connect', () => {
   const profile = (handle: string, extra: Record<string, unknown> = {}) => ({
-    handle, kind: 'startup', title: 'Rocket Labs', headline: 'We build rockets', location: 'Casablanca', skills: ['React'], openTo: ['hiring'], discoverable: true,
-    card: { email: 'team@rocket.test', phone: '+212 600', company: 'Rocket Labs' }, ...extra,
+    handle,
+    kind: 'startup',
+    title: 'Rocket Labs',
+    headline: 'We build rockets',
+    location: 'Casablanca',
+    skills: ['React'],
+    openTo: ['hiring'],
+    discoverable: true,
+    card: { email: 'team@rocket.test', phone: '+212 600', company: 'Rocket Labs' },
+    ...extra,
   });
 
   it('turns a profile into a downloadable business card', async () => {
@@ -211,30 +268,57 @@ describe('connect', () => {
     const c = await signedIn();
     await c.json('POST', '/api/v1/bio', profile('visible-co'));
     await c.json('POST', '/api/v1/bio', profile('hidden-co', { discoverable: false }));
-    const all = (await new Client().json('GET', '/api/v1/public/discover?q=rockets')).body.items.map((p: any) => p.handle);
+    const all = (await new Client().json('GET', '/api/v1/public/discover?q=rockets')).body.items.map(
+      (p: any) => p.handle,
+    );
     expect(all).toContain('visible-co');
     expect(all).not.toContain('hidden-co');
-    const people = (await new Client().json('GET', '/api/v1/public/discover?kind=person&q=rockets')).body.items;
+    const people = (await new Client().json('GET', '/api/v1/public/discover?kind=person&q=rockets')).body
+      .items;
     expect(people).toHaveLength(0);
-    expect((await new Client().json('GET', '/api/v1/public/discover?q=rockets')).body.items[0]).not.toHaveProperty('card');
+    expect(
+      (await new Client().json('GET', '/api/v1/public/discover?q=rockets')).body.items[0],
+    ).not.toHaveProperty('card');
   });
 
   it('publishes an opportunity and routes responses to the inbox', async () => {
     const owner = await signedIn();
     const page = (await owner.json('POST', '/api/v1/bio', profile('hiring-co'))).body;
-    const opp = await owner.json('POST', '/api/v1/connect/opportunities', { pageId: page.id, type: 'job', title: 'Backend engineer', description: 'Build APIs with Node.js and PostgreSQL for our team.', tags: ['Node.js'] });
+    const opp = await owner.json('POST', '/api/v1/connect/opportunities', {
+      pageId: page.id,
+      type: 'job',
+      title: 'Backend engineer',
+      description: 'Build APIs with Node.js and PostgreSQL for our team.',
+      tags: ['Node.js'],
+    });
     expect(opp.status).toBe(201);
-    const listed = (await new Client().json('GET', '/api/v1/public/opportunities?type=job&q=Backend')).body.items;
+    const listed = (await new Client().json('GET', '/api/v1/public/opportunities?type=job&q=Backend')).body
+      .items;
     expect(listed.some((o: any) => o.id === opp.body.id)).toBe(true);
 
     const visitor = new Client();
-    const bad = await visitor.json('POST', '/api/v1/public/bio/hiring-co/contact', { intent: 'job', name: 'A', email: 'nope', message: 'hi' });
+    const bad = await visitor.json('POST', '/api/v1/public/bio/hiring-co/contact', {
+      intent: 'job',
+      name: 'A',
+      email: 'nope',
+      message: 'hi',
+    });
     expect(bad.status).toBe(422);
-    const sent = await visitor.json('POST', '/api/v1/public/bio/hiring-co/contact', { intent: 'job', name: 'Ali Candidate', email: 'ali@test.dev', message: 'I would love to join your team!', opportunityId: opp.body.id });
+    const sent = await visitor.json('POST', '/api/v1/public/bio/hiring-co/contact', {
+      intent: 'job',
+      name: 'Ali Candidate',
+      email: 'ali@test.dev',
+      message: 'I would love to join your team!',
+      opportunityId: opp.body.id,
+    });
     expect(sent.status).toBe(201);
 
     const inbox = (await owner.json('GET', '/api/v1/connect/inbox')).body;
-    expect(inbox.items[0]).toMatchObject({ name: 'Ali Candidate', status: 'new', opportunity: { title: 'Backend engineer' } });
+    expect(inbox.items[0]).toMatchObject({
+      name: 'Ali Candidate',
+      status: 'new',
+      opportunity: { title: 'Backend engineer' },
+    });
     expect(inbox.counts.new).toBe(1);
     await owner.json('PATCH', `/api/v1/connect/inbox/${inbox.items[0].id}`, { status: 'in_progress' });
     expect((await owner.json('GET', '/api/v1/connect/inbox?status=new')).body.items).toHaveLength(0);
@@ -244,7 +328,13 @@ describe('connect', () => {
   it('silently drops bot submissions caught by the honeypot', async () => {
     const owner = await signedIn();
     await owner.json('POST', '/api/v1/bio', profile('honey-co'));
-    const r = await new Client().json('POST', '/api/v1/public/bio/honey-co/contact', { intent: 'other', name: 'Bot', email: 'bot@test.dev', message: 'Buy cheap stuff now!!!', website: 'x' });
+    const r = await new Client().json('POST', '/api/v1/public/bio/honey-co/contact', {
+      intent: 'other',
+      name: 'Bot',
+      email: 'bot@test.dev',
+      message: 'Buy cheap stuff now!!!',
+      website: 'x',
+    });
     expect(r.status).toBe(422); // website must be empty → validation rejects, nothing stored
     expect((await owner.json('GET', '/api/v1/connect/inbox')).body.items).toHaveLength(0);
   });
@@ -253,7 +343,12 @@ describe('connect', () => {
     const a = await signedIn();
     const b = await signedIn();
     const page = (await a.json('POST', '/api/v1/bio', profile('owned-co'))).body;
-    const r = await b.json('POST', '/api/v1/connect/opportunities', { pageId: page.id, type: 'job', title: 'Sneaky job', description: 'This should never be published anywhere.' });
+    const r = await b.json('POST', '/api/v1/connect/opportunities', {
+      pageId: page.id,
+      type: 'job',
+      title: 'Sneaky job',
+      description: 'This should never be published anywhere.',
+    });
     expect(r.status).toBe(404);
   });
 
@@ -261,7 +356,11 @@ describe('connect', () => {
     const c = new Client();
     await c.json('POST', '/api/v1/auth/demo');
     expect((await c.json('GET', '/api/v1/connect/inbox')).body.items.length).toBe(5);
-    expect((await new Client().json('GET', '/api/v1/public/discover')).body.items.length).toBeGreaterThanOrEqual(8);
-    expect((await new Client().json('GET', '/api/v1/public/opportunities')).body.items.length).toBeGreaterThanOrEqual(8);
+    expect(
+      (await new Client().json('GET', '/api/v1/public/discover')).body.items.length,
+    ).toBeGreaterThanOrEqual(8);
+    expect(
+      (await new Client().json('GET', '/api/v1/public/opportunities')).body.items.length,
+    ).toBeGreaterThanOrEqual(8);
   });
 });

@@ -14,7 +14,8 @@ export class HttpError extends Error {
 }
 
 export const notFound = (what = 'Resource') => new HttpError(404, 'not_found', `${what} not found`);
-export const forbidden = (msg = 'You do not have access to this resource') => new HttpError(403, 'forbidden', msg);
+export const forbidden = (msg = 'You do not have access to this resource') =>
+  new HttpError(403, 'forbidden', msg);
 
 export function zodFields(err: ZodError): Record<string, string> {
   const out: Record<string, string> = {};

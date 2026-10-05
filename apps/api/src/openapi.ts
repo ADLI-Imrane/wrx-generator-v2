@@ -1,10 +1,23 @@
 import { z } from 'zod';
-import { LinkInputSchema, LinkUpdateSchema, QrInputSchema, BioInputSchema, BulkImportSchema } from '@wrx/shared';
+import {
+  LinkInputSchema,
+  LinkUpdateSchema,
+  QrInputSchema,
+  BioInputSchema,
+  BulkImportSchema,
+  OpportunityInputSchema,
+  ContactInputSchema,
+} from '@wrx/shared';
 
 const schema = (s: z.ZodType) => z.toJSONSchema(s, { io: 'input', unrepresentable: 'any' });
-const json = (ref: string) => ({ content: { 'application/json': { schema: { $ref: `#/components/schemas/${ref}` } } } });
+const json = (ref: string) => ({
+  content: { 'application/json': { schema: { $ref: `#/components/schemas/${ref}` } } },
+});
 const ok = (description: string) => ({ description });
-const errors = { 401: ok('Missing or invalid credentials'), 422: ok('Validation failed — see `error.fields`') };
+const errors = {
+  401: ok('Missing or invalid credentials'),
+  422: ok('Validation failed — see `error.fields`'),
+};
 const idParam = [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }];
 
 /** OpenAPI 3.1 document generated from the same Zod schemas the API validates with. */
@@ -26,15 +39,30 @@ export const openapi = {
       QrInput: schema(QrInputSchema),
       BioInput: schema(BioInputSchema),
       BulkImport: schema(BulkImportSchema),
+      OpportunityInput: schema(OpportunityInputSchema),
+      ContactInput: schema(ContactInputSchema),
     },
   },
-  tags: [{ name: 'Links' }, { name: 'QR codes' }, { name: 'Analytics' }, { name: 'Bio pages' }],
+  tags: [
+    { name: 'Links' },
+    { name: 'QR codes' },
+    { name: 'Analytics' },
+    { name: 'Bio pages' },
+    { name: 'Connect' },
+    { name: 'Public' },
+  ],
   paths: {
     '/links': {
       get: {
-        tags: ['Links'], summary: 'List links',
+        tags: ['Links'],
+        summary: 'List links',
         parameters: [
-          { name: 'q', in: 'query', schema: { type: 'string' }, description: 'Search slug, title or destination' },
+          {
+            name: 'q',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Search slug, title or destination',
+          },
           { name: 'tag', in: 'query', schema: { type: 'string' } },
           { name: 'status', in: 'query', schema: { enum: ['active', 'archived', 'all'] } },
           { name: 'sort', in: 'query', schema: { enum: ['recent', 'clicks', 'alpha'] } },
@@ -43,27 +71,62 @@ export const openapi = {
         ],
         responses: { 200: ok('A page of links'), ...errors },
       },
-      post: { tags: ['Links'], summary: 'Create a link', requestBody: json('LinkInput'), responses: { 201: ok('Created'), 409: ok('Slug already taken'), ...errors } },
+      post: {
+        tags: ['Links'],
+        summary: 'Create a link',
+        requestBody: json('LinkInput'),
+        responses: { 201: ok('Created'), 409: ok('Slug already taken'), ...errors },
+      },
     },
-    '/links/bulk': { post: { tags: ['Links'], summary: 'Import up to 500 links', requestBody: json('BulkImport'), responses: { 201: ok('Import report'), ...errors } } },
+    '/links/bulk': {
+      post: {
+        tags: ['Links'],
+        summary: 'Import up to 500 links',
+        requestBody: json('BulkImport'),
+        responses: { 201: ok('Import report'), ...errors },
+      },
+    },
     '/links/{id}': {
       parameters: idParam,
-      get: { tags: ['Links'], summary: 'Get a link', responses: { 200: ok('The link'), 404: ok('Not found'), ...errors } },
-      patch: { tags: ['Links'], summary: 'Update a link', requestBody: json('LinkUpdate'), responses: { 200: ok('Updated'), ...errors } },
-      delete: { tags: ['Links'], summary: 'Delete a link and its analytics', responses: { 204: ok('Deleted'), ...errors } },
+      get: {
+        tags: ['Links'],
+        summary: 'Get a link',
+        responses: { 200: ok('The link'), 404: ok('Not found'), ...errors },
+      },
+      patch: {
+        tags: ['Links'],
+        summary: 'Update a link',
+        requestBody: json('LinkUpdate'),
+        responses: { 200: ok('Updated'), ...errors },
+      },
+      delete: {
+        tags: ['Links'],
+        summary: 'Delete a link and its analytics',
+        responses: { 204: ok('Deleted'), ...errors },
+      },
     },
     '/qr': {
       get: { tags: ['QR codes'], summary: 'List QR codes', responses: { 200: ok('QR codes'), ...errors } },
-      post: { tags: ['QR codes'], summary: 'Create a dynamic QR code', requestBody: json('QrInput'), responses: { 201: ok('Created'), ...errors } },
+      post: {
+        tags: ['QR codes'],
+        summary: 'Create a dynamic QR code',
+        requestBody: json('QrInput'),
+        responses: { 201: ok('Created'), ...errors },
+      },
     },
     '/qr/{id}': {
       parameters: idParam,
       get: { tags: ['QR codes'], summary: 'Get a QR code', responses: { 200: ok('QR code'), ...errors } },
-      delete: { tags: ['QR codes'], summary: 'Delete a QR code', responses: { 204: ok('Deleted'), ...errors } },
+      delete: {
+        tags: ['QR codes'],
+        summary: 'Delete a QR code',
+        responses: { 204: ok('Deleted'), ...errors },
+      },
     },
     '/analytics': {
       get: {
-        tags: ['Analytics'], summary: 'Clicks, visitors and breakdowns',
+        tags: ['Analytics'],
+        summary: 'Clicks, visitors and breakdowns',
         parameters: [
           { name: 'range', in: 'query', schema: { enum: ['24h', '7d', '30d', '90d'] } },
           { name: 'linkId', in: 'query', schema: { type: 'string' }, description: 'Limit to one link' },
@@ -73,7 +136,78 @@ export const openapi = {
     },
     '/bio': {
       get: { tags: ['Bio pages'], summary: 'List bio pages', responses: { 200: ok('Pages'), ...errors } },
-      post: { tags: ['Bio pages'], summary: 'Create a bio page', requestBody: json('BioInput'), responses: { 201: ok('Created'), 409: ok('Handle taken'), ...errors } },
+      post: {
+        tags: ['Bio pages'],
+        summary: 'Create a bio page',
+        requestBody: json('BioInput'),
+        responses: { 201: ok('Created'), 409: ok('Handle taken'), ...errors },
+      },
+    },
+    '/connect/opportunities': {
+      get: {
+        tags: ['Connect'],
+        summary: 'Opportunities you published',
+        responses: { 200: ok('Opportunities'), ...errors },
+      },
+      post: {
+        tags: ['Connect'],
+        summary: 'Publish a job, internship, partnership or funding call',
+        requestBody: json('OpportunityInput'),
+        responses: { 201: ok('Published'), ...errors },
+      },
+    },
+    '/connect/inbox': {
+      get: {
+        tags: ['Connect'],
+        summary: 'Contact requests received',
+        parameters: [{ name: 'status', in: 'query', schema: { enum: ['new', 'in_progress', 'closed'] } }],
+        responses: { 200: ok('Requests and counts'), ...errors },
+      },
+    },
+    '/public/discover': {
+      get: {
+        tags: ['Public'],
+        summary: 'Directory of discoverable profiles',
+        security: [],
+        parameters: ['kind', 'q', 'location', 'openTo'].map((name) => ({
+          name,
+          in: 'query',
+          schema: { type: 'string' },
+        })),
+        responses: { 200: ok('Profiles') },
+      },
+    },
+    '/public/opportunities': {
+      get: {
+        tags: ['Public'],
+        summary: 'Open opportunities',
+        security: [],
+        parameters: ['type', 'q', 'remote'].map((name) => ({
+          name,
+          in: 'query',
+          schema: { type: 'string' },
+        })),
+        responses: { 200: ok('Opportunities') },
+      },
+    },
+    '/public/bio/{handle}/vcard': {
+      get: {
+        tags: ['Public'],
+        summary: 'Download a profile as a vCard',
+        security: [],
+        parameters: [{ name: 'handle', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { 200: ok('text/vcard') },
+      },
+    },
+    '/public/bio/{handle}/contact': {
+      post: {
+        tags: ['Public'],
+        summary: 'Send a contact request to a profile',
+        security: [],
+        parameters: [{ name: 'handle', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: json('ContactInput'),
+        responses: { 201: ok('Sent'), 422: ok('Validation failed'), 429: ok('Too many requests') },
+      },
     },
   },
 };

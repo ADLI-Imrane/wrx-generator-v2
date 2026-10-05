@@ -57,7 +57,8 @@ ios/build/
 *.tsbuildinfo
 .cache/
 temp/
-tmp/.wrangler/
+tmp/
+.wrangler/
 .dev.vars
 playwright-report/
 test-results/

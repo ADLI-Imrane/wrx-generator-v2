@@ -1,8 +1,30 @@
 /** Paths owned by the app itself — they can never be used as a short-link slug. */
 export const RESERVED_SLUGS = new Set([
-  'api', 'app', 'assets', 'b', 'docs', 'login', 'register', 'signup', 'logout', 'demo', 'settings',
-  'admin', 'static', 'favicon.ico', 'robots.txt', 'sitemap.xml', 'manifest.webmanifest', 'p', 'unlock',
-  'health', 'openapi.json', 'privacy', 'terms', 'pricing', 'about',
+  'api',
+  'app',
+  'assets',
+  'b',
+  'docs',
+  'login',
+  'register',
+  'signup',
+  'logout',
+  'demo',
+  'settings',
+  'admin',
+  'static',
+  'favicon.ico',
+  'robots.txt',
+  'sitemap.xml',
+  'manifest.webmanifest',
+  'p',
+  'unlock',
+  'health',
+  'openapi.json',
+  'privacy',
+  'terms',
+  'pricing',
+  'about',
 ]);
 
 export const SLUG_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{1,48}[a-zA-Z0-9]$/;
@@ -26,7 +48,10 @@ export function isValidCustomSlug(slug: string): boolean {
 }
 
 /** Appends UTM parameters to a destination URL without clobbering existing query params. */
-export function withUtm(url: string, utm?: Partial<Record<'source' | 'medium' | 'campaign' | 'term' | 'content', string>> | null) {
+export function withUtm(
+  url: string,
+  utm?: Partial<Record<'source' | 'medium' | 'campaign' | 'term' | 'content', string>> | null,
+) {
   if (!utm) return url;
   const u = new URL(url);
   for (const [k, v] of Object.entries(utm)) if (v) u.searchParams.set(`utm_${k}`, v);

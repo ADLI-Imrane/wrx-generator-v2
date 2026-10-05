@@ -21,7 +21,11 @@ export const UtmSchema = z
 export const DEVICE_TARGETS = ['ios', 'android', 'desktop'] as const;
 
 export const RuleSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('country'), countries: z.array(z.string().length(2).toUpperCase()).min(1).max(50), url: httpUrl }),
+  z.object({
+    type: z.literal('country'),
+    countries: z.array(z.string().length(2).toUpperCase()).min(1).max(50),
+    url: httpUrl,
+  }),
   z.object({ type: z.literal('device'), devices: z.array(z.enum(DEVICE_TARGETS)).min(1), url: httpUrl }),
 ]);
 
@@ -45,7 +49,10 @@ export const LinkInputSchema = z.object({
 });
 export type LinkInput = z.infer<typeof LinkInputSchema>;
 
-export const LinkUpdateSchema = LinkInputSchema.partial().extend({ archived: z.boolean().optional(), removePassword: z.boolean().optional() });
+export const LinkUpdateSchema = LinkInputSchema.partial().extend({
+  archived: z.boolean().optional(),
+  removePassword: z.boolean().optional(),
+});
 export type LinkUpdate = z.infer<typeof LinkUpdateSchema>;
 
 export interface Link {
@@ -115,7 +122,16 @@ export const BIO_THEMES = ['ink', 'signal', 'paper', 'route'] as const;
 export const PROFILE_KINDS = ['person', 'startup', 'company'] as const;
 export type ProfileKind = (typeof PROFILE_KINDS)[number];
 /** What a profile is looking for — drives the directory filters and the "Contact" form intents. */
-export const OPEN_TO = ['hiring', 'jobs', 'internships', 'freelance', 'cofounder', 'partnerships', 'investment', 'mentoring'] as const;
+export const OPEN_TO = [
+  'hiring',
+  'jobs',
+  'internships',
+  'freelance',
+  'cofounder',
+  'partnerships',
+  'investment',
+  'mentoring',
+] as const;
 export type OpenTo = (typeof OPEN_TO)[number];
 
 export const CardSchema = z
@@ -129,12 +145,20 @@ export const CardSchema = z
   .default({});
 
 export const BioInputSchema = z.object({
-  handle: z.string().trim().toLowerCase().regex(/^[a-z0-9_.-]{3,30}$/, 'Use 3–30 lowercase letters, numbers, . _ or -'),
+  handle: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9_.-]{3,30}$/, 'Use 3–30 lowercase letters, numbers, . _ or -'),
   kind: z.enum(PROFILE_KINDS).default('person'),
   title: z.string().trim().min(1).max(60),
   headline: z.string().trim().max(100).default(''),
   bio: z.string().trim().max(400).default(''),
-  avatar: z.string().regex(/^data:image\/(png|jpeg|webp);base64,/).max(200_000).nullish(),
+  avatar: z
+    .string()
+    .regex(/^data:image\/(png|jpeg|webp);base64,/)
+    .max(200_000)
+    .nullish(),
   theme: z.enum(BIO_THEMES).default('ink'),
   location: z.string().trim().max(60).default(''),
   industry: z.string().trim().max(60).default(''),
@@ -142,13 +166,28 @@ export const BioInputSchema = z.object({
   openTo: z.array(z.enum(OPEN_TO)).max(8).default([]),
   discoverable: z.boolean().default(false),
   card: CardSchema,
-  links: z.array(z.object({ label: z.string().trim().min(1).max(60), url: httpUrl })).max(20).default([]),
+  links: z
+    .array(z.object({ label: z.string().trim().min(1).max(60), url: httpUrl }))
+    .max(20)
+    .default([]),
 });
 export type BioInput = z.infer<typeof BioInputSchema>;
-export interface BioPage extends BioInput { id: string; views: number; createdAt: string; publicUrl: string }
+export interface BioPage extends BioInput {
+  id: string;
+  views: number;
+  createdAt: string;
+  publicUrl: string;
+}
 export type PublicProfile = Omit<BioPage, 'id' | 'views'> & { openOpportunities: number };
 
-export const OPPORTUNITY_TYPES = ['job', 'internship', 'freelance', 'cofounder', 'partnership', 'investment'] as const;
+export const OPPORTUNITY_TYPES = [
+  'job',
+  'internship',
+  'freelance',
+  'cofounder',
+  'partnership',
+  'investment',
+] as const;
 export type OpportunityType = (typeof OPPORTUNITY_TYPES)[number];
 export const OpportunityInputSchema = z.object({
   pageId: z.string().min(1, 'Choose the profile that publishes this'),
@@ -167,10 +206,25 @@ export interface Opportunity extends Omit<OpportunityInput, 'pageId'> {
   responses: number;
   createdAt: string;
   publicUrl: string;
-  publisher: { id: string; handle: string; title: string; kind: ProfileKind; avatar: string | null; location: string };
+  publisher: {
+    id: string;
+    handle: string;
+    title: string;
+    kind: ProfileKind;
+    avatar: string | null;
+    location: string;
+  };
 }
 
-export const CONTACT_INTENTS = ['collaboration', 'hiring', 'job', 'partnership', 'investment', 'mentoring', 'other'] as const;
+export const CONTACT_INTENTS = [
+  'collaboration',
+  'hiring',
+  'job',
+  'partnership',
+  'investment',
+  'mentoring',
+  'other',
+] as const;
 export const ContactInputSchema = z.object({
   intent: z.enum(CONTACT_INTENTS),
   name: z.string().trim().min(2).max(80),
@@ -205,15 +259,31 @@ export const RegisterSchema = z.object({
 });
 export const LoginSchema = z.object({ email: z.email().toLowerCase(), password: z.string().min(1).max(128) });
 
-export interface User { id: string; email: string; name: string; plan: 'free' | 'pro'; isDemo: boolean; createdAt: string }
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  plan: 'free' | 'pro';
+  isDemo: boolean;
+  createdAt: string;
+}
 
 export const ApiKeyInputSchema = z.object({ name: z.string().trim().min(1).max(40) });
-export interface ApiKey { id: string; name: string; prefix: string; createdAt: string; lastUsedAt: string | null }
+export interface ApiKey {
+  id: string;
+  name: string;
+  prefix: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
 
 export const RANGES = ['24h', '7d', '30d', '90d'] as const;
 export type Range = (typeof RANGES)[number];
 
-export interface Breakdown { key: string; value: number }
+export interface Breakdown {
+  key: string;
+  value: number;
+}
 export interface Analytics {
   range: Range;
   total: number;
@@ -228,11 +298,30 @@ export interface Analytics {
   referrers: Breakdown[];
   sources: Breakdown[];
   topLinks: { id: string; slug: string; title: string | null; clicks: number }[];
-  recent: { slug: string; country: string | null; city: string | null; device: string; browser: string; at: string }[];
+  recent: {
+    slug: string;
+    country: string | null;
+    city: string | null;
+    device: string;
+    browser: string;
+    at: string;
+  }[];
 }
 
 export const BulkImportSchema = z.object({
-  rows: z.array(z.object({ url: httpUrl, slug: z.string().optional(), title: z.string().optional(), tags: z.string().optional() })).min(1).max(500),
+  rows: z
+    .array(
+      z.object({
+        url: httpUrl,
+        slug: z.string().optional(),
+        title: z.string().optional(),
+        tags: z.string().optional(),
+      }),
+    )
+    .min(1)
+    .max(500),
 });
 
-export interface ApiError { error: { code: string; message: string; fields?: Record<string, string> } }
+export interface ApiError {
+  error: { code: string; message: string; fields?: Record<string, string> };
+}
