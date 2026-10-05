@@ -21,6 +21,8 @@ import {
   BillingPage,
   LandingPage,
 } from './pages';
+import { BusinessCardsPage } from './pages/BusinessCardsPage';
+import { BusinessCardEditorPage } from './pages/BusinessCardEditorPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -99,6 +101,14 @@ export const router = createBrowserRouter([
             path: ':id/stats',
             element: <QRStatsPage />,
           },
+        ],
+      },
+      {
+        path: 'business-cards',
+        children: [
+          { index: true, element: <BusinessCardsPage /> },
+          { path: 'new', element: <BusinessCardEditorPage /> },
+          { path: ':id/edit', element: <BusinessCardEditorPage /> },
         ],
       },
       {

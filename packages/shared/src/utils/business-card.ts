@@ -116,6 +116,7 @@ function normalizeUrl(value: unknown, path: string, maxLength = 500): string | n
   if (
     !['http:', 'https:'].includes(parsed.protocol) ||
     !parsed.hostname ||
+    /[%\s]/.test(parsed.hostname) ||
     parsed.username ||
     parsed.password
   ) {
