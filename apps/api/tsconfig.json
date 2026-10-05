@@ -1,12 +1,5 @@
 {
-  "extends": "../../packages/config/typescript/node.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "outDir": "./dist",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test"]
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "noEmit": true, "lib": ["ES2022"], "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers/types"] },
+  "include": ["src", "test", "worker-configuration.d.ts"]
 }

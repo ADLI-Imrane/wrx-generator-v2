@@ -1,9 +1,7 @@
-# Ignore files
 node_modules
 dist
-build
-coverage
-.next
-.expo
-.turbo
+.wrangler
 pnpm-lock.yaml
+coverage
+playwright-report
+test-results
