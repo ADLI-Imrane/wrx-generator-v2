@@ -183,12 +183,15 @@ function LinkRow({ l, lang, onEdit }: { l: Link; lang: string; onEdit: () => voi
   const [menu, setMenu] = useState(false);
   const expired = l.expiresAt && Date.parse(l.expiresAt) < Date.now();
   return (
-    <li className="group relative flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5 sm:flex-nowrap">
+    <li className="group relative flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 transition-colors hover:bg-raised/50 sm:flex-nowrap">
+      <span className="hidden size-8 shrink-0 place-items-center rounded-full border border-line bg-bg text-[12px] font-semibold uppercase text-muted sm:grid" aria-hidden>
+        {hostOf(l.url).replace(/^www\./, '').charAt(0)}
+      </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <RLink
             to={`/app/links/${l.id}`}
-            className="truncate font-mono text-[14.5px] font-semibold hover:text-accent"
+            className="truncate text-[14px] font-medium hover:underline hover:underline-offset-4"
           >
             /{l.slug}
           </RLink>
@@ -208,10 +211,10 @@ function LinkRow({ l, lang, onEdit }: { l: Link; lang: string; onEdit: () => voi
             />
           )}
         </div>
-        <p className="truncate text-[13.5px] text-muted">
+        <p className="truncate text-[12.5px] text-muted">
           {l.title ? (
             <>
-              <span className="text-fg">{l.title}</span> —{' '}
+              <span>{l.title}</span> ·{' '}
             </>
           ) : null}
           {hostOf(l.url)}
@@ -224,21 +227,21 @@ function LinkRow({ l, lang, onEdit }: { l: Link; lang: string; onEdit: () => voi
       </div>
       <RLink
         to={`/app/links/${l.id}`}
-        className="flex w-20 items-center justify-end gap-1.5 text-[14px] tabular hover:text-accent"
+        className="flex h-7 items-center justify-end gap-1.5 rounded-md border border-line bg-bg px-2 text-[12.5px] tabular hover:border-line-strong"
         title={t('See analytics')}
       >
-        <BarChart3 className="size-4 text-faint" />
+        <BarChart3 className="size-3.5 text-faint" />
         {compact(l.clicks, lang)}
       </RLink>
       <span className="hidden w-28 text-right text-[12.5px] text-faint lg:block">
         {relTime(l.createdAt, lang)}
       </span>
-      <CopyButton value={l.shortUrl} />
+      <CopyButton value={l.shortUrl} variant="ghost" className="opacity-70 group-hover:opacity-100" />
       <div className="relative">
         <button
           onClick={() => setMenu(!menu)}
           onBlur={() => setTimeout(() => setMenu(false), 150)}
-          className="grid size-8 place-items-center rounded-lg text-muted hover:bg-raised"
+          className="grid size-8 place-items-center rounded-md text-muted hover:bg-raised"
           aria-label={t('More actions')}
           aria-expanded={menu}
         >

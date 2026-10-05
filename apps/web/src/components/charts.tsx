@@ -89,7 +89,7 @@ export function AreaChart({
         <path
           d={line('qr')}
           fill="none"
-          stroke="var(--color-signal)"
+          stroke="var(--muted)"
           strokeWidth="2"
           strokeDasharray="5 4"
           strokeLinejoin="round"
@@ -137,7 +137,7 @@ export function AreaChart({
           {t('All clicks')}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-0.5 w-4 rounded border-t-2 border-dashed border-signal" />
+          <span className="h-0.5 w-4 rounded border-t-2 border-dashed border-muted" />
           {t('QR scans')}
         </span>
       </div>
@@ -201,7 +201,7 @@ export function Stat({
   return (
     <div className="card grid gap-1 p-4">
       <span className="text-[13px] text-muted">{label}</span>
-      <span className="font-display text-[30px] font-semibold leading-none tabular">{value}</span>
+      <span className="text-[28px] font-semibold tracking-[-0.035em] leading-none tabular">{value}</span>
       {sub && (
         <span
           className={cx(

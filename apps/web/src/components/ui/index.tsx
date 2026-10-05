@@ -22,11 +22,11 @@ export const cx = clsx;
 /* ------------------------------ Button ------------------------------ */
 type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'signal';
 const btn: Record<BtnVariant, string> = {
-  primary: 'bg-ink text-white hover:bg-ink-2 dark:bg-accent dark:text-ink dark:hover:brightness-110',
-  secondary: 'bg-surface text-fg border border-line hover:bg-raised',
+  primary: 'bg-fg text-bg hover:bg-fg/85 shadow-[inset_0_1px_0_rgb(255_255_255/.12)]',
+  secondary: 'bg-surface text-fg border border-line-strong hover:bg-raised shadow-[0_1px_1px_rgb(0_0_0/.03)]',
   ghost: 'text-muted hover:text-fg hover:bg-raised',
   danger: 'bg-coral text-white hover:brightness-95',
-  signal: 'bg-signal text-ink hover:brightness-105',
+  signal: 'bg-accent text-white hover:brightness-110 shadow-[inset_0_1px_0_rgb(255_255_255/.2),0_1px_2px_rgb(0_0_0/.1)] dark:text-[#0a0a0b]',
 };
 export const Button = forwardRef<
   HTMLButtonElement,
@@ -40,7 +40,7 @@ export const Button = forwardRef<
     ref={ref}
     disabled={disabled || loading}
     className={cx(
-      'inline-flex select-none items-center justify-center gap-2 rounded-[var(--radius-control)] font-medium transition-[background,filter,color] duration-150 disabled:pointer-events-none disabled:opacity-55',
+      'inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] font-medium transition-[background,filter,color] duration-150 disabled:pointer-events-none disabled:opacity-55',
       size === 'sm' && 'h-8 px-3 text-[13px]',
       size === 'md' && 'h-10 px-4 text-sm',
       size === 'lg' && 'h-12 px-6 text-[15px]',
@@ -123,7 +123,7 @@ export const Input = forwardRef<
       <input
         ref={ref}
         aria-invalid={invalid || undefined}
-        className={cx(control, 'h-10 w-full pl-9', className)}
+        className={cx(control, 'h-9 w-full pl-9', className)}
         {...p}
       />
     </div>
@@ -131,7 +131,7 @@ export const Input = forwardRef<
     <input
       ref={ref}
       aria-invalid={invalid || undefined}
-      className={cx(control, 'h-10 w-full', className)}
+      className={cx(control, 'h-9 w-full', className)}
       {...p}
     />
   ),
@@ -152,7 +152,7 @@ export const Select = ({ className, children, ...p }: SelectHTMLAttributes<HTMLS
     className={cx(
       control,
       !className?.includes('w-auto') && 'w-full',
-      'h-10 appearance-none bg-[length:16px] bg-[right_10px_center] bg-no-repeat pr-9',
+      'h-9 appearance-none bg-[length:16px] bg-[right_10px_center] bg-no-repeat pr-9',
       className,
     )}
     style={{
@@ -266,7 +266,7 @@ export const Badge = ({
 );
 
 export const Kbd = ({ children }: { children: ReactNode }) => (
-  <kbd className="rounded-md border border-line bg-raised px-1.5 py-0.5 font-mono text-[11px] text-muted">
+  <kbd className="rounded-[5px] border border-line bg-surface px-1.5 py-px font-sans text-[11px] text-muted shadow-[0_1px_0_var(--line)]">
     {children}
   </kbd>
 );
@@ -302,7 +302,7 @@ export function Dialog({
       onClick={(e) => e.target === ref.current && onClose()}
       aria-label={title}
       className={cx(
-        'm-0 max-h-none max-w-none bg-transparent p-0 backdrop:bg-ink/40 backdrop:backdrop-blur-[2px] open:flex',
+        'm-0 max-h-none max-w-none bg-transparent p-0 backdrop:bg-black/30 backdrop:backdrop-blur-[3px] open:flex',
         side
           ? 'ml-auto h-dvh w-full sm:w-[min(560px,100vw)] open:animate-[slide-in_.32s_var(--ease-out)]'
           : 'mx-auto my-auto w-[calc(100vw-24px)] open:animate-[pop_.22s_var(--ease-out)]',
@@ -318,7 +318,7 @@ export function Dialog({
         )}
       >
         <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-3.5">
-          <h2 className="text-[17px] font-semibold">{title}</h2>
+          <h2 className="text-[15px] font-semibold">{title}</h2>
           <IconButton label={t('Close')} onClick={onClose}>
             <X className="size-4" />
           </IconButton>
@@ -356,7 +356,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               i.tone === 'ok' ? 'bg-ink text-white dark:bg-raised dark:text-fg' : 'bg-coral text-white',
             )}
           >
-            {i.tone === 'ok' && <span className="size-2 rounded-full bg-signal" aria-hidden />}
+            {i.tone === 'ok' && <span className="size-1.5 rounded-full bg-mint" aria-hidden />}
             {i.text}
           </div>
         ))}

@@ -64,9 +64,9 @@ export function AppShell() {
       end={to === '/app'}
       className={({ isActive }) =>
         cx(
-          'flex h-10 items-center gap-3 rounded-[10px] px-3 text-[14px] font-medium transition',
+          'flex h-8 items-center gap-2.5 rounded-[7px] px-2 text-[13.5px] transition-colors [&>svg]:size-4 [&>svg]:shrink-0',
           isActive
-            ? 'bg-ink text-white dark:bg-accent-soft dark:text-fg'
+            ? 'bg-surface font-medium text-fg shadow-[0_0_0_1px_var(--line),0_1px_2px_rgb(0_0_0/.05)] [&>svg]:text-accent'
             : 'text-muted hover:bg-raised hover:text-fg',
         )
       }
@@ -74,7 +74,7 @@ export function AppShell() {
       {icon}
       <span className="flex-1">{label}</span>
       {!!badge && (
-        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-signal px-1.5 text-[11px] font-semibold text-ink">
+        <span className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1.5 text-[10.5px] font-semibold text-white dark:text-[#0a0a0b]">
           {badge}
         </span>
       )}
@@ -82,66 +82,68 @@ export function AppShell() {
   );
 
   const sidebar = (
-    <nav aria-label={t('Main')} className="flex h-full flex-col gap-6 p-4">
-      <NavLink to="/app" className="px-2 pt-1">
-        <Logo />
-      </NavLink>
+    <nav aria-label={t('Main')} className="flex h-full flex-col gap-5 px-3 py-4">
+      <div className="flex items-center justify-between px-2">
+        <NavLink to="/app"><Logo /></NavLink>
+        <span className="grid size-6 place-items-center rounded-full bg-raised text-[10.5px] font-semibold text-muted ring-1 ring-line" title={me.data.email}>
+          {(me.data.name || me.data.email).slice(0, 2).toUpperCase()}
+        </span>
+      </div>
       <button
         onClick={() => setPalette(true)}
-        className="flex h-10 items-center gap-2 rounded-[10px] border border-line bg-surface px-3 text-[13.5px] text-faint transition hover:border-faint"
+        className="flex h-8 items-center gap-2 rounded-[7px] border border-line bg-surface px-2.5 text-[13px] text-faint transition-colors hover:border-line-strong hover:text-muted"
       >
-        <Search className="size-4" /> <span className="flex-1 text-left">{t('Search or jump to…')}</span>
+        <Search className="size-3.5" /> <span className="flex-1 truncate text-left">{t('Search')}</span>
         <Kbd>⌘K</Kbd>
       </button>
-      <div className="grid gap-1">
-        {item('/app', <BarChart3 className="size-[18px]" />, t('Overview'))}
-        {item('/app/links', <Link2 className="size-[18px]" />, t('Links'))}
-        {item('/app/qr', <QrCode className="size-[18px]" />, t('QR codes'))}
+      <div className="grid gap-px">
+        {item('/app', <BarChart3 />, t('Overview'))}
+        {item('/app/links', <Link2/>, t('Links'))}
+        {item('/app/qr', <QrCode/>, t('QR codes'))}
       </div>
-      <div className="grid gap-1">
-        <span className="px-3 text-[12px] font-medium text-faint">{t('Connect')}</span>
-        {item('/app/profile', <IdCard className="size-[18px]" />, t('Profile & card'))}
-        {item('/app/opportunities', <Briefcase className="size-[18px]" />, t('Opportunities'))}
-        {item('/app/inbox', <Inbox className="size-[18px]" />, t('Inbox'), unread)}
-        {item('/discover', <Compass className="size-[18px]" />, t('Discover'))}
+      <div className="grid gap-px">
+        <span className="px-2 pb-1.5 text-[11.5px] font-medium text-faint">{t('Connect')}</span>
+        {item('/app/profile', <IdCard/>, t('Profile & card'))}
+        {item('/app/opportunities', <Briefcase/>, t('Opportunities'))}
+        {item('/app/inbox', <Inbox/>, t('Inbox'), unread)}
+        {item('/discover', <Compass/>, t('Discover'))}
       </div>
-      <div className="mt-auto grid gap-1">
-        {item('/app/settings', <Settings className="size-[18px]" />, t('Settings'))}
+      <div className="mt-auto grid gap-px">
+        {item('/app/settings', <Settings/>, t('Settings'))}
         <div className="flex items-center gap-1 px-1 pt-2">
           <button
             onClick={() => setDark(toggleTheme())}
-            className="grid size-9 place-items-center rounded-lg text-muted hover:bg-raised hover:text-fg"
+            className="grid size-8 place-items-center rounded-md text-muted hover:bg-raised hover:text-fg"
             aria-label={dark ? t('Light mode') : t('Dark mode')}
           >
             {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>
           <button
             onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}
-            className="grid h-9 place-items-center rounded-lg px-2 text-[12.5px] font-semibold text-muted hover:bg-raised hover:text-fg"
+            className="grid h-8 place-items-center rounded-md px-2 text-[12px] font-medium text-muted hover:bg-raised hover:text-fg"
             aria-label={t('Change language')}
           >
             {lang === 'fr' ? 'EN' : 'FR'}
           </button>
           <button
             onClick={logout}
-            className="ml-auto flex h-9 items-center gap-2 rounded-lg px-2 text-[13px] text-muted hover:bg-raised hover:text-fg"
+            className="ml-auto flex h-8 items-center gap-2 rounded-md px-2 text-[12.5px] text-muted hover:bg-raised hover:text-fg"
           >
             <LogOut className="size-4" />
             {t('Sign out')}
           </button>
         </div>
-        <div className="truncate px-3 text-[12px] text-faint">{me.data.email}</div>
-      </div>
+              </div>
     </nav>
   );
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[260px_1fr]">
-      <aside className="sticky top-0 hidden h-dvh border-r border-line bg-bg lg:block">{sidebar}</aside>
+    <div className="min-h-dvh bg-bg lg:grid lg:grid-cols-[236px_1fr]">
+      <aside className="sticky top-0 hidden h-dvh lg:block">{sidebar}</aside>
       <div
         className={cx('fixed inset-0 z-40 bg-ink/40 lg:hidden', open ? 'block' : 'hidden')}
         onClick={() => setOpen(false)}
-      />
+    />
       <aside
         className={cx(
           'fixed inset-y-0 left-0 z-50 w-[280px] border-r border-line bg-bg transition-transform duration-300 lg:hidden',
@@ -150,7 +152,7 @@ export function AppShell() {
       >
         {sidebar}
       </aside>
-      <div className="min-w-0">
+      <div className="min-w-0 lg:my-2 lg:mr-2 lg:h-[calc(100dvh-16px)] lg:overflow-y-auto lg:rounded-[14px] lg:border lg:border-line lg:bg-surface lg:shadow-[0_1px_2px_rgb(0_0_0/.03)]" id="app-scroll">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-bg/85 px-4 backdrop-blur lg:hidden">
           <button
             onClick={() => setOpen(true)}
@@ -169,14 +171,15 @@ export function AppShell() {
           </button>
         </header>
         {me.data.isDemo && (
-          <div className="border-b border-line bg-signal/15 px-4 py-2 text-center text-[13px]">
+          <div className="flex items-center justify-center gap-2 border-b border-line px-4 py-2 text-center text-[12.5px] text-muted">
+            <span className="size-1.5 animate-pulse rounded-full bg-signal" aria-hidden />
             {t('You are exploring the demo workspace with sample data. It resets every night.')}{' '}
-            <NavLink to="/register" className="font-semibold underline underline-offset-2">
+            <NavLink to="/register" className="font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
               {t('Create your own account')}
             </NavLink>
           </div>
         )}
-        <main className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-8 sm:py-10">
+        <main className="mx-auto w-full max-w-[1160px] px-4 py-6 sm:px-10 sm:py-10">
           <Outlet />
         </main>
       </div>

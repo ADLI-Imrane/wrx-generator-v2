@@ -66,7 +66,7 @@ export function Avatar({
   ) : (
     <span
       className={cx(
-        'grid shrink-0 place-items-center bg-ink font-display font-semibold text-signal dark:bg-accent-soft',
+        'grid shrink-0 place-items-center bg-raised font-semibold text-fg ring-1 ring-line',
         kind === 'person' ? 'rounded-full' : 'rounded-xl',
       )}
       style={{ width: size, height: size, fontSize: size * 0.36 }}

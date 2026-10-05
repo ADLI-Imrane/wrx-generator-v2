@@ -127,13 +127,14 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           </p>
         </form>
       </div>
-      <aside className="module-grid relative hidden overflow-hidden bg-ink lg:block" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(58,91,255,.55),transparent_55%),radial-gradient(circle_at_80%_90%,rgba(255,183,3,.35),transparent_50%)]" />
+      <aside className="relative hidden overflow-hidden border-l border-line bg-[#08080a] lg:block" aria-hidden>
+        <div className="absolute inset-0 grid-lines opacity-20 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
+        <div className="absolute left-1/2 top-[-160px] h-[420px] w-[620px] -translate-x-1/2 rounded-full bg-[#4c5bff]/35 blur-[110px]" />
         <div className="relative flex h-full flex-col justify-end gap-4 p-14 text-white">
-          <p className="max-w-md font-display text-[30px] font-semibold leading-tight">
+          <p className="max-w-md text-[28px] font-semibold leading-tight tracking-[-0.03em]">
             {t('Print a QR code once. Change where it points whenever you like.')}
           </p>
-          <p className="text-white/60">
+          <p className="text-[15px] leading-relaxed text-white/55">
             {t(
               'Every WRX QR code is dynamic: it encodes a short link, so menus, posters and business cards never need reprinting.',
             )}

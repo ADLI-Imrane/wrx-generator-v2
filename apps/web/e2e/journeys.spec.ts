@@ -23,7 +23,7 @@ test('a visitor signs up, creates a link and is redirected through it', async ({
 
 test('the demo shows analytics, the directory and the inbox', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Explore the live demo' }).click();
+  await page.getByRole('button', { name: 'Explore the live demo' }).first().click();
   await expect(page).toHaveURL(/\/app$/);
   await expect(page.getByText('Unique visitors')).toBeVisible();
   await page.goto('/app/inbox');
