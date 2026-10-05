@@ -14,6 +14,19 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
   avatar_url TEXT,
+  avatar_path TEXT,
+  job_title TEXT,
+  company TEXT,
+  phone TEXT,
+  website TEXT,
+  address TEXT,
+  linkedin_url TEXT,
+  github_url TEXT,
+  instagram_url TEXT,
+  x_url TEXT,
+  company_logo_path TEXT,
+  primary_brand_color TEXT CHECK (primary_brand_color IS NULL OR primary_brand_color ~ '^#[0-9A-Fa-f]{6}$'),
+  secondary_brand_color TEXT CHECK (secondary_brand_color IS NULL OR secondary_brand_color ~ '^#[0-9A-Fa-f]{6}$'),
   subscription_tier TEXT NOT NULL DEFAULT 'free' CHECK (subscription_tier IN ('free', 'pro', 'business', 'enterprise')),
   stripe_customer_id TEXT UNIQUE,
   stripe_subscription_id TEXT,
@@ -28,8 +41,10 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own profile" ON public.profiles
   FOR SELECT USING (auth.uid() = id);
 
-CREATE POLICY "Users can update own profile" ON public.profiles
-  FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Enable insert for authenticated users only" ON public.profiles;
+REVOKE ALL ON TABLE public.profiles FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON TABLE public.profiles TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.profiles TO service_role;
 
 -- Trigger for updated_at
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
@@ -61,6 +76,18 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+CREATE OR REPLACE FUNCTION public.handle_user_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.profiles SET email = NEW.email, updated_at = NOW() WHERE id = NEW.id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_updated
+  AFTER UPDATE ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_user_update();
 
 -- =============================================
 -- LINKS TABLE

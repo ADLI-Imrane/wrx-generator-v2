@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
-import { useUpdateProfile, useUpdatePassword, useLogout } from '../hooks/useAuth';
+import { useProfile, useUpdateProfile, useUpdatePassword, useLogout } from '../hooks/useAuth';
 import { useSubscription, useUsage } from '../hooks/useBilling';
+import { supabase } from '../lib/supabase';
+import type { UserProfileUpdate } from '@wrx/shared';
 import {
   User,
-  Mail,
   Lock,
   Bell,
   Trash2,
@@ -23,6 +24,89 @@ import { Modal } from '../components/Modal';
 
 type SettingsTab = 'profile' | 'security' | 'notifications' | 'billing' | 'danger';
 
+type ProfileForm = Omit<UserProfileUpdate, 'avatarPath' | 'companyLogoPath'>;
+
+const emptyProfileForm: ProfileForm = {
+  fullName: '', jobTitle: '', company: '', phone: '', website: '', address: '',
+  linkedinUrl: '', githubUrl: '', instagramUrl: '', xUrl: '',
+  primaryBrandColor: '', secondaryBrandColor: '',
+};
+
+function ProfileField({
+  id, label, value, onChange, type = 'text', maxLength, placeholder, autoComplete,
+}: {
+  id: string; label: string; value: string; onChange: (value: string) => void;
+  type?: string; maxLength?: number; placeholder?: string; autoComplete?: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-gray-700">{label}</label>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        maxLength={maxLength}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className="input w-full"
+      />
+    </div>
+  );
+}
+
+function ProfileImageField({
+  id, label, url, busy, disabled, onChange,
+}: {
+  id: string; label: string; url?: string; busy: boolean; disabled: boolean;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-50">
+        {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : <User size={22} className="text-gray-400" aria-hidden="true" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <label htmlFor={id} className="mb-2 block text-sm font-medium text-gray-800">{label}</label>
+        <input
+          id={id}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          onChange={onChange}
+          disabled={busy || disabled}
+          className="block min-h-11 max-w-full text-sm text-gray-700 file:mr-3 file:min-h-11 file:cursor-pointer file:rounded file:border-0 file:bg-gray-100 file:px-3 file:text-sm file:font-medium file:text-gray-800 hover:file:bg-gray-200 disabled:opacity-60"
+        />
+        {busy && <span className="text-xs text-gray-500" role="status">Envoi de l’image…</span>}
+      </div>
+    </div>
+  );
+}
+
+function ProfileColorField({
+  id, label, value, onChange, onClear,
+}: {
+  id: string; label: string; value: string;
+  onChange: (value: string) => void; onClear: () => void;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-gray-700">{label}</label>
+      <div className="flex min-h-12 items-center gap-3">
+        <input
+          id={id}
+          type="color"
+          value={value || '#FFFFFF'}
+          onChange={(event) => onChange(event.target.value.toUpperCase())}
+          aria-label={`${label} — choisir une couleur`}
+          className="h-11 w-12 cursor-pointer rounded border border-gray-300 bg-white p-1"
+        />
+        <code className="text-sm text-gray-700">{value || 'Non définie'}</code>
+        {value && <button type="button" onClick={onClear} className="ml-auto min-h-11 px-2 text-sm text-gray-600 underline">Effacer</button>}
+      </div>
+    </div>
+  );
+}
+
 export function SettingsPage() {
   const { user, profile } = useAuthStore();
   const navigate = useNavigate();
@@ -31,10 +115,35 @@ export function SettingsPage() {
   // Billing data
   const { data: subscription, isLoading: isLoadingSubscription } = useSubscription();
   const { data: usage, isLoading: isLoadingUsage } = useUsage();
+  const { isLoading: isLoadingProfile, isError: isProfileError, refetch: refetchProfile } = useProfile();
+  const isProfileReady = !!user && profile?.id === user.id && !isLoadingProfile && !isProfileError;
 
   // Profile form
-  const [fullName, setFullName] = useState(profile?.fullName || '');
+  const [profileForm, setProfileForm] = useState<ProfileForm>({
+    ...emptyProfileForm,
+    fullName: profile?.fullName || '',
+  });
   const [profileSuccess, setProfileSuccess] = useState(false);
+  const [profileImageError, setProfileImageError] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState<'avatar' | 'logo' | null>(null);
+
+  useEffect(() => {
+    if (!profile) return;
+    setProfileForm({
+      fullName: profile.fullName || '',
+      jobTitle: profile.jobTitle || '',
+      company: profile.company || '',
+      phone: profile.phone || '',
+      website: profile.website || '',
+      address: profile.address || '',
+      linkedinUrl: profile.linkedinUrl || '',
+      githubUrl: profile.githubUrl || '',
+      instagramUrl: profile.instagramUrl || '',
+      xUrl: profile.xUrl || '',
+      primaryBrandColor: profile.primaryBrandColor || '',
+      secondaryBrandColor: profile.secondaryBrandColor || '',
+    });
+  }, [profile]);
 
   // Password form
   const [_currentPassword, setCurrentPassword] = useState('');
@@ -64,7 +173,7 @@ export function SettingsPage() {
     e.preventDefault();
     setProfileSuccess(false);
     updateProfile(
-      { fullName },
+      profileForm,
       {
         onSuccess: () => {
           setProfileSuccess(true);
@@ -153,63 +262,82 @@ export function SettingsPage() {
           {activeTab === 'profile' && (
             <div className="card space-y-6">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Informations du profil</h2>
-                <p className="text-sm text-gray-600">Mettez à jour vos informations personnelles</p>
+                <h2 className="text-lg font-semibold text-gray-900">Profil et identité de marque</h2>
+                <p className="text-sm text-gray-600">Une identité réutilisable dans vos futurs outils WRX.</p>
               </div>
 
               {profileSuccess && (
-                <div className="flex items-center gap-2 rounded-lg bg-green-50 p-4 text-green-700">
-                  <CheckCircle size={20} />
+                <div role="status" className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-green-700">
+                  <CheckCircle size={18} aria-hidden="true" />
                   <span className="text-sm">Profil mis à jour avec succès</span>
                 </div>
               )}
-
-              {profileError && (
-                <div className="flex items-center gap-2 rounded-lg bg-red-50 p-4 text-red-700">
-                  <AlertCircle size={20} />
-                  <span className="text-sm">{(profileError as Error).message}</span>
+              {(profileError || profileImageError) && (
+                <div role="alert" className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-red-700">
+                  <AlertCircle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  <span className="text-sm">{profileImageError || (profileError as Error).message}</span>
+                </div>
+              )}
+              {isLoadingProfile && <p role="status" className="text-sm text-gray-600">Chargement de votre profil…</p>}
+              {isProfileError && (
+                <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
+                  <span className="text-sm">Votre profil n’a pas pu être chargé. Réessayez avant d’enregistrer.</span>
+                  <button type="button" onClick={() => void refetchProfile()} className="min-h-11 px-2 text-sm font-semibold underline">Réessayer</button>
                 </div>
               )}
 
-              <form onSubmit={handleProfileSubmit} className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Nom complet
-                  </label>
-                  <div className="relative">
-                    <User
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      size={18}
-                    />
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="input w-full pl-10"
-                    />
+              <form onSubmit={handleProfileSubmit} className="settings-profile-form space-y-6">
+                <fieldset className="space-y-4">
+                  <legend className="mb-3 text-base font-semibold text-gray-900">Informations personnelles</legend>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <ProfileField id="profile-full-name" label="Nom complet" value={profileForm.fullName || ''} onChange={(value) => setProfileField('fullName', value)} maxLength={150} autoComplete="name" />
+                    <div>
+                      <label htmlFor="profile-email" className="mb-1.5 block text-sm font-medium text-gray-700">Email</label>
+                      <input id="profile-email" type="email" value={user?.email || ''} readOnly aria-describedby="profile-email-help" className="input w-full bg-gray-50" />
+                      <p id="profile-email-help" className="mt-1 text-xs text-gray-500">Géré par votre compte d’authentification.</p>
+                    </div>
+                    <ProfileField id="profile-phone" label="Téléphone" type="tel" value={profileForm.phone || ''} onChange={(value) => setProfileField('phone', value)} maxLength={32} autoComplete="tel" placeholder="+212 …" />
+                    <ProfileField id="profile-address" label="Adresse" value={profileForm.address || ''} onChange={(value) => setProfileField('address', value)} maxLength={300} autoComplete="street-address" />
                   </div>
-                </div>
+                </fieldset>
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-                  <div className="relative">
-                    <Mail
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      size={18}
-                    />
-                    <input
-                      type="email"
-                      value={user?.email || ''}
-                      disabled
-                      className="input w-full bg-gray-50 pl-10"
-                    />
+                <fieldset className="space-y-4 border-t border-gray-200 pt-5">
+                  <legend className="mb-3 text-base font-semibold text-gray-900">Informations professionnelles</legend>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <ProfileField id="profile-job-title" label="Fonction" value={profileForm.jobTitle || ''} onChange={(value) => setProfileField('jobTitle', value)} maxLength={120} autoComplete="organization-title" />
+                    <ProfileField id="profile-company" label="Entreprise" value={profileForm.company || ''} onChange={(value) => setProfileField('company', value)} maxLength={150} autoComplete="organization" />
+                    <div className="sm:col-span-2">
+                      <ProfileField id="profile-website" label="Site web" value={profileForm.website || ''} onChange={(value) => setProfileField('website', value)} maxLength={500} autoComplete="url" placeholder="https://exemple.com" />
+                    </div>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">L'email ne peut pas être modifié</p>
-                </div>
+                </fieldset>
 
-                <div className="flex justify-end">
-                  <button type="submit" disabled={isUpdatingProfile} className="btn btn-primary">
-                    {isUpdatingProfile ? 'Enregistrement...' : 'Enregistrer'}
+                <fieldset className="space-y-4 border-t border-gray-200 pt-5">
+                  <legend className="mb-3 text-base font-semibold text-gray-900">Liens sociaux</legend>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <ProfileField id="profile-linkedin" label="LinkedIn" value={profileForm.linkedinUrl || ''} onChange={(value) => setProfileField('linkedinUrl', value)} maxLength={500} placeholder="https://linkedin.com/in/…" />
+                    <ProfileField id="profile-github" label="GitHub" value={profileForm.githubUrl || ''} onChange={(value) => setProfileField('githubUrl', value)} maxLength={500} placeholder="https://github.com/…" />
+                    <ProfileField id="profile-instagram" label="Instagram" value={profileForm.instagramUrl || ''} onChange={(value) => setProfileField('instagramUrl', value)} maxLength={500} placeholder="https://instagram.com/…" />
+                    <ProfileField id="profile-x" label="X / Twitter" value={profileForm.xUrl || ''} onChange={(value) => setProfileField('xUrl', value)} maxLength={500} placeholder="https://x.com/…" />
+                  </div>
+                </fieldset>
+
+                <fieldset className="space-y-4 border-t border-gray-200 pt-5">
+                  <legend className="mb-3 text-base font-semibold text-gray-900">Identité de marque</legend>
+                  <p className="-mt-2 text-sm text-gray-600">Images PNG, JPEG ou WebP — 2 Mo maximum.</p>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <ProfileImageField id="profile-avatar" label="Photo de profil" url={profile?.avatarUrl} busy={uploadingImage === 'avatar'} disabled={!isProfileReady} onChange={(event) => void handleProfileImage(event, 'avatar')} />
+                    <ProfileImageField id="profile-company-logo" label="Logo de l’entreprise" url={profile?.companyLogoUrl} busy={uploadingImage === 'logo'} disabled={!isProfileReady} onChange={(event) => void handleProfileImage(event, 'logo')} />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <ProfileColorField id="profile-primary-color" label="Couleur principale" value={profileForm.primaryBrandColor || ''} onChange={(value) => setProfileField('primaryBrandColor', value)} onClear={() => setProfileField('primaryBrandColor', '')} />
+                    <ProfileColorField id="profile-secondary-color" label="Couleur secondaire" value={profileForm.secondaryBrandColor || ''} onChange={(value) => setProfileField('secondaryBrandColor', value)} onClear={() => setProfileField('secondaryBrandColor', '')} />
+                  </div>
+                </fieldset>
+
+                <div className="flex justify-end border-t border-gray-200 pt-5">
+                  <button type="submit" disabled={!isProfileReady || isUpdatingProfile || uploadingImage !== null} className="btn btn-primary min-h-11">
+                    {isUpdatingProfile ? 'Enregistrement…' : 'Enregistrer le profil'}
                   </button>
                 </div>
               </form>

@@ -1,32 +1,58 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/auth.store';
-import type { UserProfile } from '@wrx/shared';
+import { api } from '../lib/api';
+import type { UserProfile, UserProfileUpdate } from '@wrx/shared';
 
 // Query keys
 export const authKeys = {
   all: ['auth'] as const,
   session: () => [...authKeys.all, 'session'] as const,
-  profile: () => [...authKeys.all, 'profile'] as const,
+  profile: (userId: string) => [...authKeys.all, 'profile', userId] as const,
 };
+
+function normalizeProfileResponse(data: unknown): UserProfile {
+  if (!data || typeof data !== 'object') throw new Error('Invalid profile response');
+  const row = data as Record<string, unknown>;
+  const text = (...keys: string[]) => {
+    const value = keys.map((key) => row[key]).find((candidate) => typeof candidate === 'string');
+    return typeof value === 'string' ? value : undefined;
+  };
+
+  return {
+    id: text('id') ?? '',
+    email: text('email') ?? '',
+    fullName: text('fullName', 'full_name'),
+    avatarUrl: text('avatarUrl', 'avatar_url'),
+    jobTitle: text('jobTitle', 'job_title'),
+    company: text('company'),
+    phone: text('phone'),
+    website: text('website'),
+    address: text('address'),
+    linkedinUrl: text('linkedinUrl', 'linkedin_url'),
+    githubUrl: text('githubUrl', 'github_url'),
+    instagramUrl: text('instagramUrl', 'instagram_url'),
+    xUrl: text('xUrl', 'x_url'),
+    companyLogoUrl: text('companyLogoUrl', 'company_logo_url'),
+    primaryBrandColor: text('primaryBrandColor', 'primary_brand_color'),
+    secondaryBrandColor: text('secondaryBrandColor', 'secondary_brand_color'),
+    tier: (text('tier') ?? 'free') as UserProfile['tier'],
+    linksCreated: typeof row['linksCreated'] === 'number' ? row['linksCreated'] as number : undefined,
+    qrCreated: typeof row['qrCreated'] === 'number' ? row['qrCreated'] as number : undefined,
+    createdAt: text('createdAt', 'created_at') ?? '',
+    updatedAt: text('updatedAt', 'updated_at') ?? '',
+  };
+}
 
 // Hook pour récupérer le profil utilisateur
 export function useProfile() {
   const { user } = useAuthStore();
 
   return useQuery({
-    queryKey: authKeys.profile(),
+    queryKey: authKeys.profile(user?.id ?? 'signed-out'),
     queryFn: async (): Promise<UserProfile | null> => {
       if (!user) return null;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
+      return normalizeProfileResponse(await api.get<unknown>('/auth/me'));
     },
     enabled: !!user,
   });
@@ -157,29 +183,17 @@ export function useUpdatePassword() {
 
 // Hook pour mettre à jour le profil
 export function useUpdateProfile() {
-  const { setProfile } = useAuthStore();
+  const { user, setProfile } = useAuthStore();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (profile: Partial<UserProfile>) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    mutationFn: async (profile: UserProfileUpdate) => {
       if (!user) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(profile)
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as UserProfile;
+      return normalizeProfileResponse(await api.put<unknown>('/auth/me', profile));
     },
     onSuccess: (data) => {
       setProfile(data);
-      queryClient.invalidateQueries({ queryKey: authKeys.profile() });
+      queryClient.setQueryData(authKeys.profile(data.id), data);
     },
   });
 }
