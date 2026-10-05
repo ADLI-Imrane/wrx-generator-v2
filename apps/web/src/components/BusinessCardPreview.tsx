@@ -17,9 +17,11 @@ function useCardImages(document: BusinessCardDocument) {
         avatarPath ? supabase.storage.from('avatars').createSignedUrl(avatarPath, 3600) : null,
         logoPath ? supabase.storage.from('avatars').createSignedUrl(logoPath, 3600) : null,
       ]);
+      if (avatar?.error) throw avatar.error;
+      if (logo?.error) throw logo.error;
       return {
-        avatar: avatar && !avatar.error ? avatar.data.signedUrl : undefined,
-        logo: logo && !logo.error ? logo.data.signedUrl : undefined,
+        avatar: avatar?.data.signedUrl,
+        logo: logo?.data.signedUrl,
       };
     },
   });
@@ -57,20 +59,22 @@ function CardIdentity({ document, avatarUrl, logoUrl }: {
   );
 }
 
-function BusinessCardFace({ document, side, avatarUrl, logoUrl }: {
+function BusinessCardFace({ document, side, avatarUrl, logoUrl, exportRef, assetsState }: {
   document: BusinessCardDocument;
   side: 'front' | 'back';
   avatarUrl?: string;
   logoUrl?: string;
+  exportRef?: React.Ref<HTMLDivElement>;
+  assetsState: 'loading' | 'ready' | 'error';
 }) {
   const payload = businessCardQrPayload(document);
   const { identity, visibility, brand } = document;
   const initials = identity.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'WR';
 
   if (side === 'back') {
-    if (!document.sides.back.enabled) return <div className="bc-preview-disabled">Verso non activé</div>;
+    if (!document.sides.back.enabled) return <div ref={exportRef} data-assets-state={assetsState} className="bc-preview-disabled">Verso non activé</div>;
     return (
-      <div className={`bc-face bc-back bc-back-${document.sides.back.composition} bc-template-${document.templateKey}`} style={{ '--bc-primary': brand.primaryColor, '--bc-secondary': brand.secondaryColor || '#E7E9E1' } as React.CSSProperties}>
+      <div ref={exportRef} data-assets-state={assetsState} className={`bc-face bc-back bc-back-${document.sides.back.composition} bc-template-${document.templateKey}${exportRef ? ' bc-export-face' : ''}`} style={{ '--bc-primary': brand.primaryColor, '--bc-secondary': brand.secondaryColor || '#E7E9E1' } as React.CSSProperties}>
         <div className="bc-back-mark" aria-hidden="true">{identity.company || initials}</div>
         {(document.sides.back.composition === 'qr' || document.sides.back.composition === 'contact-qr') && visibility.qr && payload && (
           <div className="bc-preview-qr"><QRCodeSVG value={payload} size={100} level="M" includeMargin /></div>
@@ -83,7 +87,7 @@ function BusinessCardFace({ document, side, avatarUrl, logoUrl }: {
   }
 
   return (
-    <div className={`bc-face bc-front bc-template-${document.templateKey}`} style={{ '--bc-primary': brand.primaryColor, '--bc-secondary': brand.secondaryColor || '#E7E9E1' } as React.CSSProperties}>
+    <div ref={exportRef} data-assets-state={assetsState} className={`bc-face bc-front bc-template-${document.templateKey}${exportRef ? ' bc-export-face' : ''}`} style={{ '--bc-primary': brand.primaryColor, '--bc-secondary': brand.secondaryColor || '#E7E9E1' } as React.CSSProperties}>
       <div className="bc-front-rule" aria-hidden="true" />
       {document.templateKey === 'monogram' && <div className="bc-monogram" aria-hidden="true">{initials}</div>}
       {document.sides.front.composition === 'brand' ? (
@@ -103,6 +107,17 @@ function BusinessCardFace({ document, side, avatarUrl, logoUrl }: {
   );
 }
 
+export function BusinessCardArtwork({ document, side, exportRef }: {
+  document: BusinessCardDocument;
+  side: 'front' | 'back';
+  exportRef?: React.Ref<HTMLDivElement>;
+}) {
+  const { data: images, isLoading, isError } = useCardImages(document);
+  const needsAssets = !!(document.identity.avatarPath || document.identity.companyLogoPath);
+  const assetsState = isError ? 'error' : !needsAssets || images ? 'ready' : isLoading ? 'loading' : 'error';
+  return <BusinessCardFace document={document} side={side} avatarUrl={images?.avatar} logoUrl={images?.logo} exportRef={exportRef} assetsState={assetsState} />;
+}
+
 export function BusinessCardPreview({ document, side, onSideChange, compact = false, hideSideSwitch = false }: {
   document: BusinessCardDocument;
   side: 'front' | 'back';
@@ -110,7 +125,6 @@ export function BusinessCardPreview({ document, side, onSideChange, compact = fa
   compact?: boolean;
   hideSideSwitch?: boolean;
 }) {
-  const { data: images } = useCardImages(document);
   return (
     <section className={`bc-preview-panel${compact ? ' is-compact' : ''}`} aria-label="Aperçu de la carte">
       <div className="bc-preview-toolbar">
@@ -124,7 +138,7 @@ export function BusinessCardPreview({ document, side, onSideChange, compact = fa
         </div>}
       </div>
       <div className="bc-preview-stage">
-        <BusinessCardFace document={document} side={side} avatarUrl={images?.avatar} logoUrl={images?.logo} />
+        <BusinessCardArtwork document={document} side={side} />
       </div>
       <p className="bc-preview-footnote">Format de visite · aperçu à l’échelle</p>
     </section>

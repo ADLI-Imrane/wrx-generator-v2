@@ -82,6 +82,17 @@
 .bc-template-list button > svg { position: absolute; top: 8px; right: 7px; color: var(--blue); }
 .bc-save-row { display: flex; justify-content: flex-end; align-items: center; gap: 14px; padding: 20px 0 32px; }
 .bc-save-row .btn { min-height: 43px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.bc-export-section { display: grid; grid-template-columns: minmax(160px,.7fr) minmax(0,1.3fr); align-items: center; gap: 16px 24px; padding: 20px 0 36px; border-top: 1px solid var(--rule); }
+.bc-export-section h2 { margin-top: 5px; font-size: 18px; font-weight: 600; letter-spacing: -.03em; }
+.bc-export-section > div:first-child > p { margin-top: 6px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.bc-export-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.bc-export-actions .btn { min-height: 39px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 10px; }
+.bc-export-actions .btn:disabled { opacity: .55; cursor: wait; }
+.bc-export-feedback { grid-column: 1 / -1; min-height: 15px; margin: -6px 0 0; color: var(--muted); font-size: 10px; text-align: right; }
+.bc-export-feedback.is-error { color: #873a33; }
+.bc-print-document { position: fixed; top: 0; left: -10000px; width: 336px; }
+.bc-print-page { width: 336px; height: 192px; overflow: hidden; }
+.bc-export-face { box-shadow: none !important; border: 0 !important; }
 .bc-spin { animation: bc-spin 900ms linear infinite; }
 @keyframes bc-spin { to { transform: rotate(360deg); } }
 .bc-preview-sticky { position: sticky; top: 95px; min-width: 0; padding: 18px; border: 1px solid var(--rule); background: #eeefe9; }
@@ -185,9 +196,26 @@
   .bc-asset-row .bc-text-button { margin-left: auto; }
   .bc-save-row { justify-content: space-between; gap: 6px; }
   .bc-save-row .btn { flex: 1; font-size: 11px; }
+  .bc-export-section { grid-template-columns: 1fr; gap: 13px; }
+  .bc-export-actions { justify-content: flex-start; }
+  .bc-export-actions .btn { flex: 1 1 120px; }
+  .bc-export-feedback { text-align: left; }
   .bc-preview-sticky { padding: 10px; }
   .bc-face { padding: 6%; }
   .bc-preview-contacts { margin-top: 6%; gap: 5px; }
   .bc-preview-socials { left: 6%; }
 }
 @media (prefers-reduced-motion: reduce) { .bc-spin { animation: none; } }
+
+@media print {
+  @page { size: 3.5in 2in; margin: 0; }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { width: 3.5in !important; min-width: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; background: #fff !important; overflow: visible !important; }
+  body > #root { display: none !important; }
+  body > .bc-print-document { position: static !important; inset: auto !important; display: block !important; width: 3.5in !important; height: auto !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; transform: none !important; }
+  .bc-print-document::before, .bc-print-document::after, .bc-print-page::before, .bc-print-page::after { display: none !important; content: none !important; }
+  .bc-print-page { position: relative !important; display: block !important; box-sizing: border-box !important; width: 3.5in !important; height: 2in !important; min-height: 0 !important; max-height: 2in !important; margin: 0 !important; padding: 0 !important; border: 0 !important; overflow: hidden !important; break-inside: avoid !important; page-break-inside: avoid !important; }
+  .bc-print-page:not(:last-child) { break-after: page !important; page-break-after: always !important; }
+  .bc-print-page:last-child { break-after: auto !important; page-break-after: auto !important; }
+  .bc-print-page > .bc-face, .bc-print-page > .bc-preview-disabled { position: relative !important; display: block !important; box-sizing: border-box !important; width: 3.5in !important; height: 2in !important; min-width: 0 !important; max-width: none !important; min-height: 0 !important; max-height: 2in !important; aspect-ratio: auto !important; margin: 0 !important; padding: 7.2% !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; transform: none !important; overflow: hidden !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, ChevronDown, Eye, EyeOff, LoaderCircle, Save } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Download, Eye, EyeOff, LoaderCircle, Printer, Save } from 'lucide-react';
 import {
   BUSINESS_CARD_SCHEMA_VERSION,
   parseBusinessCardDocument,
@@ -14,7 +14,9 @@ import { useProfile } from '../hooks/useAuth';
 import { useAuthStore } from '../stores/auth.store';
 import { useBusinessCard, useCreateBusinessCard, useUpdateBusinessCard } from '../hooks/useBusinessCards';
 import { BusinessCardPreview } from '../components/BusinessCardPreview';
+import { BusinessCardPrintDocument } from '../components/BusinessCardPrintDocument';
 import { businessCardTemplates } from '../components/businessCardPreview.data';
+import { downloadBusinessCardPng, prepareBusinessCardArtwork, BUSINESS_CARD_PRINT_SPEC } from '../components/businessCardExport';
 
 const emptyVisibility: BusinessCardVisibility = {
   fullName: true, jobTitle: true, company: true, email: true, phone: true, website: true, address: true,
@@ -62,6 +64,10 @@ export function BusinessCardEditorPage() {
   const [formError, setFormError] = useState('');
   const [isPrefilled, setIsPrefilled] = useState(false);
   const didInitialize = useRef(false);
+  const frontArtworkRef = useRef<HTMLDivElement>(null);
+  const backArtworkRef = useRef<HTMLDivElement>(null);
+  const [exportTask, setExportTask] = useState<'front' | 'back' | 'print' | null>(null);
+  const [exportFeedback, setExportFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const isSaving = createCard.isPending || updateCard.isPending;
   const profileReady = profileQuery.isSuccess || profileQuery.isError;
 
@@ -115,6 +121,37 @@ export function BusinessCardEditorPage() {
 
   const updateVisibility = (key: keyof BusinessCardVisibility, checked: boolean) => {
     setDocument((current) => ({ ...current, visibility: { ...current.visibility, [key]: checked } }));
+  };
+
+  const exportPng = async (side: 'front' | 'back') => {
+    const node = (side === 'front' ? frontArtworkRef : backArtworkRef).current;
+    if (!node || exportTask) return;
+    setExportTask(side);
+    setExportFeedback(null);
+    try {
+      await downloadBusinessCardPng(node, title, side);
+      setExportFeedback({ type: 'success', text: `PNG ${side === 'front' ? 'recto' : 'verso'} prêt · ${BUSINESS_CARD_PRINT_SPEC.pngWidth} × ${BUSINESS_CARD_PRINT_SPEC.pngHeight} px.` });
+    } catch (error) {
+      setExportFeedback({ type: 'error', text: error instanceof Error ? error.message : 'Export impossible. Réessayez.' });
+    } finally {
+      setExportTask(null);
+    }
+  };
+
+  const printCard = async () => {
+    if (!frontArtworkRef.current || exportTask) return;
+    setExportTask('print');
+    setExportFeedback(null);
+    try {
+      await prepareBusinessCardArtwork(frontArtworkRef.current);
+      if (document.sides.back.enabled && backArtworkRef.current) await prepareBusinessCardArtwork(backArtworkRef.current);
+      window.print();
+      setExportFeedback({ type: 'success', text: 'Choisissez « Enregistrer au format PDF » dans la fenêtre d’impression.' });
+    } catch (error) {
+      setExportFeedback({ type: 'error', text: error instanceof Error ? error.message : 'Préparation de l’impression impossible. Réessayez.' });
+    } finally {
+      setExportTask(null);
+    }
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -210,10 +247,20 @@ export function BusinessCardEditorPage() {
           </section>
 
           <div className="bc-save-row"><Link to="/business-cards" className="bc-text-button">Annuler</Link><button className="btn btn-primary" type="submit" disabled={isSaving || (!editing && !profileReady) || (editing && !didInitialize.current)}>{isSaving ? <LoaderCircle className="bc-spin" size={16} /> : <Save size={16} />}{isSaving ? 'Enregistrement…' : editing ? 'Enregistrer les changements' : 'Enregistrer la carte'}</button></div>
+          <section className="bc-export-section" aria-labelledby="bc-export-title">
+            <div><span className="bc-overline">DERNIÈRE ÉTAPE</span><h2 id="bc-export-title">Prête à circuler.</h2><p>PNG haute résolution ou impression recto{document.sides.back.enabled ? ' + verso' : ''} au format carte.</p></div>
+            <div className="bc-export-actions">
+              <button type="button" className="btn btn-outline" disabled={!!exportTask} onClick={() => void exportPng('front')}>{exportTask === 'front' ? <LoaderCircle className="bc-spin" size={15} /> : <Download size={15} />}PNG recto</button>
+              <button type="button" className="btn btn-outline" disabled={!!exportTask || !document.sides.back.enabled} title={document.sides.back.enabled ? 'Télécharger le verso en PNG' : 'Activez le verso pour l’exporter'} onClick={() => void exportPng('back')}>{exportTask === 'back' ? <LoaderCircle className="bc-spin" size={15} /> : <Download size={15} />}PNG verso</button>
+              <button type="button" className="btn btn-primary" disabled={!!exportTask} onClick={() => void printCard()}>{exportTask === 'print' ? <LoaderCircle className="bc-spin" size={15} /> : <Printer size={15} />}Imprimer / Enregistrer PDF</button>
+            </div>
+            <p className={`bc-export-feedback${exportFeedback?.type === 'error' ? ' is-error' : ''}`} role={exportFeedback?.type === 'error' ? 'alert' : 'status'} aria-live="polite">{exportTask ? exportTask === 'print' ? 'Préparation des faces et des images…' : `Création du PNG ${exportTask === 'front' ? 'recto' : 'verso'}…` : exportFeedback?.text || `PNG ${BUSINESS_CARD_PRINT_SPEC.pngWidth} × ${BUSINESS_CARD_PRINT_SPEC.pngHeight} px · impression ${BUSINESS_CARD_PRINT_SPEC.widthMm} × ${BUSINESS_CARD_PRINT_SPEC.heightMm} mm.`}</p>
+          </section>
         </form>
 
         <aside className="bc-preview-sticky"><BusinessCardPreview document={document} side={activeSide} onSideChange={setActiveSide} /><div className="bc-preview-template"><span>{template?.mark} / 05</span><div><strong>{template?.name}</strong><small>{template?.note}</small></div><Eye size={15} aria-hidden="true" /></div></aside>
       </div>
+      <BusinessCardPrintDocument card={document} frontRef={frontArtworkRef} backRef={backArtworkRef} />
     </div>
   );
 }
