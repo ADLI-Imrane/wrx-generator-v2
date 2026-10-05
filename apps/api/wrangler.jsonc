@@ -14,7 +14,7 @@
     "run_worker_first": true
   },
   "d1_databases": [
-    { "binding": "DB", "database_name": "wrx", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+    { "binding": "DB", "database_name": "wrx", "database_id": "e3938e1b-af03-49b7-8259-b8b3b0746fc4", "migrations_dir": "migrations" }
   ],
   // Rebuild the public demo workspace every night so it always looks fresh.
   "triggers": { "crons": ["17 3 * * *"] },
