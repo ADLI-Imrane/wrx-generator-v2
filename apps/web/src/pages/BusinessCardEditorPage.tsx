@@ -15,7 +15,7 @@ import { useAuthStore } from '../stores/auth.store';
 import { useBusinessCard, useCreateBusinessCard, useUpdateBusinessCard } from '../hooks/useBusinessCards';
 import { BusinessCardPreview } from '../components/BusinessCardPreview';
 import { BusinessCardPrintDocument } from '../components/BusinessCardPrintDocument';
-import { businessCardTemplates } from '../components/businessCardPreview.data';
+import { BUSINESS_CARD_MANAGED_QR_NOTICE, businessCardTemplates } from '../components/businessCardPreview.data';
 import { downloadBusinessCardPng, prepareBusinessCardArtwork, BUSINESS_CARD_PRINT_SPEC } from '../components/businessCardExport';
 
 const emptyVisibility: BusinessCardVisibility = {
@@ -70,6 +70,16 @@ export function BusinessCardEditorPage() {
   const [exportFeedback, setExportFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const isSaving = createCard.isPending || updateCard.isPending;
   const profileReady = profileQuery.isSuccess || profileQuery.isError;
+
+  useEffect(() => {
+    didInitialize.current = false;
+    setDocument(blankDocument());
+    setTitle('Carte professionnelle');
+    setActiveSide('front');
+    setIsPrefilled(false);
+    setFormError('');
+    setExportFeedback(null);
+  }, [id]);
 
   useEffect(() => {
     if (!editing || !cardQuery.data || didInitialize.current) return;
@@ -169,6 +179,7 @@ export function BusinessCardEditorPage() {
 
   if (editing && (cardQuery.isLoading || !didInitialize.current && cardQuery.data)) return <div className="bc-state" role="status">Chargement de votre carte…</div>;
   if (editing && (cardQuery.isError || !cardQuery.data)) return <div className="bc-state bc-state-error" role="alert"><h1>Carte introuvable</h1><p>Cette carte n’existe pas ou vous n’y avez pas accès.</p><Link to="/business-cards" className="btn btn-outline">Retour aux cartes</Link></div>;
+  if (!editing && !profileReady) return <div className="bc-state" role="status">Chargement de votre identité…</div>;
 
   return (
     <div className="tool-page business-card-editor">
@@ -182,6 +193,7 @@ export function BusinessCardEditorPage() {
       <div className="bc-editor-layout">
         <form className="bc-editor-form" onSubmit={(event) => void submit(event)} noValidate>
           {isPrefilled && !editing && <p className="bc-prefill-note"><Check size={14} /> Informations reprises de votre profil — modifiez-les librement pour cette carte.</p>}
+          {profileQuery.isError && !editing && <p className="bc-help-note" role="status">Votre profil n’a pas pu être chargé. Vous pouvez renseigner les coordonnées de cette carte directement.</p>}
           {formError && <div className="bc-form-error" role="alert">{formError}</div>}
           <section className="bc-form-section">
             <div className="bc-section-title"><span>01</span><div><h2>Votre carte</h2><p>Un nom pour la retrouver dans votre espace.</p></div></div>
@@ -222,10 +234,18 @@ export function BusinessCardEditorPage() {
 
           <section className="bc-form-section">
             <div className="bc-section-title"><span>04</span><div><h2>Verso & partage</h2><p>Choisissez ce qui accompagne le recto.</p></div></div>
-            <VisibilityToggle label="Activer le verso" checked={document.sides.back.enabled} onChange={(checked) => setDocument((current) => ({ ...current, sides: { ...current.sides, back: { ...current.sides.back, enabled: checked } } }))} />
+            <VisibilityToggle label="Activer le verso" checked={document.sides.back.enabled} onChange={(checked) => {
+              if (!checked) setActiveSide('front');
+              setDocument((current) => ({ ...current, ...(!checked ? { qr: undefined } : {}), sides: { ...current.sides, back: { ...current.sides.back, enabled: checked } } }));
+            }} />
             {document.sides.back.enabled && <>
-              <Field label="Contenu du verso"><select value={document.sides.back.composition} onChange={(event) => setDocument((current) => ({ ...current, sides: { ...current.sides, back: { ...current.sides.back, composition: event.target.value as 'contact' | 'qr' | 'contact-qr' } } }))}><option value="contact">Coordonnées</option><option value="contact-qr">Coordonnées + QR</option><option value="qr">QR seul</option></select></Field>
-              <VisibilityToggle label="Afficher le QR statique" checked={!!document.qr} onChange={(checked) => {
+              <Field label="Contenu du verso"><select value={document.sides.back.composition} onChange={(event) => {
+                const composition = event.target.value as 'contact' | 'qr' | 'contact-qr';
+                setDocument((current) => ({ ...current, ...(composition === 'contact' ? { qr: undefined } : {}), sides: { ...current.sides, back: { ...current.sides.back, composition } } }));
+              }}><option value="contact">Coordonnées</option><option value="contact-qr">Coordonnées + QR</option><option value="qr">QR seul</option></select></Field>
+              {document.qr?.mode === 'managed' && <div className="bc-form-error" role="alert"><p>{BUSINESS_CARD_MANAGED_QR_NOTICE}</p><button type="button" className="bc-text-button" onClick={() => setDocument((current) => ({ ...current, qr: undefined, sides: { ...current.sides, back: { ...current.sides.back, composition: 'contact' } } }))}>Retirer le QR non pris en charge</button></div>}
+              <p className="bc-help-note">QR statique : contenu fixe, sans suivi des scans.</p>
+              <VisibilityToggle label="Afficher le QR statique" checked={document.qr?.mode === 'static'} onChange={(checked) => {
                 setDocument((current) => ({ ...current, visibility: { ...current.visibility, qr: checked }, sides: { ...current.sides, back: { ...current.sides.back, composition: checked ? 'contact-qr' : 'contact' } }, ...(checked ? { qr: { mode: 'static', type: 'url', content: current.identity.website || '' } } : { qr: undefined }) }));
               }} />
               {document.qr?.mode === 'static' && <div className="bc-qr-config">

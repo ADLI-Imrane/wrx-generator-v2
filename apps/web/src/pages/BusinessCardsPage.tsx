@@ -28,7 +28,7 @@ export function BusinessCardsPage() {
   return (
     <div className="tool-page business-card-library">
       <header className="studio-page-heading">
-        <div><span className="bc-overline">OUTIL 06 · IDENTITÉ PROFESSIONNELLE</span><h1>Cartes de visite<span>.</span></h1><p>Une identité claire, prête à être partagée.</p></div>
+        <div><span className="bc-overline">IDENTITÉ PROFESSIONNELLE</span><h1>Cartes de visite<span>.</span></h1><p>Une identité claire, prête à être partagée.</p></div>
         <Link to="/business-cards/new" className="btn btn-primary bc-new-card"><Plus size={17} /> Nouvelle carte</Link>
       </header>
 

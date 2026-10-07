@@ -1,5 +1,7 @@
 import type { BusinessCardDocument, BusinessCardTemplateKey } from '@wrx/shared';
 
+export const BUSINESS_CARD_MANAGED_QR_NOTICE = 'Cette carte contient un QR géré, non pris en charge dans cette version. Remplacez-le par un QR statique ou retirez-le avant d’exporter le verso.';
+
 export const businessCardTemplates: {
   key: BusinessCardTemplateKey;
   name: string;
@@ -16,6 +18,8 @@ export const businessCardTemplates: {
 export function businessCardQrPayload(document: BusinessCardDocument): string | null {
   const qr = document.qr;
   if (!qr || qr.mode !== 'static') return null;
+  if (qr.type === 'email') return `mailto:${qr.content}`;
+  if (qr.type === 'phone') return `tel:${qr.content}`;
   if (qr.type !== 'vcard') return qr.content;
   const identity = document.identity;
   const fullName = identity.fullName.replace(/[\r\n;]/g, ' ');

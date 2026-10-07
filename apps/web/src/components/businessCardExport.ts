@@ -1,4 +1,5 @@
 import { toPng } from 'html-to-image';
+import { BUSINESS_CARD_MANAGED_QR_NOTICE } from './businessCardPreview.data';
 
 /** Standard US business-card trim size, rendered at CSS's 96 px/in baseline. */
 export const BUSINESS_CARD_PRINT_SPEC = Object.freeze({
@@ -24,6 +25,7 @@ export function businessCardFilename(title: string, side: 'front' | 'back'): str
 }
 
 export async function prepareBusinessCardArtwork(node: HTMLElement): Promise<void> {
+  if (node.dataset['qrState'] === 'unsupported') throw new Error(BUSINESS_CARD_MANAGED_QR_NOTICE);
   if ('fonts' in document) await document.fonts.ready;
   if (node.dataset['assetsState'] === 'loading') {
     await new Promise<void>((resolve, reject) => {

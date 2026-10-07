@@ -116,8 +116,11 @@
 .bc-preview-contacts { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px 12px; margin-top: 8%; color: #5e695e; }
 .bc-preview-contacts span { display: flex; min-width: 0; align-items: center; gap: 5px; overflow: hidden; font-size: clamp(7px,.8vw,10px); text-overflow: ellipsis; white-space: nowrap; }
 .bc-preview-contacts svg { flex: 0 0 auto; color: var(--bc-primary); }
-.bc-preview-socials { position: absolute; z-index: 1; bottom: 8%; left: 7.2%; display: flex; gap: 5px; }
-.bc-preview-socials span { padding: 4px 6px; border: 1px solid #dfe2da; color: #59645a; font: 7px var(--mono); }
+.bc-preview-socials { position: absolute; z-index: 1; bottom: 8%; left: 7.2%; display: flex; gap: 5px; max-width: 65%; }
+.bc-preview-socials span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 4px 6px; border: 1px solid #dfe2da; color: #59645a; font: 7px var(--mono); }
+.dashboard-card-art .bc-preview-contacts span { font-size: 5px; gap: 2px; }
+.dashboard-card-art .bc-preview-socials span { padding: 1px 2px; font-size: 3px; }
+.dashboard-card-art .bc-monogram { font-size: 32px; }
 .bc-preview-edition { position: absolute; z-index: 1; right: 7%; bottom: 8%; color: #899187; font: 7px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 .bc-classic-company, .bc-bold-arrow, .bc-minimal-arrow { position: absolute; top: 8%; right: 7%; z-index: 1; color: var(--bc-primary); }
 .bc-editorial-index { position: absolute; right: 7%; top: 48%; color: #7d8678; font: 8px var(--mono); writing-mode: vertical-rl; }

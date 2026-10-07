@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { ArrowDownLeft, ArrowUpRight, Building2, Mail, MapPin, Phone, Globe2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { BusinessCardDocument } from '@wrx/shared';
-import { businessCardQrPayload } from './businessCardPreview.data';
+import { BUSINESS_CARD_MANAGED_QR_NOTICE, businessCardQrPayload } from './businessCardPreview.data';
 
 function useCardImages(document: BusinessCardDocument) {
   const avatarPath = document.identity.avatarPath;
@@ -52,7 +52,7 @@ function CardIdentity({ document, avatarUrl, logoUrl }: {
       </div>
       <div className="bc-preview-socials">
         {(['linkedin', 'github', 'instagram', 'x'] as const).filter((key) => show[key] && person.socialLinks[key]).map((key) => (
-          <span key={key}>{key === 'x' ? 'X' : key[0]?.toUpperCase() + key.slice(1)}</span>
+          <span key={key} title={person.socialLinks[key]}>{key === 'x' ? 'X' : key[0]?.toUpperCase() + key.slice(1)}: {person.socialLinks[key]?.replace(/^https?:\/\/(?:www\.)?/, '').replace(/^(?:linkedin\.com\/in|github\.com|instagram\.com|(?:x|twitter)\.com)\//, '')}</span>
         ))}
       </div>
     </>
@@ -69,19 +69,20 @@ function BusinessCardFace({ document, side, avatarUrl, logoUrl, exportRef, asset
 }) {
   const payload = businessCardQrPayload(document);
   const { identity, visibility, brand } = document;
+  const unsupportedQr = visibility.qr && document.qr?.mode === 'managed' && document.sides.back.composition !== 'contact';
   const initials = identity.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'WR';
 
   if (side === 'back') {
     if (!document.sides.back.enabled) return <div ref={exportRef} data-assets-state={assetsState} className="bc-preview-disabled">Verso non activé</div>;
     return (
-      <div ref={exportRef} data-assets-state={assetsState} className={`bc-face bc-back bc-back-${document.sides.back.composition} bc-template-${document.templateKey}${exportRef ? ' bc-export-face' : ''}`} style={{ '--bc-primary': brand.primaryColor, '--bc-secondary': brand.secondaryColor || '#E7E9E1' } as React.CSSProperties}>
+      <div ref={exportRef} data-assets-state={assetsState} data-qr-state={unsupportedQr ? 'unsupported' : 'ready'} className={`bc-face bc-back bc-back-${document.sides.back.composition} bc-template-${document.templateKey}${exportRef ? ' bc-export-face' : ''}`} style={{ '--bc-primary': brand.primaryColor, '--bc-secondary': brand.secondaryColor || '#E7E9E1' } as React.CSSProperties}>
         <div className="bc-back-mark" aria-hidden="true">{identity.company || initials}</div>
         {(document.sides.back.composition === 'qr' || document.sides.back.composition === 'contact-qr') && visibility.qr && payload && (
           <div className="bc-preview-qr"><QRCodeSVG value={payload} size={100} level="M" includeMargin /></div>
         )}
         {document.sides.back.composition !== 'qr' && <CardIdentity document={document} avatarUrl={avatarUrl} logoUrl={logoUrl} />}
-        {document.sides.back.composition === 'qr' && <p className="bc-back-caption">Scannez pour enregistrer le contact</p>}
-        {!payload && visibility.qr && document.sides.back.composition !== 'contact' && <p className="bc-qr-empty">Configurez un QR pour l’afficher ici.</p>}
+        {document.sides.back.composition === 'qr' && payload && <p className="bc-back-caption">{document.qr?.mode === 'static' && document.qr.type === 'vcard' ? 'Scannez pour enregistrer le contact' : 'Scannez pour consulter le contenu'}</p>}
+        {!payload && visibility.qr && document.sides.back.composition !== 'contact' && <p className="bc-qr-empty" title={unsupportedQr ? BUSINESS_CARD_MANAGED_QR_NOTICE : undefined}>{unsupportedQr ? 'QR géré indisponible · version statique uniquement' : 'Configurez un QR statique pour l’afficher ici.'}</p>}
       </div>
     );
   }
