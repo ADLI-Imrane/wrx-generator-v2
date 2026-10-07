@@ -23,6 +23,8 @@ import {
 } from './pages';
 import { BusinessCardsPage } from './pages/BusinessCardsPage';
 import { BusinessCardEditorPage } from './pages/BusinessCardEditorPage';
+import { DigitalCardsPage } from './pages/DigitalCardsPage';
+import { DigitalCardEditorPage } from './pages/DigitalCardEditorPage';
 
 const HomepageConcept = lazy(() => import('./pages/homepage-concept/HomepageConcept'));
 const approvedHomepage = (
@@ -117,6 +119,14 @@ export const router = createBrowserRouter([
           { index: true, element: <BusinessCardsPage /> },
           { path: 'new', element: <BusinessCardEditorPage /> },
           { path: ':id/edit', element: <BusinessCardEditorPage /> },
+        ],
+      },
+      {
+        path: 'digital-cards',
+        children: [
+          { index: true, element: <DigitalCardsPage /> },
+          { path: 'new', element: <DigitalCardEditorPage /> },
+          { path: ':id/edit', element: <DigitalCardEditorPage /> },
         ],
       },
       {

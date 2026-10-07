@@ -11,13 +11,14 @@ import {
   CreditCard,
   X,
 } from 'lucide-react';
-import { ContactRound } from 'lucide-react';
+import { ContactRound, Contact } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/links', icon: LinkIcon, label: 'Liens' },
   { to: '/qr-codes', icon: QrCode, label: 'QR Codes' },
   { to: '/business-cards', icon: ContactRound, label: 'Cartes de visite' },
+  { to: '/digital-cards', icon: Contact, label: 'Cartes numériques' },
   { to: '/analytics', icon: BarChart3, label: 'Analytiques' },
 ];
 
