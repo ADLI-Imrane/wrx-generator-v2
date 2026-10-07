@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { Layout, ProtectedRoute } from './components';
 import {
@@ -19,11 +20,20 @@ import {
   SettingsPage,
   HelpPage,
   BillingPage,
-  LandingPage,
 } from './pages';
+import { BusinessCardsPage } from './pages/BusinessCardsPage';
+import { BusinessCardEditorPage } from './pages/BusinessCardEditorPage';
+
+const HomepageConcept = lazy(() => import('./pages/homepage-concept/HomepageConcept'));
+const approvedHomepage = (
+  <Suspense fallback={<p role="status">Chargement du concept WRX…</p>}>
+    <HomepageConcept />
+  </Suspense>
+);
 
 export const router = createBrowserRouter([
-  { path: '/', element: <LandingPage /> },
+  { path: '/', element: approvedHomepage },
+  { path: '/homepage-concept', element: approvedHomepage },
   // Routes publiques
   {
     path: '/login',
@@ -99,6 +109,14 @@ export const router = createBrowserRouter([
             path: ':id/stats',
             element: <QRStatsPage />,
           },
+        ],
+      },
+      {
+        path: 'business-cards',
+        children: [
+          { index: true, element: <BusinessCardsPage /> },
+          { path: 'new', element: <BusinessCardEditorPage /> },
+          { path: ':id/edit', element: <BusinessCardEditorPage /> },
         ],
       },
       {
