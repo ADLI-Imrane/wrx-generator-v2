@@ -134,7 +134,7 @@ export function DigitalCardsPage() {
                 {card.status === 'published' && (
                   <code className="dc-public-address">
                     {window.location.origin}/c/{card.slug}{' '}
-                    <span>· page publique en préparation</span>
+                    <span>· accès public actif</span>
                   </code>
                 )}
               </div>
@@ -200,8 +200,8 @@ export function DigitalCardsPage() {
               ))}
             </ul>
             <p className="dc-phase-note">
-              La page publique sera activée dans une prochaine étape. Vous pourrez dépublier cette
-              carte à tout moment.
+              Cette adresse reste accessible tant que la carte est publiée. Vous pourrez la
+              dépublier à tout moment.
             </p>
           </div>
         ) : (

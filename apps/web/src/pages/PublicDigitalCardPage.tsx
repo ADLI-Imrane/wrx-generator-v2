@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import type { PublicDigitalCard } from '@wrx/shared';
 import { ArrowUpRight, AtSign, Download, Globe2, MapPin, Phone, Share2, type LucideIcon } from 'lucide-react';
 import { api } from '../lib/api';
-import { createPublicDigitalCardVCard, publicDigitalCardUrl } from '../lib/digital-card-vcard';
+import { createPublicDigitalCardVCard } from '../lib/digital-card-vcard';
+import { getPublicDigitalCardSharingTarget, shareDigitalCard } from '../lib/digital-card-sharing';
 import '../styles/public-digital-card.css';
 
 const socialLabels = {
@@ -55,28 +56,16 @@ export function PublicDigitalCardPage() {
     return () => { active = false; };
   }, [slug, attempt]);
 
-  const shareUrl = card ? publicDigitalCardUrl(card.slug) : '';
+  const sharingTarget = card ? getPublicDigitalCardSharingTarget(card) : null;
+  const shareUrl = sharingTarget?.url ?? '';
   const share = useCallback(async () => {
-    if (!card) return;
+    if (!sharingTarget) return;
     setNotice('');
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: card.identity.fullName, text: 'Carte numérique', url: shareUrl });
-        setNotice('Lien partagé.');
-        return;
-      }
-      await navigator.clipboard.writeText(shareUrl);
-      setNotice('Lien copié.');
-    } catch (reason) {
-      if (reason instanceof Error && reason.name === 'AbortError') return;
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        setNotice('Lien copié.');
-      } catch {
-        setNotice('Copiez le lien affiché pour le partager.');
-      }
-    }
-  }, [card, shareUrl]);
+    const result = await shareDigitalCard(sharingTarget);
+    if (result === 'shared') setNotice('Lien partagé.');
+    if (result === 'copied') setNotice('Lien copié.');
+    if (result === 'unavailable') setNotice('Copiez le lien affiché pour le partager.');
+  }, [sharingTarget]);
 
   const downloadVCard = () => {
     if (!card) return;
