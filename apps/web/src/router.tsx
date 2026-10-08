@@ -27,6 +27,7 @@ import { BusinessCardsPage } from './pages/BusinessCardsPage';
 import { BusinessCardEditorPage } from './pages/BusinessCardEditorPage';
 import { DigitalCardsPage } from './pages/DigitalCardsPage';
 import { DigitalCardEditorPage } from './pages/DigitalCardEditorPage';
+import { PublicDigitalCardPage } from './pages/PublicDigitalCardPage';
 
 const HomepageConcept = lazy(() => import('./pages/homepage-concept/HomepageConcept'));
 const approvedHomepage = (
@@ -38,6 +39,7 @@ const approvedHomepage = (
 export const router = createBrowserRouter([
   { path: '/', element: approvedHomepage },
   { path: '/homepage-concept', element: approvedHomepage },
+  { path: '/c/:slug', element: <PublicDigitalCardPage /> },
   // Routes publiques
   {
     path: '/login',
