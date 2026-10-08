@@ -2,14 +2,15 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../common/supabase/supabase.service';
 import { CreateLinkDto, UpdateLinkDto } from './dto';
-import { generateSlug } from '@wrx/shared';
 import { SLUG_CONSTRAINTS, TIER_LIMITS } from '@wrx/shared';
 import { promisify } from 'node:util';
 import { randomBytes, scrypt as scryptCallback } from 'node:crypto';
+import { normalizeLinkDestination } from './link-destination';
 
 const scrypt = promisify(scryptCallback);
 
@@ -80,7 +81,7 @@ export class LinksService {
       .from('links')
       .insert({
         user_id: userId,
-        original_url: dto.originalUrl,
+        original_url: normalizeLinkDestination(dto.originalUrl),
         slug,
         title: dto.title,
         description: dto.description,
@@ -175,7 +176,7 @@ export class LinksService {
 
     if (dto.title !== undefined) updateData['title'] = dto.title;
     if (dto.description !== undefined) updateData['description'] = dto.description;
-    if (dto.originalUrl !== undefined) updateData['original_url'] = dto.originalUrl;
+    if (dto.originalUrl !== undefined) updateData['original_url'] = normalizeLinkDestination(dto.originalUrl);
     if (dto.expiresAt !== undefined) updateData['expires_at'] = dto.expiresAt;
     if (dto.maxClicks !== undefined) updateData['max_clicks'] = dto.maxClicks;
     if (dto.isActive !== undefined) updateData['is_active'] = dto.isActive;
@@ -199,6 +200,15 @@ export class LinksService {
 
     // Verify ownership
     await this.findOne(userId, id);
+
+    const { count, error: referenceError } = await supabase
+      .from('qr_codes')
+      .select('id', { count: 'exact', head: true })
+      .eq('link_id', id);
+    if (referenceError) throw new BadRequestException(referenceError.message);
+    if ((count || 0) > 0) {
+      throw new ConflictException('Detach or replace QR codes associated with this link before deleting it');
+    }
 
     const { error } = await supabase.from('links').delete().eq('id', id);
 
@@ -281,7 +291,7 @@ export class LinksService {
     const maxAttempts = 10;
 
     while (attempts < maxAttempts) {
-      const slug = generateSlug();
+      const slug = randomBytes(16).toString('base64url');
       const { data: existing } = await supabase
         .from('links')
         .select('id')

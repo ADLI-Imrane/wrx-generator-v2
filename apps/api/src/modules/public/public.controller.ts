@@ -1,11 +1,26 @@
-import { Controller, Get, Param, Req, Res, Post, Body, HttpStatus } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Request, Response } from 'express';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { PublicService } from './public.service';
 import { QrService } from '../qr/qr.service';
 
 @ApiTags('public')
 @Controller('r')
+@UseGuards(ThrottlerGuard)
 export class PublicController {
   constructor(
     private publicService: PublicService,
@@ -21,6 +36,27 @@ export class PublicController {
       userAgent: req.headers['user-agent'],
       ...this.parseUserAgent(req.headers['user-agent'] || ''),
     };
+
+    let qr: Awaited<ReturnType<QrService['findById']>>;
+    try {
+      qr = await this.qrService.findById(id);
+    } catch {
+      return res.status(HttpStatus.NOT_FOUND).json({ message: 'QR code not found' });
+    }
+
+    if (qr.routing_mode === 'managed_link') {
+      if (!qr.link_id) return res.status(HttpStatus.NOT_FOUND).json({ message: 'QR code not found' });
+      try {
+        const { url } = await this.publicService.resolveManagedQr(qr.link_id);
+        await this.qrService.trackScan(id, scanData);
+        return res.redirect(HttpStatus.FOUND, url);
+      } catch (error) {
+        if (error instanceof UnauthorizedException) {
+          return this.sendPasswordForm(res, `/api/r/scan/${encodeURIComponent(id)}/unlock`);
+        }
+        throw error;
+      }
+    }
 
     try {
       const { content, type } = await this.qrService.trackScan(id, scanData);
@@ -52,12 +88,14 @@ export class PublicController {
 
   @Post(':slug/verify-password')
   @ApiOperation({ summary: 'Verify password for protected link' })
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   verifyPassword(@Param('slug') slug: string, @Body('password') password: string) {
     return this.publicService.checkPassword(slug, password);
   }
 
   @Post(':slug/unlock')
   @ApiOperation({ summary: 'Unlock a protected link without exposing its password in the URL' })
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async unlock(
     @Param('slug') slug: string,
     @Body('password') password: string,
@@ -93,21 +131,31 @@ export class PublicController {
       const { url } = await this.publicService.redirect(slug, clickData);
       return res.redirect(HttpStatus.FOUND, url);
     } catch (error) {
-      if (error instanceof Error && error.message === 'This link is password protected') {
-        const safeSlug = encodeURIComponent(slug);
-        res.setHeader(
-          'Content-Security-Policy',
-          "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'"
-        );
-        return res
-          .status(HttpStatus.UNAUTHORIZED)
-          .type('html')
-          .send(
-            `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lien protégé</title><style>body{margin:0;display:grid;min-height:100vh;place-items:center;background:#070b19;color:#fff;font:16px system-ui}.card{width:min(360px,calc(100% - 48px));padding:32px;border:1px solid #24324f;border-radius:24px;background:#10182b}input,button{box-sizing:border-box;width:100%;border-radius:12px;padding:13px;font:inherit}input{border:1px solid #334155;background:#0b1220;color:#fff}button{margin-top:12px;border:0;background:#67e8f9;color:#082f49;font-weight:700;cursor:pointer}p{color:#94a3b8;line-height:1.5}</style><main class="card"><h1>Lien protégé</h1><p>Entrez le mot de passe pour continuer.</p><form method="post" action="/r/${safeSlug}/unlock"><input name="password" type="password" minlength="8" maxlength="128" required autofocus autocomplete="current-password"><button type="submit">Continuer</button></form></main></html>`
-          );
+      if (error instanceof UnauthorizedException) {
+        return this.sendPasswordForm(res, `/api/r/${encodeURIComponent(slug)}/unlock`);
       }
       throw error;
     }
+  }
+
+  @Post('scan/:id/unlock')
+  @ApiOperation({ summary: 'Unlock a Link-managed QR using its associated Link password' })
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async unlockManagedQr(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('password') password: string,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
+    const qr = await this.qrService.findById(id);
+    if (qr.routing_mode !== 'managed_link' || !qr.link_id) throw new NotFoundException('QR code not found');
+    const { url } = await this.publicService.resolveManagedQr(qr.link_id, password);
+    await this.qrService.trackScan(id, {
+      ipAddress: this.getClientIp(req),
+      userAgent: req.headers['user-agent'],
+      ...this.parseUserAgent(req.headers['user-agent'] || ''),
+    });
+    return res.redirect(HttpStatus.FOUND, url);
   }
 
   private getClientIp(req: Request): string {
@@ -120,6 +168,16 @@ export class PublicController {
       return forwarded[0] || '';
     }
     return req.ip || req.socket.remoteAddress || '';
+  }
+
+  private sendPasswordForm(res: Response, action: string) {
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'"
+    );
+    return res.status(HttpStatus.UNAUTHORIZED).type('html').send(
+      `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lien protégé</title><style>body{margin:0;display:grid;min-height:100vh;place-items:center;background:#070b19;color:#fff;font:16px system-ui}.card{width:min(360px,calc(100% - 48px));padding:32px;border:1px solid #24324f;border-radius:24px;background:#10182b}input,button{box-sizing:border-box;width:100%;border-radius:12px;padding:13px;font:inherit}input{border:1px solid #334155;background:#0b1220;color:#fff}button{margin-top:12px;border:0;background:#67e8f9;color:#082f49;font-weight:700;cursor:pointer}p{color:#94a3b8;line-height:1.5}</style><main class="card"><h1>Lien protégé</h1><p>Entrez le mot de passe pour continuer.</p><form method="post" action="${action}"><input name="password" type="password" minlength="8" maxlength="128" required autofocus autocomplete="current-password"><button type="submit">Continuer</button></form></main></html>`
+    );
   }
 
   private parseUserAgent(userAgent: string): { device?: string; browser?: string; os?: string } {

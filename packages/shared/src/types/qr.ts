@@ -18,6 +18,7 @@ export interface QRCode {
   id: string;
   userId: string;
   linkId?: string;
+  routingMode?: 'legacy' | 'managed_link';
   type: QRCodeType;
   title?: string;
   content: string;
@@ -40,6 +41,8 @@ export interface UpdateQRCodeDto {
   title?: string;
   content?: string;
   style?: QRStyleConfig;
+  /** Explicitly associates the QR with a Link; null detaches and requires replacement content. */
+  linkId?: string | null;
 }
 
 export interface GenerateQRDto {

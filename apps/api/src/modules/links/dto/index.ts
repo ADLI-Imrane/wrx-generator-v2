@@ -12,7 +12,7 @@ import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class CreateLinkDto {
   @ApiProperty({ example: 'https://example.com/very-long-url-that-needs-shortening' })
-  @IsUrl()
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_valid_protocol: true, disallow_auth: true })
   originalUrl!: string;
 
   @ApiPropertyOptional({ example: 'my-custom-slug', minLength: 3, maxLength: 50 })

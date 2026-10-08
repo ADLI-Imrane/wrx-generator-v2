@@ -11,6 +11,7 @@ import {
   IsIn,
   ValidateNested,
   IsObject,
+  ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -74,10 +75,10 @@ export class CreateQrDto {
   @IsString()
   content!: string;
 
-  @ApiPropertyOptional({ description: 'Link ID to associate with this QR code' })
-  @IsOptional()
+  @ApiPropertyOptional({ description: 'Link ID to associate with this QR code; null detaches on update' })
+  @ValidateIf((_object, value) => value !== null && value !== undefined)
   @IsUUID()
-  linkId?: string;
+  linkId?: string | null;
 
   @ApiPropertyOptional({ example: 'My QR Code' })
   @IsOptional()
@@ -99,4 +100,5 @@ export class CreateQrDto {
   style?: QRStyleConfigDto;
 }
 
+// `null` is an explicit detach; omission preserves the existing association.
 export class UpdateQrDto extends PartialType(CreateQrDto) {}

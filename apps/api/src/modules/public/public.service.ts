@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../common/supabase/supabase.service';
+import { isSafeLinkDestination } from '../links/link-destination';
 import { promisify } from 'node:util';
 import { scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 
@@ -21,6 +22,17 @@ interface ClickData {
   device?: string;
   browser?: string;
   os?: string;
+}
+
+interface ResolvableLinkRow {
+  id: string;
+  original_url: string;
+  is_active: boolean;
+  expires_at: string | null;
+  max_clicks: number | null;
+  clicks: number | null;
+  password_hash: string | null;
+  title: string | null;
 }
 
 @Injectable()
@@ -41,31 +53,7 @@ export class PublicService {
       throw new NotFoundException('Link not found');
     }
 
-    // Check if link is active
-    if (!link.is_active) {
-      throw new GoneException('This link has been deactivated');
-    }
-
-    // Check expiration
-    if (link.expires_at && new Date(link.expires_at) < new Date()) {
-      throw new GoneException('This link has expired');
-    }
-
-    // Check max clicks
-    if (link.max_clicks && link.clicks >= link.max_clicks) {
-      throw new GoneException('This link has reached its maximum number of clicks');
-    }
-
-    // Check password protection
-    if (link.password_hash) {
-      if (!password) {
-        throw new UnauthorizedException('This link is password protected');
-      }
-      const isValidPassword = await this.verifyPassword(password, link.password_hash);
-      if (!isValidPassword) {
-        throw new ForbiddenException('Invalid password');
-      }
-    }
+    await this.assertLinkCanResolve(link, password);
 
     // Record the click
     await this.recordClick({
@@ -77,6 +65,59 @@ export class PublicService {
       url: link.original_url,
       title: link.title,
     };
+  }
+
+  /** Managed QR ingress shares every Link policy but intentionally records no ordinary click. */
+  async resolveManagedQr(linkId: string, password?: string) {
+    const { data: link, error } = await this.supabaseService
+      .getAdminClient()
+      .from('links')
+      .select('*')
+      .eq('id', linkId)
+      .maybeSingle();
+
+    if (error || !link) throw new NotFoundException('Link not found');
+    await this.assertLinkCanResolve(link, password);
+    return { url: link.original_url, title: link.title };
+  }
+
+  private async assertLinkCanResolve(link: ResolvableLinkRow, password?: string): Promise<void> {
+    if (!link.is_active) throw new GoneException('This link has been deactivated');
+    if (link.expires_at && new Date(link.expires_at) < new Date()) {
+      throw new GoneException('This link has expired');
+    }
+    if (link.max_clicks && (await this.getAcceptedRouteCount(link)) >= Number(link.max_clicks)) {
+      throw new GoneException('This link has reached its maximum number of clicks');
+    }
+    if (!isSafeLinkDestination(link.original_url)) {
+      throw new GoneException('This link destination is unavailable');
+    }
+    if (link.password_hash) {
+      if (!password) throw new UnauthorizedException('This link is password protected');
+      if (!(await this.verifyPassword(password, link.password_hash))) {
+        throw new ForbiddenException('Invalid password');
+      }
+    }
+  }
+
+  private async getAcceptedRouteCount(link: ResolvableLinkRow): Promise<number> {
+    const supabase = this.supabaseService.getAdminClient();
+    const qrResult = await supabase
+      .from('qr_codes')
+      .select('id')
+      .eq('link_id', link.id)
+      .eq('routing_mode', 'managed_link');
+    if (qrResult.error) throw qrResult.error;
+
+    const qrIds = (qrResult.data || []).map((qr: { id: string }) => qr.id);
+    if (qrIds.length === 0) return Number(link.clicks || 0);
+
+    const scanResult = await supabase
+      .from('scans')
+      .select('id', { count: 'exact', head: true })
+      .in('qr_code_id', qrIds);
+    if (scanResult.error) throw scanResult.error;
+    return Number(link.clicks || 0) + (scanResult.count || 0);
   }
 
   async getLinkPreview(slug: string) {

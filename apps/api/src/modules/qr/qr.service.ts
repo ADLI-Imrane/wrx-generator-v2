@@ -27,6 +27,7 @@ interface QRCodeRow {
   id: string;
   user_id: string;
   link_id?: string;
+  routing_mode?: 'legacy' | 'managed_link';
   type: string;
   title?: string;
   description?: string;
@@ -52,6 +53,7 @@ function transformQRCode(data: QRCodeRow): Record<string, unknown> {
     id: data.id,
     userId: data.user_id,
     linkId: data.link_id,
+    routingMode: data.routing_mode || 'legacy',
     type: data.type,
     title: data.title,
     description: data.description,
@@ -98,6 +100,14 @@ export class QrService {
       throw new ForbiddenException('QR code limit reached for your plan');
     }
 
+    const routingMode = dto.linkId ? 'managed_link' : 'legacy';
+    if (dto.linkId) {
+      if (dto.type !== 'url') {
+        throw new BadRequestException('A Link-managed QR must use the URL type');
+      }
+      await this.findOwnedLink(userId, dto.linkId);
+    }
+
     // Extract style properties
     const styleConfig = dto.style || {};
 
@@ -107,6 +117,7 @@ export class QrService {
       .insert({
         user_id: userId,
         link_id: dto.linkId,
+        routing_mode: routingMode,
         type: dto.type || 'url',
         content: dto.content,
         title: dto.title,
@@ -306,8 +317,17 @@ export class QrService {
   async update(userId: string, id: string, dto: UpdateQrDto) {
     const supabase = this.supabaseService.getAdminClient();
 
-    // Verify ownership
-    await this.findOne(userId, id);
+    // Verify ownership and retain the existing mode unless association is explicitly changed.
+    const current = await this.findOne(userId, id);
+
+    if (
+      current['routingMode'] === 'managed_link' &&
+      dto.linkId === undefined &&
+      dto.type !== undefined &&
+      dto.type !== 'url'
+    ) {
+      throw new BadRequestException('A Link-managed QR must use the URL type');
+    }
 
     const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
@@ -317,6 +337,24 @@ export class QrService {
     if (dto.description !== undefined) updateData['description'] = dto.description;
     if (dto.content !== undefined) updateData['content'] = dto.content;
     if (dto.type !== undefined) updateData['type'] = dto.type;
+
+    if (dto.linkId !== undefined) {
+      if (dto.linkId === null) {
+        if (dto.content === undefined) {
+          throw new BadRequestException('Provide the QR content when detaching it from a Link');
+        }
+        updateData['link_id'] = null;
+        updateData['routing_mode'] = 'legacy';
+      } else {
+        const type = dto.type ?? current['type'];
+        if (type !== 'url') {
+          throw new BadRequestException('A Link-managed QR must use the URL type');
+        }
+        await this.findOwnedLink(userId, dto.linkId);
+        updateData['link_id'] = dto.linkId;
+        updateData['routing_mode'] = 'managed_link';
+      }
+    }
 
     // Handle style properties
     if (dto.style) {
@@ -406,7 +444,22 @@ export class QrService {
     return {
       content: qr.content,
       type: qr.type,
+      linkId: qr.routing_mode === 'managed_link' ? qr.link_id : undefined,
+      routingMode: qr.routing_mode || 'legacy',
     };
+  }
+
+  private async findOwnedLink(userId: string, linkId: string) {
+    const { data, error } = await this.supabaseService
+      .getAdminClient()
+      .from('links')
+      .select('id')
+      .eq('id', linkId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error || !data) throw new NotFoundException('Link not found');
+    return data;
   }
 
   async generateImage(userId: string, id: string, format: 'png' | 'svg' = 'png') {
