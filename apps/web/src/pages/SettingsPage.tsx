@@ -74,8 +74,10 @@ function ProfileImageField({
           accept="image/png,image/jpeg,image/webp"
           onChange={onChange}
           disabled={busy || disabled}
+          aria-describedby={`${id}-help`}
           className="block min-h-11 max-w-full text-sm text-gray-700 file:mr-3 file:min-h-11 file:cursor-pointer file:rounded file:border-0 file:bg-gray-100 file:px-3 file:text-sm file:font-medium file:text-gray-800 hover:file:bg-gray-200 disabled:opacity-60"
         />
+        <p id={`${id}-help`} className="mt-1 text-xs text-gray-500">PNG, JPEG ou WebP — 2 Mo maximum.</p>
         {busy && <span className="text-xs text-gray-500" role="status">Envoi de l’image…</span>}
       </div>
     </div>
@@ -159,6 +161,7 @@ export function SettingsPage() {
 
   const {
     mutate: updateProfile,
+    mutateAsync: updateProfileAsync,
     isPending: isUpdatingProfile,
     error: profileError,
   } = useUpdateProfile();
@@ -181,6 +184,53 @@ export function SettingsPage() {
         },
       }
     );
+  };
+
+  const setProfileField = (key: keyof ProfileForm, value: string) => {
+    setProfileForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleProfileImage = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    kind: 'avatar' | 'logo',
+  ) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    setProfileImageError(null);
+    if (!user) {
+      setProfileImageError('Connectez-vous pour modifier ces images.');
+      return;
+    }
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setProfileImageError('Choisissez une image PNG, JPEG ou WebP.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileImageError('L’image ne doit pas dépasser 2 Mo.');
+      return;
+    }
+
+    setUploadingImage(kind);
+    try {
+      const assetPath = `${user.id}/${kind === 'avatar' ? 'avatar' : 'company-logo'}`;
+      const { error } = await supabase.storage.from('avatars').upload(assetPath, file, {
+        upsert: true,
+        contentType: file.type,
+        cacheControl: '3600',
+      });
+      if (error) throw error;
+
+      await updateProfileAsync(kind === 'avatar' ? { avatarPath: assetPath } : { companyLogoPath: assetPath });
+      setProfileSuccess(true);
+      window.setTimeout(() => setProfileSuccess(false), 3000);
+    } catch (error) {
+      setProfileImageError(error instanceof Error ? error.message : 'Impossible d’envoyer cette image.');
+    } finally {
+      setUploadingImage(null);
+    }
   };
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
@@ -228,7 +278,7 @@ export function SettingsPage() {
   ] as const;
 
   return (
-    <div className="space-y-6">
+    <div className="settings-workspace space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
@@ -238,11 +288,12 @@ export function SettingsPage() {
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Sidebar */}
         <div className="w-full lg:w-64">
-          <nav className="card space-y-1 p-2">
+          <nav className="settings-tabs card space-y-1 p-2" aria-label="Sections des paramètres">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                aria-pressed={activeTab === tab.id}
                 className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-colors ${
                   activeTab === tab.id
                     ? 'bg-primary-50 text-primary-600'
@@ -324,7 +375,6 @@ export function SettingsPage() {
 
                 <fieldset className="space-y-4 border-t border-gray-200 pt-5">
                   <legend className="mb-3 text-base font-semibold text-gray-900">Identité de marque</legend>
-                  <p className="-mt-2 text-sm text-gray-600">Images PNG, JPEG ou WebP — 2 Mo maximum.</p>
                   <div className="grid gap-5 sm:grid-cols-2">
                     <ProfileImageField id="profile-avatar" label="Photo de profil" url={profile?.avatarUrl} busy={uploadingImage === 'avatar'} disabled={!isProfileReady} onChange={(event) => void handleProfileImage(event, 'avatar')} />
                     <ProfileImageField id="profile-company-logo" label="Logo de l’entreprise" url={profile?.companyLogoUrl} busy={uploadingImage === 'logo'} disabled={!isProfileReady} onChange={(event) => void handleProfileImage(event, 'logo')} />
@@ -382,6 +432,7 @@ export function SettingsPage() {
                     />
                     <input
                       type={showPassword ? 'text' : 'password'}
+                      aria-label="Nouveau mot de passe"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••"
@@ -391,6 +442,7 @@ export function SettingsPage() {
                     />
                     <button
                       type="button"
+                      aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
@@ -410,6 +462,7 @@ export function SettingsPage() {
                     />
                     <input
                       type={showPassword ? 'text' : 'password'}
+                      aria-label="Confirmer le mot de passe"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"

@@ -110,7 +110,7 @@ export function HelpPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="help-workspace mx-auto space-y-8">
       {/* Header */}
       <div className="text-center">
         <div className="bg-primary-100 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
@@ -125,6 +125,7 @@ export function HelpPage() {
       {/* Search */}
       <div className="relative">
         <input
+          aria-label="Rechercher dans l’aide"
           type="text"
           placeholder="Rechercher dans l'aide..."
           value={searchQuery}
@@ -147,7 +148,7 @@ export function HelpPage() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="help-shortcuts grid gap-4 sm:grid-cols-3">
         <a
           href="mailto:support@wrx-generator.com"
           className="hover:border-primary-300 hover:bg-primary-50 flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 transition-colors"
@@ -162,28 +163,28 @@ export function HelpPage() {
         </a>
 
         <a
-          href="#"
+          href="/links/new"
           className="hover:border-primary-300 hover:bg-primary-50 flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 transition-colors"
         >
           <div className="rounded-lg bg-green-100 p-3">
             <ChatBubbleLeftRightIcon className="h-6 w-6 text-green-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Chat en direct</h3>
-            <p className="text-sm text-gray-500">Réponse en moins de 5 min</p>
+            <h3 className="font-semibold text-gray-900">Créer un lien</h3>
+            <p className="text-sm text-gray-500">Ouvrir le générateur</p>
           </div>
         </a>
 
         <a
-          href="#"
+          href="#help-questions"
           className="hover:border-primary-300 hover:bg-primary-50 flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 transition-colors"
         >
           <div className="rounded-lg bg-purple-100 p-3">
             <BookOpenIcon className="h-6 w-6 text-purple-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Documentation</h3>
-            <p className="text-sm text-gray-500">Guides détaillés</p>
+            <h3 className="font-semibold text-gray-900">Questions fréquentes</h3>
+            <p className="text-sm text-gray-500">Les réponses par sujet</p>
           </div>
         </a>
       </div>
@@ -196,6 +197,7 @@ export function HelpPage() {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
+              aria-pressed={selectedCategory === category.id}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 selectedCategory === category.id
                   ? 'bg-primary-100 text-primary-700'
@@ -210,7 +212,7 @@ export function HelpPage() {
       </div>
 
       {/* FAQ Accordion */}
-      <div className="space-y-3">
+      <div id="help-questions" className="space-y-3">
         <h2 className="text-xl font-semibold text-gray-900">Questions fréquentes</h2>
 
         {filteredFAQs.length === 0 ? (
@@ -232,6 +234,7 @@ export function HelpPage() {
             <div key={index} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
               <button
                 onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+                aria-expanded={expandedIndex === index}
                 className="flex w-full items-center justify-between p-4 text-left"
               >
                 <div className="flex items-center gap-3">

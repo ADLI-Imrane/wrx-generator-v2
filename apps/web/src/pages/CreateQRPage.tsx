@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useCreateQR, useGenerateQRPreview, useDownloadQR } from '../hooks/useQR';
+import { QRCodeSVG } from 'qrcode.react';
+import { useCreateQR, useDownloadQR } from '../hooks/useQR';
 import {
   QrCode,
   ArrowLeft,
@@ -11,6 +12,7 @@ import {
   Image,
   Type,
   Loader2,
+  Check,
 } from 'lucide-react';
 
 type QRType = 'url' | 'text' | 'vcard' | 'wifi' | 'email' | 'phone' | 'sms';
@@ -39,36 +41,13 @@ export function CreateQRPage() {
     size: 300,
   });
 
-  // Preview
-  const [preview, setPreview] = useState<string | null>(null);
-
   // États
   const [createdQR, setCreatedQR] = useState<{ id: string; imageUrl: string } | null>(null);
+  const [downloadedFormat, setDownloadedFormat] = useState<'png' | 'svg' | 'pdf' | null>(null);
+  const [downloadError, setDownloadError] = useState('');
 
   const { mutate: createQR, isPending, error } = useCreateQR();
-  const { mutate: generatePreview, isPending: isGeneratingPreview } = useGenerateQRPreview();
-  const { mutate: downloadQR, isPending: isDownloading } = useDownloadQR();
-
-  // Générer le preview quand le contenu change
-  useEffect(() => {
-    if (content.length > 3) {
-      const debounce = setTimeout(() => {
-        generatePreview(
-          {
-            type: qrType,
-            content,
-            style,
-          },
-          {
-            onSuccess: (previewData) => setPreview(previewData),
-          }
-        );
-      }, 500);
-      return () => clearTimeout(debounce);
-    } else {
-      setPreview(null);
-    }
-  }, [content, qrType, style, generatePreview]);
+  const { mutateAsync: downloadQR, isPending: isDownloading } = useDownloadQR();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,9 +61,10 @@ export function CreateQRPage() {
       },
       {
         onSuccess: (qr) => {
+          window.scrollTo({ top: 0, behavior: 'instant' });
           setCreatedQR({
             id: qr.id,
-            imageUrl: qr.imageUrl || preview || '',
+            imageUrl: qr.imageUrl || '',
           });
         },
       }
@@ -95,12 +75,18 @@ export function CreateQRPage() {
     setCreatedQR(null);
     setContent('');
     setTitle('');
-    setPreview(null);
   };
 
-  const handleDownload = (format: 'png' | 'svg' | 'pdf') => {
+  const handleDownload = async (format: 'png' | 'svg' | 'pdf') => {
     if (!createdQR) return;
-    downloadQR({ id: createdQR.id, format, size: style.size });
+    try {
+      await downloadQR({ id: createdQR.id, format, size: style.size });
+      setDownloadedFormat(format);
+      setDownloadError('');
+      window.setTimeout(() => setDownloadedFormat(null), 1800);
+    } catch {
+      setDownloadError('Le téléchargement a échoué. Réessayez dans un instant.');
+    }
   };
 
   const qrTypes: { value: QRType; label: string; placeholder: string }[] = [
@@ -116,21 +102,20 @@ export function CreateQRPage() {
   // Success state
   if (createdQR) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="qr-success mx-auto max-w-2xl space-y-6">
         <div className="card text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">QR Code créé avec succès !</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">Votre code est prêt.</h2>
           <p className="mt-2 text-gray-600">Votre QR code est prêt à être téléchargé.</p>
 
           <div className="mt-6 flex justify-center">
             {createdQR.imageUrl ? (
-              <img
-                src={createdQR.imageUrl}
-                alt="QR Code généré"
-                className="h-64 w-64 rounded-lg border border-gray-200"
-              />
+              <div className="wrx-qr-stage h-64 w-64 rounded-lg border border-gray-200">
+                <img src={createdQR.imageUrl} alt="QR Code généré" className="wrx-qr-assembled h-full w-full" />
+                <span aria-hidden="true" className="wrx-qr-scan" />
+              </div>
             ) : (
               <div className="flex h-64 w-64 items-center justify-center rounded-lg bg-gray-100">
                 <QrCode size={100} className="text-gray-400" />
@@ -140,42 +125,50 @@ export function CreateQRPage() {
 
           <div className="mt-6 flex flex-wrap justify-center gap-4">
             <button
-              onClick={() => handleDownload('png')}
+              onClick={() => void handleDownload('png')}
               disabled={isDownloading}
               className="btn btn-outline flex items-center gap-2"
             >
               {isDownloading ? (
                 <Loader2 size={18} className="animate-spin" />
+              ) : downloadedFormat === 'png' ? (
+                <Check size={18} />
               ) : (
                 <Download size={18} />
               )}
-              PNG
+              {downloadedFormat === 'png' ? 'Téléchargé' : 'PNG'}
             </button>
             <button
-              onClick={() => handleDownload('svg')}
+              onClick={() => void handleDownload('svg')}
               disabled={isDownloading}
               className="btn btn-outline flex items-center gap-2"
             >
               {isDownloading ? (
                 <Loader2 size={18} className="animate-spin" />
+              ) : downloadedFormat === 'svg' ? (
+                <Check size={18} />
               ) : (
                 <Download size={18} />
               )}
-              SVG
+              {downloadedFormat === 'svg' ? 'Téléchargé' : 'SVG'}
             </button>
             <button
-              onClick={() => handleDownload('pdf')}
+              onClick={() => void handleDownload('pdf')}
               disabled={isDownloading}
               className="btn btn-outline flex items-center gap-2"
             >
               {isDownloading ? (
                 <Loader2 size={18} className="animate-spin" />
+              ) : downloadedFormat === 'pdf' ? (
+                <Check size={18} />
               ) : (
                 <Download size={18} />
               )}
-              PDF
+              {downloadedFormat === 'pdf' ? 'Téléchargé' : 'PDF'}
             </button>
           </div>
+
+          {downloadError && <p role="alert" className="mt-4 text-sm text-red-700">{downloadError}</p>}
 
           <div className="mt-6 flex justify-center gap-4">
             <button onClick={handleCreateAnother} className="btn btn-outline">
@@ -191,7 +184,7 @@ export function CreateQRPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="tool-page qr-tool space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
@@ -201,8 +194,8 @@ export function CreateQRPage() {
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Créer un QR Code</h1>
-          <p className="mt-1 text-gray-600">Personnalisez votre QR code selon vos besoins</p>
+          <h1 className="text-2xl font-bold text-gray-900">Votre contenu prend forme.</h1>
+          <p className="mt-1 text-gray-600">Choisissez un contenu. Regardez votre code se construire.</p>
         </div>
       </div>
 
@@ -214,7 +207,7 @@ export function CreateQRPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="qr-composer grid gap-6 lg:grid-cols-2">
         {/* Formulaire */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Type de QR */}
@@ -232,7 +225,8 @@ export function CreateQRPage() {
                     setQrType(type.value);
                     setContent('');
                   }}
-                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  aria-pressed={qrType === type.value}
+                  className={`wrx-type-control rounded-lg border px-3 py-2 text-sm font-medium ${
                     qrType === type.value
                       ? 'border-primary-600 bg-primary-50 text-primary-600'
                       : 'border-gray-200 hover:bg-gray-50'
@@ -249,6 +243,7 @@ export function CreateQRPage() {
             <h3 className="mb-4 font-semibold text-gray-900">Titre (optionnel)</h3>
             <input
               type="text"
+              aria-label="Titre du QR code"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Mon QR code..."
@@ -264,6 +259,7 @@ export function CreateQRPage() {
             </h3>
             {qrType === 'text' || qrType === 'vcard' ? (
               <textarea
+                aria-label="Contenu du QR code"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={qrTypes.find((t) => t.value === qrType)?.placeholder}
@@ -274,6 +270,7 @@ export function CreateQRPage() {
             ) : (
               <input
                 type={qrType === 'email' ? 'email' : qrType === 'url' ? 'url' : 'text'}
+                aria-label="Contenu du QR code"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={qrTypes.find((t) => t.value === qrType)?.placeholder}
@@ -295,12 +292,14 @@ export function CreateQRPage() {
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
+                    aria-label="Couleur du QR"
                     value={style.foregroundColor}
                     onChange={(e) => setStyle({ ...style, foregroundColor: e.target.value })}
                     className="h-10 w-10 cursor-pointer rounded border border-gray-300"
                   />
                   <input
                     type="text"
+                    aria-label="Couleur du QR"
                     value={style.foregroundColor}
                     onChange={(e) => setStyle({ ...style, foregroundColor: e.target.value })}
                     className="input flex-1"
@@ -312,12 +311,14 @@ export function CreateQRPage() {
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
+                    aria-label="Couleur de fond"
                     value={style.backgroundColor}
                     onChange={(e) => setStyle({ ...style, backgroundColor: e.target.value })}
                     className="h-10 w-10 cursor-pointer rounded border border-gray-300"
                   />
                   <input
                     type="text"
+                    aria-label="Couleur de fond"
                     value={style.backgroundColor}
                     onChange={(e) => setStyle({ ...style, backgroundColor: e.target.value })}
                     className="input flex-1"
@@ -336,16 +337,18 @@ export function CreateQRPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Taille du QR code</span>
-                <span className="text-sm font-medium">{style.size}px</span>
+                <span key={style.size} className="wrx-length-number text-xl">{style.size}<small className="ml-0.5 text-xs font-normal text-slate-500">px</small></span>
               </div>
               <input
                 type="range"
+                aria-label="Taille du QR code"
                 min="100"
                 max="500"
                 step="50"
                 value={style.size}
                 onChange={(e) => setStyle({ ...style, size: parseInt(e.target.value) })}
-                className="w-full"
+                style={{ '--wrx-range-progress': `${((style.size - 100) / 400) * 100}%` } as React.CSSProperties}
+                className="wrx-range w-full"
               />
             </div>
           </div>
@@ -362,24 +365,22 @@ export function CreateQRPage() {
         </form>
 
         {/* Preview */}
-        <div className="lg:sticky lg:top-6">
+        <div className="qr-preview-panel">
           <div className="card">
-            <h3 className="mb-4 font-semibold text-gray-900">Aperçu</h3>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="font-semibold text-gray-900">Aperçu</h3>
+              <span role="status" className={`wrx-qr-status text-xs font-medium ${content ? 'text-emerald-700' : 'text-slate-500'}`}>
+                {content ? 'QR prêt' : 'En attente'}
+              </span>
+            </div>
             <div
-              className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 p-8"
+              className="wrx-qr-preview-frame flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 p-8"
               style={{ backgroundColor: style.backgroundColor }}
             >
-              {isGeneratingPreview ? (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="border-primary-600 h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
-                  <span className="text-sm text-gray-500">Génération...</span>
+              {content ? (
+                <div className="wrx-qr-stage" style={{ width: style.size, maxWidth: '100%', backgroundColor: style.backgroundColor }}>
+                  <QRCodeSVG value={content} size={style.size} fgColor={style.foregroundColor} bgColor={style.backgroundColor} includeMargin title="Aperçu du QR code" />
                 </div>
-              ) : preview ? (
-                <img
-                  src={preview}
-                  alt="QR Code preview"
-                  style={{ width: style.size, height: style.size, maxWidth: '100%' }}
-                />
               ) : (
                 <div className="text-center">
                   <QrCode size={100} className="mx-auto text-gray-300" />
@@ -387,6 +388,7 @@ export function CreateQRPage() {
                 </div>
               )}
             </div>
+            <p className="qr-preview-note">APERÇU EN DIRECT / PRÊT POUR LE MONDE RÉEL</p>
           </div>
         </div>
       </div>

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLogin, useOAuthLogin } from '../hooks/useAuth';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { AuthFrame } from '../components/AuthFrame';
+import { BrandLogo } from '../components/BrandLogo';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -26,15 +28,13 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <AuthFrame>
       {/* Panneau gauche - Formulaire */}
-      <div className="flex flex-1 items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="auth-fields">
         <div className="w-full max-w-md space-y-8">
           {/* Logo */}
           <div className="text-center">
-            <div className="bg-primary-600 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl">
-              <span className="text-xl font-bold text-white">W</span>
-            </div>
+            <BrandLogo size="auth" className="mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900">Connectez-vous à votre compte</h2>
             <p className="mt-2 text-gray-600">
               Pas encore de compte ?{' '}
@@ -95,6 +95,7 @@ export function LoginPage() {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
@@ -177,17 +178,6 @@ export function LoginPage() {
         </div>
       </div>
 
-      {/* Panneau droit - Image */}
-      <div className="from-primary-600 to-accent-600 hidden bg-gradient-to-br lg:block lg:w-1/2">
-        <div className="flex h-full items-center justify-center p-12">
-          <div className="text-center text-white">
-            <h1 className="mb-4 text-4xl font-bold">WRX Generator</h1>
-            <p className="text-primary-100 text-xl">
-              Créez, gérez et suivez vos liens courts et QR codes en toute simplicité.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    </AuthFrame>
   );
 }

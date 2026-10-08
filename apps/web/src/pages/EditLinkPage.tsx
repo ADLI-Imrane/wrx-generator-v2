@@ -1,3 +1,4 @@
+import { Modal } from '../components/Modal';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useLink, useUpdateLink, useDeleteLink } from '../hooks/useLinks';
@@ -85,7 +86,7 @@ export function EditLinkPage() {
 
   if (loadError || !link) {
     return (
-      <div className="mx-auto max-w-2xl">
+      <div className="tool-page link-tool">
         <div className="rounded-lg bg-red-50 p-6 text-center">
           <h2 className="text-lg font-semibold text-red-800">Lien non trouvé</h2>
           <p className="mt-2 text-red-600">Ce lien n'existe pas ou vous n'y avez pas accès.</p>
@@ -100,7 +101,7 @@ export function EditLinkPage() {
   const shortUrl = `${window.location.origin}/s/${link.slug}`;
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="tool-page link-tool">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -127,7 +128,7 @@ export function EditLinkPage() {
       </div>
 
       {/* Short URL Display */}
-      <div className="bg-primary-50 mb-6 rounded-lg p-4">
+      <div className="wrx-edit-short-url mb-6">
         <label className="text-primary-700 mb-1 block text-sm font-medium">URL raccourcie</label>
         <div className="flex items-center gap-2">
           <code className="text-primary-800 flex-1 rounded bg-white px-3 py-2 font-mono text-sm">
@@ -147,7 +148,7 @@ export function EditLinkPage() {
       </div>
 
       {/* Edit Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="link-composer link-edit-form">
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           {/* Original URL */}
           <div className="mb-4">
@@ -266,10 +267,7 @@ export function EditLinkPage() {
       </form>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Supprimer le lien ?</h3>
+      <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Supprimer le lien ?" size="sm">
             <p className="mt-2 text-gray-600">
               Cette action est irréversible. Toutes les statistiques associées seront également
               supprimées.
@@ -289,9 +287,7 @@ export function EditLinkPage() {
                 {deleteLink.isPending ? 'Suppression...' : 'Supprimer'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

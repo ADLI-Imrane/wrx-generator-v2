@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { Layout, ProtectedRoute } from './components';
+import { AuthFrame } from './components/AuthFrame';
 import {
   LoginPage,
   RegisterPage,
@@ -20,6 +21,7 @@ import {
   SettingsPage,
   HelpPage,
   BillingPage,
+  PasswordGeneratorPage,
 } from './pages';
 import { BusinessCardsPage } from './pages/BusinessCardsPage';
 import { BusinessCardEditorPage } from './pages/BusinessCardEditorPage';
@@ -124,6 +126,10 @@ export const router = createBrowserRouter([
         element: <AnalyticsPage />,
       },
       {
+        path: 'passwords',
+        element: <PasswordGeneratorPage />,
+      },
+      {
         path: 'billing',
         element: <BillingPage />,
       },
@@ -142,15 +148,16 @@ export const router = createBrowserRouter([
   {
     path: '*',
     element: (
-      <div className="flex min-h-screen items-center justify-center">
+      <AuthFrame>
         <div className="text-center">
-          <h1 className="text-6xl font-bold text-gray-900">404</h1>
+          <p className="eyebrow mb-4">Destination introuvable / 404</p>
+          <h2 className="text-4xl font-bold text-gray-900">Ce chemin s’arrête ici.</h2>
           <p className="mt-4 text-xl text-gray-600">Page non trouvée</p>
           <a href="/dashboard" className="btn btn-primary mt-6 inline-block">
             Retour au dashboard
           </a>
         </div>
-      </div>
+      </AuthFrame>
     ),
   },
 ]);

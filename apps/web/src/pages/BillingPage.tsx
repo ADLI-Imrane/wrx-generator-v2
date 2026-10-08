@@ -47,10 +47,10 @@ export function BillingPage() {
   const [pendingPriceId, setPendingPriceId] = useState<string | null>(null);
 
   // API hooks
-  const { data: plans = [], isLoading: plansLoading } = usePlans();
-  const { data: subscription, isLoading: subscriptionLoading } = useSubscription();
-  const { data: usage, isLoading: usageLoading } = useUsage();
-  const { data: invoices = [], isLoading: invoicesLoading } = useInvoices();
+  const { data: plans = [], isLoading: plansLoading, error: plansError, refetch: refetchPlans } = usePlans();
+  const { data: subscription, isLoading: subscriptionLoading, error: subscriptionError, refetch: refetchSubscription } = useSubscription();
+  const { data: usage, isLoading: usageLoading, error: usageError, refetch: refetchUsage } = useUsage();
+  const { data: invoices = [], isLoading: invoicesLoading, error: invoicesError, refetch: refetchInvoices } = useInvoices();
   const createCheckout = useCreateCheckout();
   const customerPortal = useCustomerPortal();
   const cancelSubscription = useCancelSubscription();
@@ -59,12 +59,14 @@ export function BillingPage() {
   const downgradeToFree = useDowngradeToFree();
   const previewPlanChange = usePreviewPlanChange();
   const completeUpgrade = useCompleteUpgrade();
+  const syncSubscriptionMutate = syncSubscription.mutate;
+  const completeUpgradeMutate = completeUpgrade.mutate;
 
   // Handle success/cancel from Stripe
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
       // Sync subscription from Stripe
-      syncSubscription.mutate(undefined, {
+      syncSubscriptionMutate(undefined, {
         onSuccess: (data) => {
           toast.success(`Paiement réussi ! Votre plan ${data.tier} est maintenant actif.`);
         },
@@ -78,7 +80,7 @@ export function BillingPage() {
       // Upgrade payment completed - finalize the upgrade
       const sessionId = searchParams.get('session_id');
       if (sessionId) {
-        completeUpgrade.mutate(sessionId, {
+        completeUpgradeMutate(sessionId, {
           onSuccess: (data) => {
             toast.success(data.message);
             // Clear URL params
@@ -95,7 +97,7 @@ export function BillingPage() {
     } else if (searchParams.get('upgrade') === 'canceled') {
       toast.error('Mise à niveau annulée.');
     }
-  }, [searchParams]);
+  }, [searchParams, syncSubscriptionMutate, completeUpgradeMutate]);
 
   // Manual sync handler
   const handleSyncSubscription = () => {
@@ -187,7 +189,9 @@ export function BillingPage() {
       });
     } else {
       // New subscription
-      createCheckout.mutate(priceId);
+      createCheckout.mutate(priceId, {
+        onError: () => toast.error('Le paiement est indisponible pour le moment.'),
+      });
     }
   };
 
@@ -223,7 +227,9 @@ export function BillingPage() {
   };
 
   const handleManageBilling = () => {
-    customerPortal.mutate();
+    customerPortal.mutate(undefined, {
+      onError: () => toast.error('Le portail de facturation est indisponible pour le moment.'),
+    });
   };
 
   const handleCancelSubscription = () => {
@@ -248,8 +254,18 @@ export function BillingPage() {
     );
   }
 
+  if (plansError || subscriptionError || usageError) {
+    return (
+      <div role="alert" className="mx-auto max-w-2xl rounded-lg border border-red-200 bg-red-50 p-6 text-red-900">
+        <h1 className="text-xl font-semibold">Facturation indisponible</h1>
+        <p className="mt-2 text-sm">Les plans ou votre abonnement n’ont pas pu être chargés. Vérifiez que l’API WRX est démarrée, puis réessayez.</p>
+        <button type="button" className="btn btn-primary mt-4" onClick={() => { void refetchPlans(); void refetchSubscription(); void refetchUsage(); }}>Réessayer</button>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="billing-workspace mx-auto space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Facturation</h1>
@@ -257,7 +273,7 @@ export function BillingPage() {
       </div>
 
       {/* Current Plan & Usage */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="billing-summary grid gap-6 lg:grid-cols-2">
         {/* Current Plan */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between">
@@ -414,52 +430,40 @@ export function BillingPage() {
       <div>
         <div className="mb-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
           <h2 className="text-xl font-semibold text-gray-900">Changer de plan</h2>
-
-          {/* Billing Period Toggle */}
           <div className="flex items-center gap-3 rounded-lg bg-gray-100 p-1">
             <button
               onClick={() => setBillingPeriod('monthly')}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                billingPeriod === 'monthly'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${billingPeriod === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
             >
               Mensuel
             </button>
             <button
               onClick={() => setBillingPeriod('yearly')}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                billingPeriod === 'yearly'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${billingPeriod === 'yearly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
             >
-              Annuel
-              <span className="ml-1.5 rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700">
-                -17%
-              </span>
+              Annuel <span className="ml-1.5 rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700">-17%</span>
             </button>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="billing-plans grid gap-4 md:grid-cols-3">
           {plans.map((plan) => {
             const Icon = planIcons[plan.id] || SparklesIcon;
-            const price = billingPeriod === 'yearly' ? plan.price * 10 : plan.price; // 2 months free for yearly
+            const price = billingPeriod === 'yearly' ? plan.price * 10 : plan.price;
             const isCurrentPlan = subscription?.tier === plan.id;
             const isPopular = plan.id === 'pro';
 
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-lg border-2 bg-white p-6 ${
+                data-highlighted={isPopular}
+                className={`plan-option relative rounded-lg border-2 bg-white p-6 ${
                   isPopular ? 'border-primary-500 ring-primary-500 ring-1' : 'border-gray-200'
                 }`}
               >
                 {isPopular && (
                   <span className="bg-primary-500 absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-medium text-white">
-                    Populaire
+                    Pro
                   </span>
                 )}
 
@@ -477,16 +481,11 @@ export function BillingPage() {
 
                 <div className="mb-4 flex items-end gap-1">
                   <span className="text-3xl font-bold text-gray-900">
-                    {billingPeriod === 'yearly' && plan.price > 0
-                      ? Math.round(price / 12)
-                      : plan.price}
+                    {billingPeriod === 'yearly' && plan.price > 0 ? Math.round(price / 12) : plan.price}
                   </span>
                   <span className="mb-1 text-gray-500">MAD/mois</span>
                 </div>
-
-                {billingPeriod === 'yearly' && plan.price > 0 && (
-                  <p className="mb-4 text-sm text-gray-500">Facturé {price} MAD par an</p>
-                )}
+                {billingPeriod === 'yearly' && plan.price > 0 && <p className="mb-4 text-sm text-gray-500">Facturé {price} MAD par an</p>}
 
                 <ul className="mb-6 space-y-2">
                   {plan.features.map((feature, index) => (
@@ -565,6 +564,8 @@ export function BillingPage() {
           <div className="mt-4 flex justify-center py-8">
             <ArrowPathIcon className="h-6 w-6 animate-spin text-gray-400" />
           </div>
+        ) : invoicesError ? (
+          <p role="alert" className="mt-4 text-sm text-red-700">Impossible de charger les factures. <button type="button" className="underline" onClick={() => { void refetchInvoices(); }}>Réessayer</button></p>
         ) : invoices.length === 0 ? (
           <p className="mt-4 text-gray-500">Aucune facture pour le moment.</p>
         ) : (

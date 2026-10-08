@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 
 interface ModalProps {
@@ -11,6 +11,8 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
   // Fermer avec Escape
   const handleEscape = useCallback(
     (event: KeyboardEvent) => {
@@ -22,14 +24,32 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
   );
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    const background = document.getElementById('root');
+    const wasInert = background?.inert ?? false;
+    if (background) background.inert = true;
+    panelRef.current?.focus();
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const focusable = Array.from(panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]') ?? []).filter(node => node.getClientRects().length > 0);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first) { event.preventDefault(); return; }
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === panelRef.current)) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
       document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', trapFocus);
       document.body.style.overflow = 'hidden';
-    }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = '';
+      document.removeEventListener('keydown', trapFocus);
+      document.body.style.overflow = previousOverflow;
+      if (background) background.inert = wasInert;
+      previousFocus?.focus();
     };
   }, [isOpen, handleEscape]);
 
@@ -45,20 +65,27 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
   return createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} />
+      <div className="wrx-modal-backdrop fixed inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative w-full ${sizeClasses[size]} transform rounded-xl bg-white shadow-xl transition-all`}
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={title ? titleId : undefined}
+          aria-label={title ? undefined : 'Dialogue WRX'}
+          tabIndex={-1}
+          className={`wrx-modal-panel relative w-full ${sizeClasses[size]} rounded-xl bg-white shadow-xl`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {title && (
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+              <h2 id={titleId} className="text-lg font-semibold text-gray-900">{title}</h2>
               <button
                 onClick={onClose}
+                aria-label="Fermer le dialogue"
                 className="rounded-lg p-2 transition-colors hover:bg-gray-100"
               >
                 <X size={20} className="text-gray-500" />

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useResetPassword } from '../hooks/useAuth';
 import { Mail, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
+import { AuthFrame } from '../components/AuthFrame';
+import { BrandLogo } from '../components/BrandLogo';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -21,7 +23,7 @@ export function ForgotPasswordPage() {
 
   if (isSubmitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <AuthFrame>
         <div className="w-full max-w-md space-y-8 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <CheckCircle className="h-8 w-8 text-green-600" />
@@ -41,18 +43,16 @@ export function ForgotPasswordPage() {
             </Link>
           </div>
         </div>
-      </div>
+      </AuthFrame>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <AuthFrame>
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
         <div className="text-center">
-          <div className="bg-primary-600 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl">
-            <span className="text-xl font-bold text-white">W</span>
-          </div>
+          <BrandLogo size="auth" className="mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900">Mot de passe oublié ?</h2>
           <p className="mt-2 text-gray-600">
             Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
@@ -102,6 +102,6 @@ export function ForgotPasswordPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </AuthFrame>
   );
 }

@@ -1,3 +1,4 @@
+import { ResourceTabs } from '../components/ProductPrimitives';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLinks, useDeleteLink } from '../hooks/useLinks';
@@ -52,7 +53,7 @@ export function LinksPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="resource-page space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -65,6 +66,7 @@ export function LinksPage() {
         </Link>
       </div>
 
+      <ResourceTabs />
       {/* Filters */}
       <div className="card">
         <div className="flex flex-col gap-4 md:flex-row">
@@ -114,7 +116,8 @@ export function LinksPage() {
             </select>
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+              className="wrx-sort-control rounded-lg p-2 transition-colors hover:bg-gray-100"
+              aria-label={`Tri ${sortOrder === 'asc' ? 'ascendant' : 'descendant'}`}
             >
               {sortOrder === 'asc' ? (
                 <SortAsc size={18} className="text-gray-600" />
@@ -141,11 +144,19 @@ export function LinksPage() {
           <LinkIcon className="mx-auto text-gray-300" size={64} />
           <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun lien trouvé</h3>
           <p className="mt-2 text-gray-500">
-            {search
-              ? 'Aucun lien ne correspond à votre recherche.'
+            {search || filterActive !== undefined
+              ? 'Aucun lien ne correspond aux filtres sélectionnés.'
               : 'Commencez par créer votre premier lien court.'}
           </p>
-          {!search && (
+          {search || filterActive !== undefined ? (
+            <button
+              type="button"
+              className="btn btn-outline mt-6"
+              onClick={() => { setSearch(''); setFilterActive(undefined); setPage(1); }}
+            >
+              Effacer les filtres
+            </button>
+          ) : (
             <Link to="/links/new" className="btn btn-primary mt-6 inline-flex items-center gap-2">
               <Plus size={18} />
               Créer un lien
@@ -154,16 +165,17 @@ export function LinksPage() {
         </div>
       ) : (
         <>
-          <div className="space-y-4">
-            {data?.data?.map((link) => (
-              <LinkCard
-                key={link.id}
+          <div key={data?.data?.map((item) => item.id).join(':')} className="space-y-4">
+            {data?.data?.map((link, index) => (
+              <div key={link.id} className="wrx-resource-enter" style={{ '--wrx-entry-index': index } as React.CSSProperties}>
+                <LinkCard
                 link={link}
                 onCopy={handleCopy}
                 onEdit={handleEdit}
                 onDelete={setDeleteModal}
                 onGenerateQR={handleGenerateQR}
-              />
+                />
+              </div>
             ))}
           </div>
 
