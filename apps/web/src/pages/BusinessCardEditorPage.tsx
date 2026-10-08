@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, ChevronDown, Download, Eye, EyeOff, LoaderCircle, Printer, Save } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Download, Eye, EyeOff, LoaderCircle, Printer, RefreshCw, Save } from 'lucide-react';
 import {
   BUSINESS_CARD_SCHEMA_VERSION,
   parseBusinessCardDocument,
@@ -13,10 +13,12 @@ import {
 import { useProfile } from '../hooks/useAuth';
 import { useAuthStore } from '../stores/auth.store';
 import { useBusinessCard, useCreateBusinessCard, useUpdateBusinessCard } from '../hooks/useBusinessCards';
+import { useDigitalCards } from '../hooks/useDigitalCards';
 import { BusinessCardPreview } from '../components/BusinessCardPreview';
 import { BusinessCardPrintDocument } from '../components/BusinessCardPrintDocument';
 import { BUSINESS_CARD_MANAGED_QR_NOTICE, businessCardTemplates } from '../components/businessCardPreview.data';
 import { downloadBusinessCardPng, prepareBusinessCardArtwork, BUSINESS_CARD_PRINT_SPEC } from '../components/businessCardExport';
+import { publicDigitalCardUrl } from '../lib/digital-card-vcard';
 
 const emptyVisibility: BusinessCardVisibility = {
   fullName: true, jobTitle: true, company: true, email: true, phone: true, website: true, address: true,
@@ -56,11 +58,13 @@ export function BusinessCardEditorPage() {
   const { user } = useAuthStore();
   const profileQuery = useProfile();
   const cardQuery = useBusinessCard(id);
+  const digitalCardsQuery = useDigitalCards({ staleTime: 0, refetchOnWindowFocus: true });
   const createCard = useCreateBusinessCard();
   const updateCard = useUpdateBusinessCard();
   const [title, setTitle] = useState('Carte professionnelle');
   const [document, setDocument] = useState<BusinessCardDocument>(blankDocument);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
+  const [qrDestinationMode, setQrDestinationMode] = useState<'manual' | 'digital-card'>('manual');
   const [formError, setFormError] = useState('');
   const [isPrefilled, setIsPrefilled] = useState(false);
   const didInitialize = useRef(false);
@@ -70,12 +74,28 @@ export function BusinessCardEditorPage() {
   const [exportFeedback, setExportFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const isSaving = createCard.isPending || updateCard.isPending;
   const profileReady = profileQuery.isSuccess || profileQuery.isError;
+  const qrSource = document.qr?.mode === 'static' ? document.qr.digitalCardSource : undefined;
+  const selectedDigitalCardRecord = qrSource
+    ? digitalCardsQuery.data?.find((card) => card.id === qrSource.id)
+    : undefined;
+  const selectedDigitalCard = selectedDigitalCardRecord?.slug === qrSource?.slug && selectedDigitalCardRecord?.status === 'published'
+    ? selectedDigitalCardRecord
+    : undefined;
+  const publishedDigitalCards = digitalCardsQuery.data?.filter((card) => card.status === 'published') ?? [];
+  const qrSourceNeedsResolution = qrDestinationMode === 'digital-card' && (
+    !qrSource || digitalCardsQuery.isFetching || digitalCardsQuery.isError || !selectedDigitalCard
+  );
+  const artworkDocument = useMemo(() => {
+    if (qrDestinationMode !== 'digital-card' || !qrSourceNeedsResolution) return document;
+    return { ...document, visibility: { ...document.visibility, qr: false } };
+  }, [document, qrDestinationMode, qrSourceNeedsResolution]);
 
   useEffect(() => {
     didInitialize.current = false;
     setDocument(blankDocument());
     setTitle('Carte professionnelle');
     setActiveSide('front');
+    setQrDestinationMode('manual');
     setIsPrefilled(false);
     setFormError('');
     setExportFeedback(null);
@@ -85,7 +105,9 @@ export function BusinessCardEditorPage() {
     if (!editing || !cardQuery.data || didInitialize.current) return;
     const saved = cardQuery.data;
     setTitle(saved.title);
-    setDocument(parseBusinessCardDocument(saved.document));
+    const savedDocument = parseBusinessCardDocument(saved.document);
+    setDocument(savedDocument);
+    setQrDestinationMode(savedDocument.qr?.mode === 'static' && savedDocument.qr.digitalCardSource ? 'digital-card' : 'manual');
     didInitialize.current = true;
   }, [editing, cardQuery.data]);
 
@@ -133,7 +155,50 @@ export function BusinessCardEditorPage() {
     setDocument((current) => ({ ...current, visibility: { ...current.visibility, [key]: checked } }));
   };
 
+  const setQrDestination = (mode: 'manual' | 'digital-card') => {
+    setQrDestinationMode(mode);
+    setFormError('');
+    if (mode === 'manual') {
+      setDocument((current) => {
+        if (current.qr?.mode !== 'static' || !current.qr.digitalCardSource) return current;
+        return {
+          ...current,
+          qr: {
+            mode: 'static',
+            type: 'url',
+            content: current.identity.website || '',
+          },
+        };
+      });
+    }
+  };
+
+  const selectDigitalCard = (cardId: string) => {
+    const card = digitalCardsQuery.data?.find((item) => item.id === cardId && item.status === 'published');
+    if (!card) return;
+    setQrDestinationMode('digital-card');
+    setFormError('');
+    setDocument((current) => ({
+      ...current,
+      visibility: { ...current.visibility, qr: true },
+      sides: {
+        ...current.sides,
+        back: {
+          ...current.sides.back,
+          composition: current.sides.back.composition === 'qr' ? 'qr' : 'contact-qr',
+        },
+      },
+      qr: {
+        mode: 'static',
+        type: 'url',
+        content: publicDigitalCardUrl(card.slug),
+        digitalCardSource: { id: card.id, slug: card.slug },
+      },
+    }));
+  };
+
   const exportPng = async (side: 'front' | 'back') => {
+    if (side === 'back' && qrSourceNeedsResolution) return;
     const node = (side === 'front' ? frontArtworkRef : backArtworkRef).current;
     if (!node || exportTask) return;
     setExportTask(side);
@@ -149,6 +214,7 @@ export function BusinessCardEditorPage() {
   };
 
   const printCard = async () => {
+    if (qrSourceNeedsResolution) return;
     if (!frontArtworkRef.current || exportTask) return;
     setExportTask('print');
     setExportFeedback(null);
@@ -167,6 +233,10 @@ export function BusinessCardEditorPage() {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setFormError('');
+    if (qrSourceNeedsResolution) {
+      setFormError('Vérifiez, remplacez ou retirez la Carte numérique sélectionnée avant d’enregistrer ou d’exporter le verso.');
+      return;
+    }
     try {
       const normalized = parseBusinessCardDocument(document);
       if (editing) await updateCard.mutateAsync({ id, input: { title, document: normalized } });
@@ -188,7 +258,7 @@ export function BusinessCardEditorPage() {
         <div className="bc-editor-template-indicator"><span>{template?.mark}</span><small>{template?.name}</small></div>
       </header>
 
-      <div className="bc-mobile-preview"><div className="bc-mobile-preview-heading"><span className="bc-overline">APERÇU</span><span><Eye size={14} /> Mis à jour en direct</span></div><BusinessCardPreview document={document} side={activeSide} onSideChange={setActiveSide} compact /></div>
+      <div className="bc-mobile-preview"><div className="bc-mobile-preview-heading"><span className="bc-overline">APERÇU</span><span><Eye size={14} /> Mis à jour en direct</span></div><BusinessCardPreview document={artworkDocument} side={activeSide} onSideChange={setActiveSide} compact /></div>
 
       <div className="bc-editor-layout">
         <form className="bc-editor-form" onSubmit={(event) => void submit(event)} noValidate>
@@ -236,25 +306,39 @@ export function BusinessCardEditorPage() {
             <div className="bc-section-title"><span>04</span><div><h2>Verso & partage</h2><p>Choisissez ce qui accompagne le recto.</p></div></div>
             <VisibilityToggle label="Activer le verso" checked={document.sides.back.enabled} onChange={(checked) => {
               if (!checked) setActiveSide('front');
+              if (!checked) setQrDestinationMode('manual');
               setDocument((current) => ({ ...current, ...(!checked ? { qr: undefined } : {}), sides: { ...current.sides, back: { ...current.sides.back, enabled: checked } } }));
             }} />
             {document.sides.back.enabled && <>
               <Field label="Contenu du verso"><select value={document.sides.back.composition} onChange={(event) => {
                 const composition = event.target.value as 'contact' | 'qr' | 'contact-qr';
+                if (composition === 'contact') setQrDestinationMode('manual');
                 setDocument((current) => ({ ...current, ...(composition === 'contact' ? { qr: undefined } : {}), sides: { ...current.sides, back: { ...current.sides.back, composition } } }));
               }}><option value="contact">Coordonnées</option><option value="contact-qr">Coordonnées + QR</option><option value="qr">QR seul</option></select></Field>
               {document.qr?.mode === 'managed' && <div className="bc-form-error" role="alert"><p>{BUSINESS_CARD_MANAGED_QR_NOTICE}</p><button type="button" className="bc-text-button" onClick={() => setDocument((current) => ({ ...current, qr: undefined, sides: { ...current.sides, back: { ...current.sides.back, composition: 'contact' } } }))}>Retirer le QR non pris en charge</button></div>}
               <p className="bc-help-note">QR statique : contenu fixe, sans suivi des scans.</p>
               <VisibilityToggle label="Afficher le QR statique" checked={document.qr?.mode === 'static'} onChange={(checked) => {
+                setQrDestinationMode('manual');
                 setDocument((current) => ({ ...current, visibility: { ...current.visibility, qr: checked }, sides: { ...current.sides, back: { ...current.sides.back, composition: checked ? 'contact-qr' : 'contact' } }, ...(checked ? { qr: { mode: 'static', type: 'url', content: current.identity.website || '' } } : { qr: undefined }) }));
               }} />
               {document.qr?.mode === 'static' && <div className="bc-qr-config">
+                <Field label="Destination du QR"><select value={qrDestinationMode} onChange={(event) => setQrDestination(event.target.value as 'manual' | 'digital-card')}><option value="manual">Destination manuelle / statique</option><option value="digital-card">Carte numérique publiée</option></select></Field>
+                {qrDestinationMode === 'digital-card' ? <div className="bc-qr-digital-source">
+                  {digitalCardsQuery.isFetching && <p className="bc-help-note" role="status">Vérification des Cartes numériques publiées…</p>}
+                  {digitalCardsQuery.isError && <div className="bc-qr-source-warning" role="alert"><p>Impossible de vérifier la publication de cette destination. Réessayez ou revenez à une destination manuelle.</p><button type="button" className="bc-text-button" onClick={() => void digitalCardsQuery.refetch()}><RefreshCw size={13} /> Réessayer</button></div>}
+                  {!digitalCardsQuery.isFetching && !digitalCardsQuery.isError && qrSource && !selectedDigitalCard && <div className="bc-qr-source-warning" role="alert"><p>{selectedDigitalCardRecord ? `« ${selectedDigitalCardRecord.title} » n’est plus publiée.` : 'La Carte numérique sélectionnée n’est plus disponible.'} Son adresse publique ne peut donc pas être considérée comme fonctionnelle.</p><button type="button" className="bc-text-button" onClick={() => setQrDestination('manual')}>Retirer la sélection</button></div>}
+                  {!digitalCardsQuery.isFetching && !digitalCardsQuery.isError && publishedDigitalCards.length > 0 && <Field label={qrSource && !selectedDigitalCard ? 'Choisir une carte publiée pour remplacer' : 'Carte numérique publiée'}><select value={selectedDigitalCard?.id ?? ''} onChange={(event) => selectDigitalCard(event.target.value)}><option value="">Choisir une carte…</option>{publishedDigitalCards.map((card) => <option key={card.id} value={card.id}>{card.title} · {card.document.identity.fullName}</option>)}</select></Field>}
+                  {!digitalCardsQuery.isFetching && !digitalCardsQuery.isError && publishedDigitalCards.length === 0 && !qrSource && <p className="bc-help-note">Aucune Carte numérique publiée. <Link to="/digital-cards">Publier une carte</Link> avant de la sélectionner ici.</p>}
+                  {!qrSourceNeedsResolution && selectedDigitalCard && document.qr?.mode === 'static' && <div className="bc-qr-source-summary"><strong>{selectedDigitalCard.title}</strong><code>{document.qr.content}</code><p>L’adresse encodée reste fixe après impression. La Carte numérique doit rester publiée pour être accessible.</p></div>}
+                  <p className="bc-help-note">Le QR reste statique : aucun suivi des scans. Une carte dépubliée ne sera plus accessible à cette adresse.</p>
+                </div> : <>
                 <Field label="Le QR contient"><select value={document.qr.type} onChange={(event) => {
                   const type = event.target.value as BusinessCardQrType;
                   setDocument((current) => current.qr?.mode !== 'static' ? current : ({ ...current, qr: { mode: 'static', type, content: type === 'url' ? current.identity.website || '' : type === 'email' ? current.identity.email || '' : type === 'phone' ? current.identity.phone || '' : type === 'vcard' ? 'contact' : '' } }));
                 }}><option value="url">Une adresse web</option><option value="vcard">Une fiche contact (vCard)</option><option value="email">Un email</option><option value="phone">Un numéro de téléphone</option><option value="text">Un texte</option></select></Field>
                 {document.qr.type !== 'vcard' && <Field label="Contenu encodé"><input required maxLength={2048} value={document.qr.content} onChange={(event) => setDocument((current) => current.qr?.mode !== 'static' ? current : ({ ...current, qr: { ...current.qr, content: event.target.value } }))} placeholder={document.qr.type === 'url' ? 'https://exemple.com' : document.qr.type === 'email' ? 'nom@exemple.com' : document.qr.type === 'phone' ? '+212…' : 'Votre message'} /></Field>}
                 {document.qr.type === 'vcard' && <p className="bc-help-note">Le QR sera généré depuis les coordonnées renseignées ci-dessus.</p>}
+                </>}
               </div>}
             </>}
           </section>
@@ -271,16 +355,16 @@ export function BusinessCardEditorPage() {
             <div><span className="bc-overline">DERNIÈRE ÉTAPE</span><h2 id="bc-export-title">Prête à circuler.</h2><p>PNG haute résolution ou impression recto{document.sides.back.enabled ? ' + verso' : ''} au format carte.</p></div>
             <div className="bc-export-actions">
               <button type="button" className="btn btn-outline" disabled={!!exportTask} onClick={() => void exportPng('front')}>{exportTask === 'front' ? <LoaderCircle className="bc-spin" size={15} /> : <Download size={15} />}PNG recto</button>
-              <button type="button" className="btn btn-outline" disabled={!!exportTask || !document.sides.back.enabled} title={document.sides.back.enabled ? 'Télécharger le verso en PNG' : 'Activez le verso pour l’exporter'} onClick={() => void exportPng('back')}>{exportTask === 'back' ? <LoaderCircle className="bc-spin" size={15} /> : <Download size={15} />}PNG verso</button>
-              <button type="button" className="btn btn-primary" disabled={!!exportTask} onClick={() => void printCard()}>{exportTask === 'print' ? <LoaderCircle className="bc-spin" size={15} /> : <Printer size={15} />}Imprimer / Enregistrer PDF</button>
+              <button type="button" className="btn btn-outline" disabled={!!exportTask || !document.sides.back.enabled || qrSourceNeedsResolution} title={!document.sides.back.enabled ? 'Activez le verso pour l’exporter' : qrSourceNeedsResolution ? 'Vérifiez ou remplacez la Carte numérique sélectionnée' : 'Télécharger le verso en PNG'} onClick={() => void exportPng('back')}>{exportTask === 'back' ? <LoaderCircle className="bc-spin" size={15} /> : <Download size={15} />}PNG verso</button>
+              <button type="button" className="btn btn-primary" disabled={!!exportTask || qrSourceNeedsResolution} onClick={() => void printCard()}>{exportTask === 'print' ? <LoaderCircle className="bc-spin" size={15} /> : <Printer size={15} />}Imprimer / Enregistrer PDF</button>
             </div>
             <p className={`bc-export-feedback${exportFeedback?.type === 'error' ? ' is-error' : ''}`} role={exportFeedback?.type === 'error' ? 'alert' : 'status'} aria-live="polite">{exportTask ? exportTask === 'print' ? 'Préparation des faces et des images…' : `Création du PNG ${exportTask === 'front' ? 'recto' : 'verso'}…` : exportFeedback?.text || `PNG ${BUSINESS_CARD_PRINT_SPEC.pngWidth} × ${BUSINESS_CARD_PRINT_SPEC.pngHeight} px · impression ${BUSINESS_CARD_PRINT_SPEC.widthMm} × ${BUSINESS_CARD_PRINT_SPEC.heightMm} mm.`}</p>
           </section>
         </form>
 
-        <aside className="bc-preview-sticky"><BusinessCardPreview document={document} side={activeSide} onSideChange={setActiveSide} /><div className="bc-preview-template"><span>{template?.mark} / 05</span><div><strong>{template?.name}</strong><small>{template?.note}</small></div><Eye size={15} aria-hidden="true" /></div></aside>
+        <aside className="bc-preview-sticky"><BusinessCardPreview document={artworkDocument} side={activeSide} onSideChange={setActiveSide} /><div className="bc-preview-template"><span>{template?.mark} / 05</span><div><strong>{template?.name}</strong><small>{template?.note}</small></div><Eye size={15} aria-hidden="true" /></div></aside>
       </div>
-      <BusinessCardPrintDocument card={document} frontRef={frontArtworkRef} backRef={backArtworkRef} />
+      <BusinessCardPrintDocument card={artworkDocument} frontRef={frontArtworkRef} backRef={backArtworkRef} />
     </div>
   );
 }

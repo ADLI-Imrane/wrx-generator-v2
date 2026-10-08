@@ -216,7 +216,7 @@ function normalizeQr(value: unknown): BusinessCardDocument['qr'] {
     return { mode: 'managed', qrCodeId: value['qrCodeId'] };
   }
   if (value['mode'] === 'static') {
-    assertKeys(value, ['mode', 'type', 'content'], ['mode', 'type', 'content'], path);
+    assertKeys(value, ['mode', 'type', 'content', 'digitalCardSource'], ['mode', 'type', 'content'], path);
     if (!BUSINESS_CARD_QR_TYPES.includes(value['type'] as BusinessCardQrType)) {
       fail(`${path}.type`, 'is not a supported QR type.');
     }
@@ -225,7 +225,32 @@ function normalizeQr(value: unknown): BusinessCardDocument['qr'] {
     if (value['type'] === 'email' && !EMAIL_PATTERN.test(content)) {
       fail(`${path}.content`, 'must be a valid email address for an email QR.');
     }
-    return { mode: 'static', type: value['type'] as BusinessCardQrType, content };
+    let digitalCardSource: { id: string; slug: string } | undefined;
+    if (value['digitalCardSource'] !== undefined) {
+      const source = value['digitalCardSource'];
+      assertRecord(source, `${path}.digitalCardSource`);
+      assertKeys(source, ['id', 'slug'], ['id', 'slug'], `${path}.digitalCardSource`);
+      if (typeof source['id'] !== 'string' || !UUID_PATTERN.test(source['id'])) {
+        fail(`${path}.digitalCardSource.id`, 'must be a valid Digital Card ID.');
+      }
+      if (typeof source['slug'] !== 'string' || !/^[a-zA-Z0-9_-]{3,50}$/.test(source['slug'])) {
+        fail(`${path}.digitalCardSource.slug`, 'must be a valid stable Digital Card slug.');
+      }
+      if (value['type'] !== 'url') {
+        fail(`${path}.digitalCardSource`, 'requires a URL QR type.');
+      }
+      const parsedContent = new URL(content);
+      if (parsedContent.pathname !== `/c/${source['slug']}` || parsedContent.search || parsedContent.hash) {
+        fail(`${path}.content`, 'must be the stable public URL for the selected Digital Card.');
+      }
+      digitalCardSource = { id: source['id'], slug: source['slug'] };
+    }
+    return {
+      mode: 'static',
+      type: value['type'] as BusinessCardQrType,
+      content,
+      ...(digitalCardSource ? { digitalCardSource } : {}),
+    };
   }
   return fail(`${path}.mode`, 'must be static or managed.');
 }

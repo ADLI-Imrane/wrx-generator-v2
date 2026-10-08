@@ -8,10 +8,11 @@ export const digitalCardKeys = {
   detail: (id: string) => [...digitalCardKeys.all, 'detail', id] as const,
 };
 
-export function useDigitalCards() {
+export function useDigitalCards(options?: { staleTime?: number; refetchOnWindowFocus?: boolean }) {
   return useQuery({
     queryKey: digitalCardKeys.list(),
     queryFn: () => api.get<DigitalCardRecord[]>('/digital-cards'),
+    ...options,
   });
 }
 
