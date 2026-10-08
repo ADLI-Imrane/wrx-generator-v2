@@ -16,6 +16,7 @@ interface LinkCardProps {
 export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR }: LinkCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const shortUrl = `${import.meta.env.VITE_SHORT_URL_BASE || 'http://localhost:3000/r'}/${link.slug}`;
@@ -33,15 +34,19 @@ export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR }: LinkC
   }, []);
 
   const handleCopy = async () => {
-    // shortUrl already includes the protocol (http:// or https://)
-    await navigator.clipboard.writeText(shortUrl);
-    setCopied(true);
-    onCopy?.(shortUrl);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(shortUrl);
+      setCopied(true);
+      setCopyError(false);
+      onCopy?.(shortUrl);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopyError(true);
+    }
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md">
+    <div className="wrx-resource-card rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex items-start justify-between gap-4">
         {/* Info principale */}
         <div className="min-w-0 flex-1">
@@ -65,12 +70,15 @@ export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR }: LinkC
             </a>
             <button
               onClick={handleCopy}
-              className="rounded p-1 transition-colors hover:bg-gray-100"
-              title="Copier le lien"
+              className="wrx-copy-action rounded p-1 transition-colors hover:bg-gray-100"
+              data-copied={copied}
+              aria-label={copied ? 'Lien copié' : 'Copier le lien'}
+              title={copied ? 'Lien copié' : 'Copier le lien'}
             >
-              <Copy size={14} className={copied ? 'text-green-600' : 'text-gray-400'} />
+              {copied ? <span className="text-xs font-semibold text-emerald-700">Copié</span> : <Copy size={14} className="text-gray-400" />}
             </button>
           </div>
+          {copyError && <p role="alert" className="mt-1 text-xs text-red-700">Copie indisponible. Sélectionnez le lien ci-dessus.</p>}
 
           <p className="mt-1 truncate text-sm text-gray-500">{link.originalUrl}</p>
 
@@ -109,6 +117,8 @@ export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR }: LinkC
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Actions du lien"
+              aria-expanded={isMenuOpen}
               className="rounded-lg p-2 transition-colors hover:bg-gray-100"
             >
               <MoreVertical size={18} className="text-gray-500" />

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRegister, useOAuthLogin } from '../hooks/useAuth';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, User } from 'lucide-react';
+import { AuthFrame } from '../components/AuthFrame';
+import { BrandLogo } from '../components/BrandLogo';
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -48,47 +50,13 @@ export function RegisterPage() {
   const displayError = validationError || (error as Error)?.message;
 
   return (
-    <div className="flex min-h-screen">
-      {/* Panneau gauche - Image */}
-      <div className="from-accent-600 to-primary-600 hidden bg-gradient-to-br lg:block lg:w-1/2">
-        <div className="flex h-full items-center justify-center p-12">
-          <div className="text-center text-white">
-            <h1 className="mb-4 text-4xl font-bold">Rejoignez WRX Generator</h1>
-            <p className="text-accent-100 text-xl">
-              Commencez gratuitement avec 50 liens et 10 QR codes par mois.
-            </p>
-            <div className="mx-auto mt-8 max-w-sm space-y-4 text-left">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                  <span className="text-white">✓</span>
-                </div>
-                <span className="text-white/90">Liens courts personnalisables</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                  <span className="text-white">✓</span>
-                </div>
-                <span className="text-white/90">QR codes dynamiques</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                  <span className="text-white">✓</span>
-                </div>
-                <span className="text-white/90">Analytiques détaillées</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <AuthFrame>
       {/* Panneau droit - Formulaire */}
-      <div className="flex flex-1 items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="auth-fields">
         <div className="w-full max-w-md space-y-8">
           {/* Logo */}
           <div className="text-center">
-            <div className="bg-primary-600 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl">
-              <span className="text-xl font-bold text-white">W</span>
-            </div>
+            <BrandLogo size="auth" className="mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900">Créer un compte</h2>
             <p className="mt-2 text-gray-600">
               Déjà inscrit ?{' '}
@@ -170,6 +138,7 @@ export function RegisterPage() {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
@@ -284,6 +253,6 @@ export function RegisterPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AuthFrame>
   );
 }

@@ -85,6 +85,10 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'GET', token });
   }
 
+  async getPublic<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET', skipAuth: true });
+  }
+
   async post<T>(endpoint: string, data: unknown, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',

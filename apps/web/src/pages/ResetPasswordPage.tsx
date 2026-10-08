@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useUpdatePassword } from '../hooks/useAuth';
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { AuthFrame } from '../components/AuthFrame';
+import { BrandLogo } from '../components/BrandLogo';
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -57,7 +59,7 @@ export function ResetPasswordPage() {
 
   if (isSuccess) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <AuthFrame>
         <div className="w-full max-w-md space-y-8 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <CheckCircle className="h-8 w-8 text-green-600" />
@@ -68,18 +70,16 @@ export function ResetPasswordPage() {
             de connexion.
           </p>
         </div>
-      </div>
+      </AuthFrame>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <AuthFrame>
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
         <div className="text-center">
-          <div className="bg-primary-600 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl">
-            <span className="text-xl font-bold text-white">W</span>
-          </div>
+          <BrandLogo size="auth" className="mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900">Nouveau mot de passe</h2>
           <p className="mt-2 text-gray-600">
             Choisissez un nouveau mot de passe sécurisé pour votre compte.
@@ -114,7 +114,8 @@ export function ResetPasswordPage() {
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -149,6 +150,6 @@ export function ResetPasswordPage() {
           </button>
         </form>
       </div>
-    </div>
+    </AuthFrame>
   );
 }

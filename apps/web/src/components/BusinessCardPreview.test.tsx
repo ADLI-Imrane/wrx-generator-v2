@@ -2,12 +2,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BusinessCardPreview } from './BusinessCardPreview';
+import { BusinessCardPrintDocument } from './BusinessCardPrintDocument';
 import { businessCardQrPayload, businessCardTemplates } from './businessCardPreview.data';
 import type { BusinessCardDocument } from '@wrx/shared';
 import { BusinessCardDocumentValidationError, parseBusinessCardDocument } from '@wrx/shared';
+import { publicDigitalCardUrl } from '../lib/digital-card-vcard';
 
 const signedAssets = vi.hoisted(() => ({ createSignedUrl: vi.fn(async (path: string) => ({ data: { signedUrl: `https://assets.example/${path}?token=temporary` }, error: null })) }));
 vi.mock('../lib/supabase', () => ({ supabase: { storage: { from: () => signedAssets } } }));
+vi.mock('qrcode.react', () => ({ QRCodeSVG: ({ value }: { value: string }) => <svg data-testid="qr-code" data-value={value} /> }));
 
 const document: BusinessCardDocument = {
   schemaVersion: 1,
@@ -51,6 +54,41 @@ describe('BusinessCardPreview', () => {
   it('encodes email and phone as actionable static payloads', () => {
     expect(businessCardQrPayload({ ...document, qr: { mode: 'static', type: 'email', content: 'amina@example.com' } })).toBe('mailto:amina@example.com');
     expect(businessCardQrPayload({ ...document, qr: { mode: 'static', type: 'phone', content: '+212600000000' } })).toBe('tel:+212600000000');
+  });
+
+  it('passes the selected stable Digital Card URL to preview and print artwork as a static payload', () => {
+    const url = publicDigitalCardUrl('Amina_2026');
+    const card = parseBusinessCardDocument({
+      ...document,
+      qr: {
+        mode: 'static',
+        type: 'url',
+        content: url,
+        digitalCardSource: { id: 'c1aa99cc-6f9d-4130-8a61-f20d12aa47e1', slug: 'Amina_2026' },
+      },
+    });
+
+    expect(businessCardQrPayload(card)).toBe(url);
+    const preview = renderPreview(card, 'back');
+    expect(preview.getByTestId('qr-code')).toHaveAttribute('data-value', url);
+    preview.unmount();
+
+    const printClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const print = render(<QueryClientProvider client={printClient}><BusinessCardPrintDocument card={card} frontRef={{ current: null }} backRef={{ current: null }} /></QueryClientProvider>);
+    expect(window.document.body.querySelector('.bc-print-page .bc-preview-qr [data-testid="qr-code"]')).toHaveAttribute('data-value', url);
+    print.unmount();
+  });
+
+  it('rejects Digital Card source metadata that does not match a stable /c/:slug URL', () => {
+    expect(() => parseBusinessCardDocument({
+      ...document,
+      qr: {
+        mode: 'static',
+        type: 'url',
+        content: 'https://wrx.example/c/another-card',
+        digitalCardSource: { id: 'c1aa99cc-6f9d-4130-8a61-f20d12aa47e1', slug: 'amina-card' },
+      },
+    })).toThrow(/stable public URL/);
   });
 
   it('shows an explicit unsupported managed-QR state instead of a fake or blank QR', () => {
