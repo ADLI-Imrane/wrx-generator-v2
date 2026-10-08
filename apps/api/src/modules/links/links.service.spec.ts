@@ -3,14 +3,14 @@ import { validate } from 'class-validator';
 import { CreateLinkDto } from './dto';
 import { LinksService } from './links.service';
 
-function createService(options: { qrReferences?: number } = {}) {
+function createService(options: { qrReferences?: number; passwordHash?: string | null } = {}) {
   const inserted: Record<string, unknown>[] = [];
   const updated: Record<string, unknown>[] = [];
   const deleted: string[] = [];
   const profile = { id: 'owner-1', tier: 'free' };
   const existingLink = {
     id: 'link-1', user_id: 'owner-1', slug: 'stable-slug', original_url: 'https://example.com/old',
-    clicks: 0, is_active: true, max_clicks: null, expires_at: null, password_hash: null,
+    clicks: 0, is_active: true, max_clicks: null, expires_at: null, password_hash: options.passwordHash ?? null,
   };
   const makeQuery = (table: string) => {
     let insertValues: Record<string, unknown> | undefined;
@@ -62,6 +62,14 @@ function createService(options: { qrReferences?: number } = {}) {
 }
 
 describe('LinksService managed-routing foundation', () => {
+  it('exposes only whether a Link is password protected, never its stored hash', async () => {
+    const { service } = createService({ passwordHash: 'private-hash' });
+    const result = await service.findOne('owner-1', 'link-1');
+    expect(result.isPasswordProtected).toBe(true);
+    expect(result).not.toHaveProperty('passwordHash');
+    expect(JSON.stringify(result)).not.toContain('private-hash');
+  });
+
   it('generates high-entropy URL-safe slugs and normalizes accepted HTTP(S) destinations', async () => {
     const { service, inserted } = createService();
     const link = await service.create('owner-1', { originalUrl: 'HTTPS://Example.com/path' });

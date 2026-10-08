@@ -5,6 +5,7 @@ import {
   BUSINESS_CARD_TEMPLATE_KEYS,
   type BusinessCardDocument,
   type BusinessCardIdentitySnapshot,
+  type BusinessCardQrPresentation,
   type BusinessCardQrType,
   type BusinessCardSocialPlatform,
   type BusinessCardTemplateKey,
@@ -138,6 +139,32 @@ function optionalColor(value: unknown, path: string, required = false): string |
   return value.trim().toUpperCase();
 }
 
+function relativeLuminance(color: string): number {
+  const channels = color.slice(1).match(/.{2}/g)!.map((channel) => parseInt(channel, 16) / 255);
+  const linear = channels.map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * linear[0]! + 0.7152 * linear[1]! + 0.0722 * linear[2]!;
+}
+
+export function isBusinessCardQrContrastSafe(foregroundColor: string, backgroundColor: string): boolean {
+  if (!COLOR_PATTERN.test(foregroundColor) || !COLOR_PATTERN.test(backgroundColor)) return false;
+  const foregroundLuminance = relativeLuminance(foregroundColor);
+  const backgroundLuminance = relativeLuminance(backgroundColor);
+  return foregroundLuminance < backgroundLuminance
+    && (backgroundLuminance + 0.05) / (foregroundLuminance + 0.05) >= 4.5;
+}
+
+function normalizeQrPresentation(value: unknown, path: string): BusinessCardQrPresentation {
+  assertRecord(value, path);
+  assertKeys(value, ['foregroundColor', 'backgroundColor', 'frame'], ['foregroundColor', 'backgroundColor', 'frame'], path);
+  const foregroundColor = optionalColor(value['foregroundColor'], `${path}.foregroundColor`, true)!;
+  const backgroundColor = optionalColor(value['backgroundColor'], `${path}.backgroundColor`, true)!;
+  if (value['frame'] !== 'sharp' && value['frame'] !== 'soft') fail(`${path}.frame`, 'must be sharp or soft.');
+  if (!isBusinessCardQrContrastSafe(foregroundColor, backgroundColor)) {
+    fail(path, 'must use a dark foreground with at least 4.5:1 contrast against a light background.');
+  }
+  return { foregroundColor, backgroundColor, frame: value['frame'] };
+}
+
 function optionalAssetPath(value: unknown, path: string): string | null {
   const normalized = optionalText(value, path, 255);
   if (normalized === null) return null;
@@ -216,7 +243,7 @@ function normalizeQr(value: unknown): BusinessCardDocument['qr'] {
     return { mode: 'managed', qrCodeId: value['qrCodeId'] };
   }
   if (value['mode'] === 'static') {
-    assertKeys(value, ['mode', 'type', 'content', 'digitalCardSource'], ['mode', 'type', 'content'], path);
+    assertKeys(value, ['mode', 'type', 'content', 'digitalCardSource', 'presentation'], ['mode', 'type', 'content'], path);
     if (!BUSINESS_CARD_QR_TYPES.includes(value['type'] as BusinessCardQrType)) {
       fail(`${path}.type`, 'is not a supported QR type.');
     }
@@ -226,6 +253,9 @@ function normalizeQr(value: unknown): BusinessCardDocument['qr'] {
       fail(`${path}.content`, 'must be a valid email address for an email QR.');
     }
     let digitalCardSource: { id: string; slug: string } | undefined;
+    const presentation = value['presentation'] === undefined
+      ? undefined
+      : normalizeQrPresentation(value['presentation'], `${path}.presentation`);
     if (value['digitalCardSource'] !== undefined) {
       const source = value['digitalCardSource'];
       assertRecord(source, `${path}.digitalCardSource`);
@@ -250,6 +280,7 @@ function normalizeQr(value: unknown): BusinessCardDocument['qr'] {
       type: value['type'] as BusinessCardQrType,
       content,
       ...(digitalCardSource ? { digitalCardSource } : {}),
+      ...(presentation ? { presentation } : {}),
     };
   }
   return fail(`${path}.mode`, 'must be static or managed.');

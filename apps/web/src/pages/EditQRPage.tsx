@@ -2,6 +2,8 @@ import { Modal } from '../components/Modal';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQRCode, useUpdateQRCode, useDeleteQRCode } from '../hooks/useQR';
+import { useLinks } from '../hooks/useLinks';
+import { getManagedLinkStatus, isLinkEligibleForManagedQr, managedLinkStatusLabel } from '../lib/managed-qr';
 import { ArrowLeftIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 type QRType = 'url' | 'vcard' | 'wifi' | 'text' | 'email' | 'phone' | 'sms';
@@ -12,6 +14,12 @@ export function EditQRPage() {
   const { data: qrCode, isLoading: isLoadingQR, error: loadError } = useQRCode(id!);
   const updateQRCode = useUpdateQRCode();
   const deleteQRCode = useDeleteQRCode();
+  const { data: linksResponse, isLoading: isLoadingLinks, error: linksError } = useLinks({ page: 1, limit: 100 });
+  const links = linksResponse?.data ?? [];
+  const [mode, setMode] = useState<'direct' | 'managed'>('direct');
+  const [selectedLinkId, setSelectedLinkId] = useState('');
+  const selectedLink = links.find((link) => link.id === selectedLinkId)
+    ?? (qrCode?.linkedLink?.id === selectedLinkId ? qrCode.linkedLink : undefined);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -43,6 +51,8 @@ export function EditQRPage() {
 
   useEffect(() => {
     if (qrCode) {
+      setMode(qrCode.routingMode === 'managed_link' ? 'managed' : 'direct');
+      setSelectedLinkId(qrCode.linkId || '');
       const style = qrCode.style || {};
       setFormData({
         title: qrCode.title || '',
@@ -110,11 +120,18 @@ END:VCARD`;
     const content = generateContent();
 
     try {
+      if (mode === 'managed' && (!selectedLink || (selectedLinkId !== qrCode?.linkId && !isLinkEligibleForManagedQr(selectedLink)))) return;
+
       await updateQRCode.mutateAsync({
         id: id!,
         data: {
           title: formData.title,
-          content,
+          type: mode === 'managed' ? 'url' : formData.type,
+          ...(mode === 'managed'
+            ? { linkId: selectedLink!.id }
+            : qrCode?.routingMode === 'managed_link'
+              ? { content, linkId: null }
+              : { content }),
           style: {
             foregroundColor: formData.foregroundColor,
             backgroundColor: formData.backgroundColor,
@@ -229,7 +246,61 @@ END:VCARD`;
               />
             </div>
 
-            <div>
+            <fieldset className="mb-4">
+              <legend className="mb-2 text-sm font-medium text-gray-700">Mode du QR</legend>
+              <div className="flex flex-wrap gap-3">
+                <label className={`rounded-lg border px-3 py-2 ${mode === 'direct' ? 'border-primary-600 bg-primary-50' : 'border-gray-200'}`}>
+                  <input type="radio" name="edit-qr-mode" checked={mode === 'direct'} onChange={() => {
+                    if (mode === 'managed') setFormData((current) => ({ ...current, type: 'url', url: '' }));
+                    setMode('direct');
+                  }} className="mr-2 accent-blue-600" />
+                  QR direct
+                </label>
+                <label className={`rounded-lg border px-3 py-2 ${mode === 'managed' ? 'border-amber-500 bg-amber-50' : 'border-gray-200'}`}>
+                  <input type="radio" name="edit-qr-mode" checked={mode === 'managed'} onChange={() => {
+                    setMode('managed');
+                    setFormData((current) => ({ ...current, type: 'url' }));
+                  }} className="mr-2 accent-amber-600" />
+                  QR géré / dynamique
+                </label>
+              </div>
+              {qrCode.routingMode === 'managed_link' && mode === 'direct' && (
+                <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                  Pour détacher ce QR, saisissez un nouveau contenu direct. Le lien actuel reste associé jusqu’à l’enregistrement.
+                </p>
+              )}
+              {mode === 'managed' && (
+                <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                  Le QR imprimé reste identique. Le Lien WRX associé détermine la destination des prochains scans.
+                </p>
+              )}
+            </fieldset>
+
+            {mode === 'managed' && (
+              <div className="mb-4 space-y-2">
+                <label htmlFor="edit-managed-link" className="block text-sm font-medium text-gray-700">Lien WRX associé</label>
+                {isLoadingLinks ? <p role="status" className="text-sm text-gray-600">Chargement de vos liens…</p> : linksError ? (
+                  <p role="alert" className="text-sm text-red-700">Impossible de charger vos liens. Actualisez la page pour réessayer.</p>
+                ) : (
+                  <select id="edit-managed-link" value={selectedLinkId} onChange={(event) => setSelectedLinkId(event.target.value)} className="input w-full" required>
+                    <option value="">Choisir un lien actif</option>
+                    {qrCode.linkId && !links.some((link) => link.id === qrCode.linkId) && <option value={qrCode.linkId}>Lien associé indisponible</option>}
+                    {links.map((link) => {
+                      const status = getManagedLinkStatus(link);
+                      return <option key={link.id} value={link.id} disabled={status !== 'active'}>{`${link.title || link.slug} · /r/${link.slug} · ${managedLinkStatusLabel(status)}${link.isPasswordProtected ? ' · protégé' : ''}`}</option>;
+                    })}
+                  </select>
+                )}
+                {selectedLink && (
+                  <p className="break-all rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                    Destination actuelle : {selectedLink.originalUrl}{selectedLink.isPasswordProtected ? ' · protégé par mot de passe' : ''}
+                  </p>
+                )}
+                {links.length === 0 && !isLoadingLinks && !linksError && <Link to="/links/new" className="btn btn-outline inline-flex min-h-11 items-center">Créer un lien WRX</Link>}
+              </div>
+            )}
+
+            {mode === 'direct' && <div>
               <label htmlFor="type" className="mb-1 block text-sm font-medium text-gray-700">
                 Type
               </label>
@@ -245,11 +316,11 @@ END:VCARD`;
                   </option>
                 ))}
               </select>
-            </div>
+            </div>}
           </div>
 
           {/* Type-specific Content */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6">
+          {mode === 'direct' && <div className="rounded-lg border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Contenu</h2>
 
             {formData.type === 'url' && (
@@ -535,7 +606,7 @@ END:VCARD`;
                 </div>
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Style */}
           <div className="rounded-lg border border-gray-200 bg-white p-6">
@@ -610,7 +681,11 @@ END:VCARD`;
           {/* Error Message */}
           {updateQRCode.error && (
             <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
-              {(updateQRCode.error as Error).message || 'Erreur lors de la mise à jour'}
+              {mode === 'managed'
+                ? (/404|Link not found/i.test(updateQRCode.error.message)
+                    ? 'Ce Lien WRX n’est plus disponible. Choisissez un autre lien actif.'
+                    : 'L’association n’a pas pu être enregistrée. Vérifiez le lien choisi puis réessayez.')
+                : updateQRCode.error.message || 'Erreur lors de la mise à jour'}
             </div>
           )}
 
@@ -621,7 +696,7 @@ END:VCARD`;
             </Link>
             <button
               type="submit"
-              disabled={updateQRCode.isPending}
+              disabled={updateQRCode.isPending || (mode === 'managed' && (!selectedLink || (selectedLinkId !== qrCode.linkId && !isLinkEligibleForManagedQr(selectedLink))))}
               className="btn btn-primary flex-1"
             >
               {updateQRCode.isPending ? 'Enregistrement...' : 'Enregistrer'}
@@ -633,7 +708,7 @@ END:VCARD`;
         <div className="qr-preview-panel">
           <div className="rounded-lg border border-gray-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Aperçu</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{qrCode.routingMode === 'managed_link' ? 'Aperçu du QR stable' : 'Aperçu'}</h2>
               {previewUrl && (
                 <button type="button" onClick={handleDownload} className="btn btn-outline btn-sm">
                   <ArrowDownTrayIcon className="mr-1 h-4 w-4" />
@@ -653,6 +728,11 @@ END:VCARD`;
               )}
             </div>
 
+            {qrCode.routingMode === 'managed_link' && (
+              <p className="mt-3 text-center text-sm text-gray-600">
+                Ce QR encode l’entrée WRX stable. La destination actuelle est contrôlée par le Lien WRX associé.
+              </p>
+            )}
             <div className="mt-4 text-center text-sm text-gray-500">
               <span className="font-medium">{qrCode.scans || 0}</span> scans au total
             </div>

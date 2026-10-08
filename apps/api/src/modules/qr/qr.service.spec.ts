@@ -59,6 +59,25 @@ describe('QrService Link association contract', () => {
     expect(result).toMatchObject({ linkId: 'link-1', routingMode: 'managed_link' });
   });
 
+  it('returns only a safe linked Link summary, including password-protected status', async () => {
+    const { service } = createService('owner-1', {
+      id: 'qr-1', user_id: 'owner-1', type: 'url', content: 'https://example.com',
+      link_id: 'link-1', routing_mode: 'managed_link',
+      links: {
+        id: 'link-1', slug: 'stable', title: 'Current offer', original_url: 'https://new.example',
+        is_active: true, expires_at: null, max_clicks: 40, clicks: 2, password_hash: 'must-not-leak',
+      },
+    });
+    const result = await service.findOne('owner-1', 'qr-1');
+    expect(result).toMatchObject({
+      linkedLink: {
+        id: 'link-1', title: 'Current offer', originalUrl: 'https://new.example',
+        isPasswordProtected: true, maxClicks: 40,
+      },
+    });
+    expect(JSON.stringify(result)).not.toContain('must-not-leak');
+  });
+
   it('rejects an association to another owner or a missing Link', async () => {
     const foreign = createService('owner-2').service;
     const missing = createService('missing').service;

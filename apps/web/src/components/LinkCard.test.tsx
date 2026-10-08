@@ -13,6 +13,7 @@ describe('LinkCard Component', () => {
     onEdit: vi.fn(),
     onDelete: vi.fn(),
     onGenerateQR: vi.fn(),
+    onCreateManagedQR: vi.fn(),
   };
 
   beforeEach(() => {
@@ -62,6 +63,22 @@ describe('LinkCard Component', () => {
     render(<LinkCard {...defaultProps} link={{ ...mockLink, isActive: false }} />);
 
     expect(screen.getByText('Inactif')).toBeInTheDocument();
+  });
+
+  it('offers a separate managed QR action and carries the selected Link identity', async () => {
+    render(<LinkCard {...defaultProps} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Actions du lien' }));
+    const managedAction = screen.getByRole('button', { name: 'Créer un QR géré' });
+    fireEvent.click(managedAction);
+    expect(defaultProps.onCreateManagedQR).toHaveBeenCalledWith(mockLink);
+  });
+
+  it('keeps direct QR generation separate from managed QR creation', () => {
+    render(<LinkCard {...defaultProps} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Actions du lien' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Créer un QR direct' }));
+    expect(defaultProps.onGenerateQR).toHaveBeenCalledWith(mockLink);
+    expect(defaultProps.onCreateManagedQR).not.toHaveBeenCalled();
   });
 
   it('should not show inactive badge when link is active', () => {

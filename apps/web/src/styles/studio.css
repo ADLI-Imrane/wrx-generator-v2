@@ -175,7 +175,10 @@ input, textarea, select { max-width: 100%; min-width: 0; }
 .password-console .password-output { background: #20382f; border: 0; border-radius: 4px; padding: 26px; min-height: 140px; }
 .wrx-app .password-output output { color: #e4f0c9; font-size: clamp(20px,2.9vw,34px); letter-spacing: -.03em; }
 .password-console .wrx-character-set[data-enabled=true] { background: #e8eee0; border-color: #bacbab; color: #2f4c37; }
-.password-console .wrx-strength-panel[data-strength=excellent], .password-console .wrx-password-control[data-strength=excellent] { --wrx-strength-color: #427247; }
+.password-console .wrx-strength-panel[data-strength=weak], .password-console .wrx-password-control[data-strength=weak] { --wrx-strength-color: #a34038; }
+.password-console .wrx-strength-panel[data-strength=fair], .password-console .wrx-password-control[data-strength=fair] { --wrx-strength-color: #8a5a00; }
+.password-console .wrx-strength-panel[data-strength=strong], .password-console .wrx-password-control[data-strength=strong] { --wrx-strength-color: #276749; }
+.password-console .wrx-strength-panel[data-strength=excellent], .password-console .wrx-password-control[data-strength=excellent] { --wrx-strength-color: #1f5e36; }
 .password-output button { color: #d5e6bf; border-color: #55735b; background: transparent; }
 .password-output button:hover { background: #385442; }
 .password-config { display: flex; flex-direction: column; gap: 24px; }
@@ -185,6 +188,7 @@ input, textarea, select { max-width: 100%; min-width: 0; }
 .password-console .wrx-strength-label { font-size: 28px; font-weight: 500; letter-spacing: -.05em; }
 .password-console .wrx-strength-panel [role=progressbar] { margin-top: 24px; }
 .password-console .wrx-strength-segment { height: 25px; border-radius: 1px; }
+.password-console .wrx-strength-segment:not([data-filled=true]) { background: #cbd5e1; }
 .password-console .wrx-length-number { font-size: 48px; }
 .password-console > .password-action { border-top: 1px solid var(--rule); padding-top: 24px; }
 .password-console .wrx-generate-button { min-width: 260px; }

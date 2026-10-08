@@ -44,7 +44,17 @@ interface QRCodeRow {
   error_correction_level?: string;
   created_at: string;
   updated_at?: string;
-  links?: unknown;
+  links?: {
+    id: string;
+    slug: string;
+    title?: string;
+    original_url: string;
+    is_active: boolean;
+    expires_at?: string;
+    max_clicks?: number;
+    clicks?: number;
+    password_hash?: string | null;
+  } | null;
 }
 
 // Helper to transform snake_case DB response to camelCase
@@ -76,7 +86,17 @@ function transformQRCode(data: QRCodeRow): Record<string, unknown> {
     downloads: data.downloads_count,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
-    links: data.links,
+    linkedLink: data.links ? {
+      id: data.links.id,
+      slug: data.links.slug,
+      title: data.links.title,
+      originalUrl: data.links.original_url,
+      isActive: data.links.is_active,
+      expiresAt: data.links.expires_at,
+      maxClicks: data.links.max_clicks,
+      clicks: data.links.clicks || 0,
+      isPasswordProtected: Boolean(data.links.password_hash),
+    } : null,
   };
 }
 
@@ -168,7 +188,7 @@ export class QrService {
 
     let query = supabase
       .from('qr_codes')
-      .select('*, links(slug, original_url)', { count: 'exact' })
+      .select('*, links(id, slug, title, original_url, is_active, expires_at, max_clicks, clicks, password_hash)', { count: 'exact' })
       .eq('user_id', userId);
 
     // Apply search filter
@@ -238,7 +258,7 @@ export class QrService {
 
     const { data, error } = await supabase
       .from('qr_codes')
-      .select('*, links(slug, original_url)')
+      .select('*, links(id, slug, title, original_url, is_active, expires_at, max_clicks, clicks, password_hash)')
       .eq('id', id)
       .eq('user_id', userId)
       .single();

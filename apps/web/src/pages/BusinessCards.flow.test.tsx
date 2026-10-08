@@ -145,6 +145,38 @@ describe('Business Card editor integration', () => {
     await waitFor(() => expect(screen.getByLabelText('Nom complet')).toHaveValue('Deuxième identité'));
   });
 
+  it('persists safe QR presentation controls without changing the static payload', async () => {
+    const document = documentFixture();
+    document.sides.back.composition = 'contact-qr';
+    document.qr = { mode: 'static', type: 'url', content: 'https://stable.example/card' };
+    cards.set('one', record('one', document));
+    renderFlow('/business-cards/one/edit');
+    await screen.findByRole('textbox', { name: 'Téléphone' });
+
+    fireEvent.change(screen.getByLabelText('Encre du QR'), { target: { value: '#235ee7' } });
+    fireEvent.change(screen.getByLabelText('Cadre du QR'), { target: { value: 'sharp' } });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer les changements' }));
+    await screen.findByRole('heading', { name: /^Cartes de visite/, level: 1 });
+
+    expect(cards.get('one')?.document.qr).toMatchObject({
+      mode: 'static', type: 'url', content: 'https://stable.example/card',
+      presentation: { foregroundColor: '#235EE7', backgroundColor: '#F5F4EC', frame: 'sharp' },
+    });
+  });
+
+  it('rejects low-contrast QR color selections without changing the stored presentation', async () => {
+    const document = documentFixture();
+    document.sides.back.composition = 'contact-qr';
+    document.qr = { mode: 'static', type: 'url', content: 'https://stable.example/card' };
+    cards.set('one', record('one', document));
+    renderFlow('/business-cards/one/edit');
+    await screen.findByRole('textbox', { name: 'Téléphone' });
+    fireEvent.change(screen.getByLabelText('Encre du QR'), { target: { value: '#eeeeee' } });
+    expect(screen.getByRole('alert')).toHaveTextContent(/contraste suffisant/);
+    expect(screen.getByLabelText('Encre du QR')).toHaveValue('#1d2a2a');
+  });
+
   it.each(['disable-back', 'contacts-only'])('keeps a static QR document valid after %s', async (change) => {
     const document = documentFixture();
     document.sides.back.composition = 'contact-qr';
@@ -173,7 +205,7 @@ describe('Business Card editor integration', () => {
     fireEvent.change(screen.getByLabelText('Contenu encodé'), { target: { value: 'https://example.com/contact' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer les changements' }));
     await screen.findByRole('heading', { name: /^Cartes de visite/, level: 1 });
-    expect(cards.get('one')?.document.qr).toEqual({ mode: 'static', type: 'url', content: 'https://example.com/contact' });
+    expect(cards.get('one')?.document.qr).toMatchObject({ mode: 'static', type: 'url', content: 'https://example.com/contact', presentation: { foregroundColor: '#1D2A2A', backgroundColor: '#F5F4EC', frame: 'soft' } });
   });
 
   it('offers published Digital Cards only and saves/reloads the stable URL as a static QR source', async () => {
@@ -198,6 +230,7 @@ describe('Business Card editor integration', () => {
     expect(saved?.qr).toEqual({
       mode: 'static', type: 'url', content: expectedUrl,
       digitalCardSource: { id: published.id, slug: published.slug },
+      presentation: { foregroundColor: '#1D2A2A', backgroundColor: '#F5F4EC', frame: 'soft' },
     });
     expect(businessCardQrPayload(saved!)).toBe(expectedUrl);
 
@@ -294,7 +327,7 @@ describe('Business Card editor integration', () => {
     fireEvent.change(screen.getByLabelText('Contenu encodé'), { target: { value: 'https://manual.example/path' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la carte' }));
     await screen.findByRole('heading', { name: /^Cartes de visite/, level: 1 });
-    expect(cards.get('created')?.document.qr).toEqual({ mode: 'static', type: 'url', content: 'https://manual.example/path' });
+    expect(cards.get('created')?.document.qr).toMatchObject({ mode: 'static', type: 'url', content: 'https://manual.example/path', presentation: { foregroundColor: '#1D2A2A', backgroundColor: '#F5F4EC', frame: 'soft' } });
   });
 
   it('shows a safe error for a missing/foreign card and exposes no editable document', async () => {

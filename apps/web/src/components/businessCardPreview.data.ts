@@ -1,4 +1,10 @@
-import type { BusinessCardDocument, BusinessCardTemplateKey } from '@wrx/shared';
+import type { BusinessCardDocument, BusinessCardQrPresentation, BusinessCardTemplateKey } from '@wrx/shared';
+
+export const DEFAULT_BUSINESS_CARD_QR_PRESENTATION: BusinessCardQrPresentation = {
+  foregroundColor: '#1D2A2A',
+  backgroundColor: '#F5F4EC',
+  frame: 'soft',
+};
 
 export const BUSINESS_CARD_MANAGED_QR_NOTICE = 'Cette carte contient un QR géré, non pris en charge dans cette version. Remplacez-le par un QR statique ou retirez-le avant d’exporter le verso.';
 

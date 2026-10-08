@@ -9,7 +9,9 @@ export interface Link {
   title?: string;
   description?: string;
   passwordHash?: string;
+  isPasswordProtected?: boolean;
   expiresAt?: string;
+  maxClicks?: number;
   clicks: number;
   isActive: boolean;
   tags?: string[];

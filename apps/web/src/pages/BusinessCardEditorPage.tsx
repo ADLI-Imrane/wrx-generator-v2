@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, ChevronDown, Download, Eye, EyeOff, LoaderCircle, Printer, RefreshCw, Save } from 'lucide-react';
 import {
   BUSINESS_CARD_SCHEMA_VERSION,
+  isBusinessCardQrContrastSafe,
   parseBusinessCardDocument,
   type BusinessCardDocument,
   type BusinessCardQrType,
@@ -16,7 +17,7 @@ import { useBusinessCard, useCreateBusinessCard, useUpdateBusinessCard } from '.
 import { useDigitalCards } from '../hooks/useDigitalCards';
 import { BusinessCardPreview } from '../components/BusinessCardPreview';
 import { BusinessCardPrintDocument } from '../components/BusinessCardPrintDocument';
-import { BUSINESS_CARD_MANAGED_QR_NOTICE, businessCardTemplates } from '../components/businessCardPreview.data';
+import { BUSINESS_CARD_MANAGED_QR_NOTICE, businessCardTemplates, DEFAULT_BUSINESS_CARD_QR_PRESENTATION } from '../components/businessCardPreview.data';
 import { downloadBusinessCardPng, prepareBusinessCardArtwork, BUSINESS_CARD_PRINT_SPEC } from '../components/businessCardExport';
 import { publicDigitalCardUrl } from '../lib/digital-card-vcard';
 
@@ -65,6 +66,7 @@ export function BusinessCardEditorPage() {
   const [document, setDocument] = useState<BusinessCardDocument>(blankDocument);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [qrDestinationMode, setQrDestinationMode] = useState<'manual' | 'digital-card'>('manual');
+  const [qrPresentationError, setQrPresentationError] = useState('');
   const [formError, setFormError] = useState('');
   const [isPrefilled, setIsPrefilled] = useState(false);
   const didInitialize = useRef(false);
@@ -167,6 +169,7 @@ export function BusinessCardEditorPage() {
             mode: 'static',
             type: 'url',
             content: current.identity.website || '',
+            ...(current.qr.presentation ? { presentation: current.qr.presentation } : {}),
           },
         };
       });
@@ -193,7 +196,25 @@ export function BusinessCardEditorPage() {
         type: 'url',
         content: publicDigitalCardUrl(card.slug),
         digitalCardSource: { id: card.id, slug: card.slug },
+        ...(current.qr?.mode === 'static' && current.qr.presentation ? { presentation: current.qr.presentation } : {}),
       },
+    }));
+  };
+
+  const qrPresentation = document.qr?.mode === 'static'
+    ? document.qr.presentation ?? DEFAULT_BUSINESS_CARD_QR_PRESENTATION
+    : DEFAULT_BUSINESS_CARD_QR_PRESENTATION;
+
+  const updateQrPresentation = (field: 'foregroundColor' | 'backgroundColor', value: string) => {
+    const next = { ...qrPresentation, [field]: value };
+    if (!isBusinessCardQrContrastSafe(next.foregroundColor, next.backgroundColor)) {
+      setQrPresentationError('Choisissez une encre sombre et un fond clair offrant un contraste suffisant pour le scan.');
+      return;
+    }
+    setQrPresentationError('');
+    setDocument((current) => current.qr?.mode !== 'static' ? current : ({
+      ...current,
+      qr: { ...current.qr, presentation: next },
     }));
   };
 
@@ -319,7 +340,8 @@ export function BusinessCardEditorPage() {
               <p className="bc-help-note">QR statique : contenu fixe, sans suivi des scans.</p>
               <VisibilityToggle label="Afficher le QR statique" checked={document.qr?.mode === 'static'} onChange={(checked) => {
                 setQrDestinationMode('manual');
-                setDocument((current) => ({ ...current, visibility: { ...current.visibility, qr: checked }, sides: { ...current.sides, back: { ...current.sides.back, composition: checked ? 'contact-qr' : 'contact' } }, ...(checked ? { qr: { mode: 'static', type: 'url', content: current.identity.website || '' } } : { qr: undefined }) }));
+                setQrPresentationError('');
+                setDocument((current) => ({ ...current, visibility: { ...current.visibility, qr: checked }, sides: { ...current.sides, back: { ...current.sides.back, composition: checked ? 'contact-qr' : 'contact' } }, ...(checked ? { qr: { mode: 'static', type: 'url', content: current.identity.website || '', presentation: current.qr?.mode === 'static' ? current.qr.presentation ?? DEFAULT_BUSINESS_CARD_QR_PRESENTATION : DEFAULT_BUSINESS_CARD_QR_PRESENTATION } } : { qr: undefined }) }));
               }} />
               {document.qr?.mode === 'static' && <div className="bc-qr-config">
                 <Field label="Destination du QR"><select value={qrDestinationMode} onChange={(event) => setQrDestination(event.target.value as 'manual' | 'digital-card')}><option value="manual">Destination manuelle / statique</option><option value="digital-card">Carte numérique publiée</option></select></Field>
@@ -334,11 +356,20 @@ export function BusinessCardEditorPage() {
                 </div> : <>
                 <Field label="Le QR contient"><select value={document.qr.type} onChange={(event) => {
                   const type = event.target.value as BusinessCardQrType;
-                  setDocument((current) => current.qr?.mode !== 'static' ? current : ({ ...current, qr: { mode: 'static', type, content: type === 'url' ? current.identity.website || '' : type === 'email' ? current.identity.email || '' : type === 'phone' ? current.identity.phone || '' : type === 'vcard' ? 'contact' : '' } }));
+                  setDocument((current) => current.qr?.mode !== 'static' ? current : ({ ...current, qr: { ...current.qr, type, content: type === 'url' ? current.identity.website || '' : type === 'email' ? current.identity.email || '' : type === 'phone' ? current.identity.phone || '' : type === 'vcard' ? 'contact' : '' } }));
                 }}><option value="url">Une adresse web</option><option value="vcard">Une fiche contact (vCard)</option><option value="email">Un email</option><option value="phone">Un numéro de téléphone</option><option value="text">Un texte</option></select></Field>
                 {document.qr.type !== 'vcard' && <Field label="Contenu encodé"><input required maxLength={2048} value={document.qr.content} onChange={(event) => setDocument((current) => current.qr?.mode !== 'static' ? current : ({ ...current, qr: { ...current.qr, content: event.target.value } }))} placeholder={document.qr.type === 'url' ? 'https://exemple.com' : document.qr.type === 'email' ? 'nom@exemple.com' : document.qr.type === 'phone' ? '+212…' : 'Votre message'} /></Field>}
                 {document.qr.type === 'vcard' && <p className="bc-help-note">Le QR sera généré depuis les coordonnées renseignées ci-dessus.</p>}
                 </>}
+                <div className="bc-qr-presentation">
+                  <div className="bc-fields-grid bc-color-fields">
+                    <Field label="Encre du QR" hint="Toujours plus sombre que le fond."><input aria-label="Encre du QR" type="color" value={qrPresentation.foregroundColor} onChange={(event) => updateQrPresentation('foregroundColor', event.target.value)} /></Field>
+                    <Field label="Fond et zone de silence"><input aria-label="Fond et zone de silence" type="color" value={qrPresentation.backgroundColor} onChange={(event) => updateQrPresentation('backgroundColor', event.target.value)} /></Field>
+                  </div>
+                  <Field label="Cadre du QR"><select aria-label="Cadre du QR" value={qrPresentation.frame} onChange={(event) => setDocument((current) => current.qr?.mode !== 'static' ? current : ({ ...current, qr: { ...current.qr, presentation: { ...qrPresentation, frame: event.target.value as 'sharp' | 'soft' } } }))}><option value="sharp">Net</option><option value="soft">Arrondi discret</option></select></Field>
+                  <p className="bc-help-note">La zone claire autour du code est conservée pour faciliter le scan. Un contraste trop faible est refusé.</p>
+                  {qrPresentationError && <p className="bc-qr-contrast-error" role="alert">{qrPresentationError}</p>}
+                </div>
               </div>}
             </>}
           </section>

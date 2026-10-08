@@ -31,6 +31,33 @@ describe('QRCard Component', () => {
     expect(screen.getByText('URL')).toBeInTheDocument();
   });
 
+  it('labels unassociated saved QR records as direct, not managed', () => {
+    render(<QRCard {...defaultProps} qr={{ ...mockQR, routingMode: 'legacy', linkId: undefined }} />);
+    expect(screen.getByText('QR direct')).toBeInTheDocument();
+    expect(screen.queryByText('QR géré / dynamique')).not.toBeInTheDocument();
+  });
+
+  it('shows current linked Link destination and status for managed QR', () => {
+    render(<QRCard {...defaultProps} qr={{
+      ...mockQR,
+      routingMode: 'managed_link',
+      linkId: 'link-1',
+      linkedLink: {
+        id: 'link-1', slug: 'stable-id', title: 'Salon', originalUrl: 'https://example.com/current',
+        isActive: false, isPasswordProtected: true, clicks: 0,
+      },
+    }} />);
+    expect(screen.getByText('QR géré / dynamique')).toBeInTheDocument();
+    expect(screen.getByText('Lien WRX · Salon')).toBeInTheDocument();
+    expect(screen.getByText('https://example.com/current')).toBeInTheDocument();
+    expect(screen.getByText('Inactif · Protégé par mot de passe')).toBeInTheDocument();
+  });
+
+  it('shows a safe recovery state when the linked Link summary is unavailable', () => {
+    render(<QRCard {...defaultProps} qr={{ ...mockQR, routingMode: 'managed_link', linkId: 'link-1', linkedLink: null }} />);
+    expect(screen.getByText(/Lien associé indisponible/)).toBeInTheDocument();
+  });
+
   it('should render scan count', () => {
     render(<QRCard {...defaultProps} />);
 

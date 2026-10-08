@@ -163,11 +163,21 @@
 .bc-back .bc-preview-contacts { position: absolute; left: 7%; bottom: 10%; grid-template-columns: 1fr; gap: 4px; max-width: 63%; margin: 0; color: #f4f4ed; }
 .bc-back .bc-preview-contacts svg { color: var(--bc-secondary); }
 .bc-back .bc-preview-socials { display: none; }
-.bc-preview-qr { position: absolute; z-index: 1; top: 50%; right: 7%; display: grid; place-items: center; padding: 7px; background: white; transform: translateY(-50%); }
-.bc-back-qr .bc-preview-qr { right: calc(50% - 57px); }
+.bc-preview-qr { position: absolute; z-index: 1; top: 50%; right: 7%; display: grid; place-items: center; padding: 5px; border: 1px solid; box-shadow: 0 2px 8px #10202024; transform: translateY(-50%); }
+.bc-preview-qr svg { display: block; max-width: 100%; height: auto; }
+.bc-back-qr .bc-preview-qr { right: calc(50% - 60px); }
+.bc-back.bc-template-minimal .bc-preview-qr { padding: 3px; box-shadow: none; }
+.bc-back.bc-template-editorial .bc-preview-qr { border-bottom-width: 3px; }
+.bc-back.bc-template-monogram .bc-preview-qr { box-shadow: 0 0 0 3px #ffffff30; }
+.bc-back.bc-template-bold .bc-preview-qr { border-width: 2px; box-shadow: none; }
 .bc-back-caption { z-index: 1; max-width: 110px; color: white; font-size: 9px; line-height: 1.5; }
 .bc-qr-empty { z-index: 1; color: white; font-size: 8px; }
 .bc-preview-footnote { margin-top: 14px; color: #737d72; font: 9px var(--mono); text-align: center; }
+.bc-preview-contact-value { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc-preview-website { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc-qr-presentation { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--rule); }
+.bc-qr-presentation input[type="color"] { width: 100%; min-height: 42px; padding: 4px; border: 1px solid var(--rule); background: var(--surface); cursor: pointer; }
+.bc-qr-contrast-error { color: #873a33; font-size: 11px; line-height: 1.5; }
 .bc-preview-template { display: flex; align-items: center; gap: 12px; padding-top: 16px; margin-top: 16px; border-top: 1px solid #d6dacf; }
 .bc-preview-template > span { color: var(--muted); font: 9px var(--mono); }
 .bc-preview-template > div { display: flex; flex: 1; flex-direction: column; gap: 3px; }

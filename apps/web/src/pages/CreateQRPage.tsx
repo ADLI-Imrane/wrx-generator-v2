@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCreateQR, useDownloadQR } from '../hooks/useQR';
+import { useLinks } from '../hooks/useLinks';
+import { getManagedLinkStatus, isLinkEligibleForManagedQr, managedLinkStatusLabel } from '../lib/managed-qr';
+import type { Link as LinkType } from '@wrx/shared';
 import {
   QrCode,
   ArrowLeft,
@@ -32,6 +35,8 @@ export function CreateQRPage() {
   const [qrType, setQrType] = useState<QRType>('url');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState(searchParams.get('url') || '');
+  const [mode, setMode] = useState<'direct' | 'managed'>(searchParams.has('linkId') ? 'managed' : 'direct');
+  const [selectedLinkId, setSelectedLinkId] = useState(searchParams.get('linkId') || '');
 
   // Style
   const [style, setStyle] = useState<QRStyle>({
@@ -42,29 +47,40 @@ export function CreateQRPage() {
   });
 
   // États
-  const [createdQR, setCreatedQR] = useState<{ id: string; imageUrl: string } | null>(null);
+  const [createdQR, setCreatedQR] = useState<{ id: string; imageUrl: string; managed: boolean } | null>(null);
   const [downloadedFormat, setDownloadedFormat] = useState<'png' | 'svg' | 'pdf' | null>(null);
   const [downloadError, setDownloadError] = useState('');
 
   const { mutate: createQR, isPending, error } = useCreateQR();
   const { mutateAsync: downloadQR, isPending: isDownloading } = useDownloadQR();
+  const { data: linksResponse, isLoading: isLoadingLinks, error: linksError } = useLinks({ page: 1, limit: 100 });
+  const links = linksResponse?.data ?? [];
+  const selectedLink = links.find((link) => link.id === selectedLinkId);
+  const eligibleLinks = links.filter(isLinkEligibleForManagedQr);
+  const createErrorMessage = error
+    ? mode === 'managed'
+      ? (/404|Link not found/i.test(error.message)
+          ? 'Ce Lien WRX n’est plus disponible. Choisissez un autre lien actif.'
+          : 'L’association n’a pas pu être enregistrée. Vérifiez le lien choisi puis réessayez.')
+      : error.message
+    : '';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (mode === 'managed' && !selectedLink) return;
+
     createQR(
-      {
-        type: qrType,
-        title: title || undefined,
-        content,
-        style,
-      },
+      mode === 'managed' && selectedLink
+        ? { type: 'url', title: title || undefined, content: selectedLink.originalUrl, linkId: selectedLink.id, style }
+        : { type: qrType, title: title || undefined, content, style },
       {
         onSuccess: (qr) => {
           window.scrollTo({ top: 0, behavior: 'instant' });
           setCreatedQR({
             id: qr.id,
             imageUrl: qr.imageUrl || '',
+            managed: mode === 'managed',
           });
         },
       }
@@ -108,7 +124,11 @@ export function CreateQRPage() {
             <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
           <h2 className="mt-4 text-2xl font-bold text-gray-900">Votre code est prêt.</h2>
-          <p className="mt-2 text-gray-600">Votre QR code est prêt à être téléchargé.</p>
+          <p className="mt-2 text-gray-600">
+            {createdQR.managed
+              ? 'Ce QR géré reste identique ; les prochains scans suivront la destination actuelle du Lien WRX associé.'
+              : 'Votre QR code est prêt à être téléchargé.'}
+          </p>
 
           <div className="mt-6 flex justify-center">
             {createdQR.imageUrl ? (
@@ -203,15 +223,82 @@ export function CreateQRPage() {
       {error && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 p-4 text-red-700">
           <AlertCircle size={20} />
-          <span className="text-sm">{(error as Error).message}</span>
+          <span className="text-sm">{createErrorMessage}</span>
         </div>
       )}
 
       <div className="qr-composer grid gap-6 lg:grid-cols-2">
         {/* Formulaire */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          <fieldset className="card">
+            <legend className="mb-3 font-semibold text-gray-900">Mode du QR</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={`cursor-pointer rounded-lg border p-3 ${mode === 'direct' ? 'border-primary-600 bg-primary-50' : 'border-gray-200'}`}>
+                <input
+                  type="radio"
+                  name="qr-mode"
+                  value="direct"
+                  checked={mode === 'direct'}
+                  onChange={() => { setMode('direct'); setQrType('url'); if (searchParams.has('linkId')) setContent(''); }}
+                  className="mr-2 accent-blue-600"
+                />
+                <span className="font-medium text-gray-900">QR direct</span>
+                <span className="mt-1 block pl-6 text-sm text-gray-600">Le contenu est encodé selon le type choisi.</span>
+              </label>
+              <label className={`cursor-pointer rounded-lg border p-3 ${mode === 'managed' ? 'border-amber-500 bg-amber-50' : 'border-gray-200'}`}>
+                <input
+                  type="radio"
+                  name="qr-mode"
+                  value="managed"
+                  checked={mode === 'managed'}
+                  onChange={() => { setMode('managed'); setQrType('url'); setContent(''); }}
+                  className="mr-2 accent-amber-600"
+                />
+                <span className="font-medium text-gray-900">QR géré / dynamique</span>
+                <span className="mt-1 block pl-6 text-sm text-gray-600">Le QR reste identique ; le Lien WRX contrôle sa destination.</span>
+              </label>
+            </div>
+            {mode === 'managed' && (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                <p>Après l’enregistrement, ce QR utilisera une adresse WRX stable. Changer la destination du lien ne nécessite pas de réimprimer le QR. Il peut cesser de résoudre si le lien est désactivé ou expire. Sa suppression est bloquée tant qu’un QR y est associé.</p>
+              </div>
+            )}
+          </fieldset>
+
+          {mode === 'managed' && (
+            <div className="card space-y-3">
+              <label htmlFor="managed-link" className="block font-semibold text-gray-900">Lien WRX associé</label>
+              {isLoadingLinks ? (
+                <p role="status" className="text-sm text-gray-600">Chargement de vos liens…</p>
+              ) : linksError ? (
+                <p role="alert" className="text-sm text-red-700">Impossible de charger vos liens. Réessayez après avoir actualisé la page.</p>
+              ) : eligibleLinks.length > 0 ? (
+                <select id="managed-link" value={selectedLinkId} onChange={(event) => setSelectedLinkId(event.target.value)} className="input w-full" required>
+                  <option value="">Choisir un lien actif</option>
+                  {links.map((link: LinkType) => {
+                    const status = getManagedLinkStatus(link);
+                    const label = `${link.title || link.slug} · /r/${link.slug} · ${managedLinkStatusLabel(status)}${link.isPasswordProtected ? ' · protégé' : ''}`;
+                    return <option key={link.id} value={link.id} disabled={status !== 'active'}>{label}</option>;
+                  })}
+                </select>
+              ) : (
+                <div className="space-y-3 text-sm text-gray-700">
+                  <p>{links.length ? 'Aucun de vos liens n’est actuellement actif et disponible pour un QR géré.' : 'Créez d’abord un Lien WRX pour pouvoir lui associer un QR géré.'}</p>
+                  <Link to="/links/new" className="btn btn-outline inline-flex min-h-11 items-center">Créer un lien WRX</Link>
+                </div>
+              )}
+              {selectedLink && isLinkEligibleForManagedQr(selectedLink) && (
+                <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm">
+                  <p className="font-medium text-gray-900">{selectedLink.title || selectedLink.slug}</p>
+                  <p className="mt-1 break-all text-gray-600">Destination : {selectedLink.originalUrl}</p>
+                  <p className="mt-1 text-gray-600">/r/{selectedLink.slug}{selectedLink.isPasswordProtected ? ' · protégé par mot de passe' : ''}</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Type de QR */}
-          <div className="card">
+          {mode === 'direct' && <div className="card">
             <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
               <Type size={20} className="text-primary-600" />
               Type de QR Code
@@ -236,7 +323,7 @@ export function CreateQRPage() {
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* Titre */}
           <div className="card">
@@ -252,7 +339,7 @@ export function CreateQRPage() {
           </div>
 
           {/* Contenu */}
-          <div className="card">
+          {mode === 'direct' && <div className="card">
             <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
               <QrCode size={20} className="text-primary-600" />
               Contenu
@@ -278,7 +365,7 @@ export function CreateQRPage() {
                 className="input w-full"
               />
             )}
-          </div>
+          </div>}
 
           {/* Couleurs */}
           <div className="card">
@@ -358,7 +445,7 @@ export function CreateQRPage() {
             <button type="button" onClick={() => navigate('/qr-codes')} className="btn btn-outline">
               Annuler
             </button>
-            <button type="submit" disabled={isPending || !content} className="btn btn-primary">
+            <button type="submit" disabled={isPending || (mode === 'managed' ? !selectedLink || !isLinkEligibleForManagedQr(selectedLink) : !content)} className="btn btn-primary">
               {isPending ? 'Création...' : 'Créer le QR code'}
             </button>
           </div>
@@ -377,7 +464,13 @@ export function CreateQRPage() {
               className="wrx-qr-preview-frame flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 p-8"
               style={{ backgroundColor: style.backgroundColor }}
             >
-              {content ? (
+              {mode === 'managed' ? (
+                <div className="max-w-sm text-center">
+                  <QrCode size={76} className="mx-auto text-amber-500" aria-hidden="true" />
+                  <p className="mt-4 font-medium text-gray-900">Aperçu après enregistrement</p>
+                  <p className="mt-2 text-sm text-gray-600">L’adresse QR stable est attribuée à la création. Vous pourrez ensuite prévisualiser et télécharger le QR qui sera réellement imprimé.</p>
+                </div>
+              ) : content ? (
                 <div className="wrx-qr-stage" style={{ width: style.size, maxWidth: '100%', backgroundColor: style.backgroundColor }}>
                   <QRCodeSVG value={content} size={style.size} fgColor={style.foregroundColor} bgColor={style.backgroundColor} includeMargin title="Aperçu du QR code" />
                 </div>

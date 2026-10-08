@@ -54,4 +54,45 @@ describe('PasswordGeneratorPage', () => {
       expect(localStorage.getItem('wrx:password-history:v1:user-a')).toBe('[]');
     });
   });
+
+  it('keeps its local utility interface free of cross-tool tabs', () => {
+    render(<PasswordGeneratorPage />, { wrapper: MemoryRouter });
+    expect(screen.getByRole('heading', { name: 'Le hasard, bien réglé.' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Outils de création' })).not.toBeInTheDocument();
+  });
+
+  it('shows progressively stronger colored segments and updates with length and character sets', () => {
+    render(<PasswordGeneratorPage />, { wrapper: MemoryRouter });
+
+    const meter = screen.getByRole('progressbar', { name: 'Force estimée du prochain mot de passe' });
+    const expectStrength = (tone: string, label: string, level: number) => {
+      expect(meter).toHaveAttribute('data-strength', tone);
+      expect(meter).toHaveAttribute('aria-valuenow', String(level));
+      expect(meter).toHaveAttribute('aria-valuetext', `${label}, ${level} sur 4`);
+      expect(meter.querySelectorAll('[data-filled="true"]')).toHaveLength(level);
+      expect(screen.getByText(label)).toBeInTheDocument();
+    };
+    const setLength = (value: number) => fireEvent.change(screen.getByRole('slider', { name: 'Longueur' }), { target: { value: String(value) } });
+
+    setLength(8);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Minuscules' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chiffres' }));
+    expectStrength('weak', 'Faible', 1);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Minuscules' }));
+    expectStrength('fair', 'Moyenne', 2);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chiffres' }));
+    setLength(11);
+    expectStrength('fair', 'Moyenne', 2);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Symboles' }));
+    expectStrength('strong', 'Forte', 3);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Symboles' }));
+    expectStrength('fair', 'Moyenne', 2);
+
+    setLength(12);
+    expectStrength('strong', 'Forte', 3);
+    setLength(17);
+    expectStrength('excellent', 'Très forte', 4);
+  });
 });

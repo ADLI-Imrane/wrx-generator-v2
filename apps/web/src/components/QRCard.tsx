@@ -4,6 +4,7 @@ import { Download, MoreVertical, BarChart2, Edit, Trash2, Copy } from 'lucide-re
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { QRCode } from '@wrx/shared';
+import { getManagedLinkStatus, managedLinkStatusLabel } from '../lib/managed-qr';
 
 interface QRCardProps {
   qr: QRCode;
@@ -72,9 +73,34 @@ export function QRCard({ qr, onDownload, onEdit, onDelete, onDuplicate }: QRCard
               <h3 className="truncate font-medium text-gray-900">
                 {qr.title || `QR Code ${qr.id.slice(0, 8)}`}
               </h3>
-              <span className="mt-1 inline-block rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-                {getTypeLabel(qr.type)}
-              </span>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <span className="inline-block rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                  {getTypeLabel(qr.type)}
+                </span>
+                <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${qr.routingMode === 'managed_link' ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700'}`}>
+                  {qr.routingMode === 'managed_link' ? 'QR géré / dynamique' : 'QR direct'}
+                </span>
+              </div>
+              {qr.routingMode === 'managed_link' && (
+                <div className="mt-2 min-w-0 text-xs text-gray-600">
+                  {qr.linkId && qr.linkedLink ? (
+                    <>
+                      <p className="font-medium text-gray-800">
+                        Lien WRX · {qr.linkedLink.title || qr.linkedLink.slug}
+                      </p>
+                      <p className="mt-0.5 truncate" title={qr.linkedLink.originalUrl}>
+                        {qr.linkedLink.originalUrl}
+                      </p>
+                      <p className="mt-1">
+                        {managedLinkStatusLabel(getManagedLinkStatus(qr.linkedLink))}
+                        {qr.linkedLink.isPasswordProtected ? ' · Protégé par mot de passe' : ''}
+                      </p>
+                    </>
+                  ) : (
+                    <p role="status">Lien associé indisponible. Ouvrez Modifier pour choisir un autre lien.</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Menu actions */}

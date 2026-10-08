@@ -1,4 +1,3 @@
-import { ResourceTabs } from '../components/ProductPrimitives';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQRCodes, useDeleteQR, useDownloadQR, useDuplicateQR } from '../hooks/useQR';
@@ -82,7 +81,6 @@ export function QRCodesPage() {
         </Link>
       </div>
 
-      <ResourceTabs />
       {/* Filters */}
       <div className="card">
         <div className="flex flex-col gap-4 md:flex-row">

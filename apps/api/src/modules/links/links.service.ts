@@ -26,6 +26,7 @@ function transformLink(dbLink: any) {
     shortUrl: `${shortUrlDomain}/r/${dbLink.slug}`,
     title: dbLink.title,
     description: dbLink.description,
+    isPasswordProtected: Boolean(dbLink.password_hash),
     expiresAt: dbLink.expires_at,
     maxClicks: dbLink.max_clicks,
     clicks: dbLink.clicks || 0,

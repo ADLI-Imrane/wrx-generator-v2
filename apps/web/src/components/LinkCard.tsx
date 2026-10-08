@@ -11,9 +11,10 @@ interface LinkCardProps {
   onEdit?: (link: LinkType) => void;
   onDelete?: (link: LinkType) => void;
   onGenerateQR?: (link: LinkType) => void;
+  onCreateManagedQR?: (link: LinkType) => void;
 }
 
-export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR }: LinkCardProps) {
+export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR, onCreateManagedQR }: LinkCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
@@ -144,7 +145,17 @@ export function LinkCard({ link, onCopy, onEdit, onDelete, onGenerateQR }: LinkC
                   className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
                   <QrCode size={16} />
-                  Générer QR Code
+                  Créer un QR direct
+                </button>
+                <button
+                  onClick={() => {
+                    onCreateManagedQR?.(link);
+                    setIsMenuOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <QrCode size={16} />
+                  Créer un QR géré
                 </button>
                 <hr className="my-1" />
                 <button

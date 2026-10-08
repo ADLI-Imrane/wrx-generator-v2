@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { ArrowDownLeft, ArrowUpRight, Building2, Mail, MapPin, Phone, Globe2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { BusinessCardDocument } from '@wrx/shared';
-import { BUSINESS_CARD_MANAGED_QR_NOTICE, businessCardQrPayload } from './businessCardPreview.data';
+import { BUSINESS_CARD_MANAGED_QR_NOTICE, businessCardQrPayload, DEFAULT_BUSINESS_CARD_QR_PRESENTATION } from './businessCardPreview.data';
 
 function useCardImages(document: BusinessCardDocument) {
   const avatarPath = document.identity.avatarPath;
@@ -45,10 +45,10 @@ function CardIdentity({ document, avatarUrl, logoUrl }: {
         {show.companyLogo && logoUrl && <img className="bc-preview-logo" src={logoUrl} alt="" />}
       </div>
       <div className="bc-preview-contacts">
-        {show.email && person.email && <span><Mail size={12} />{person.email}</span>}
-        {show.phone && person.phone && <span><Phone size={12} />{person.phone}</span>}
-        {show.website && person.website && <span><Globe2 size={12} />{person.website.replace(/^https?:\/\//, '')}</span>}
-        {show.address && person.address && <span><MapPin size={12} />{person.address}</span>}
+        {show.email && person.email && <span title={person.email} aria-label={`Email : ${person.email}`}><Mail size={12} /><span className="bc-preview-contact-value">{person.email}</span></span>}
+        {show.phone && person.phone && <span title={person.phone} aria-label={`Téléphone : ${person.phone}`}><Phone size={12} /><span className="bc-preview-contact-value">{person.phone}</span></span>}
+        {show.website && person.website && <span title={person.website} aria-label={`Site web : ${person.website}`}><Globe2 size={12} /><span className="bc-preview-contact-value">{person.website.replace(/^https?:\/\//, '')}</span></span>}
+        {show.address && person.address && <span title={person.address} aria-label={`Adresse : ${person.address}`}><MapPin size={12} /><span className="bc-preview-contact-value">{person.address}</span></span>}
       </div>
       <div className="bc-preview-socials">
         {(['linkedin', 'github', 'instagram', 'x'] as const).filter((key) => show[key] && person.socialLinks[key]).map((key) => (
@@ -68,6 +68,9 @@ function BusinessCardFace({ document, side, avatarUrl, logoUrl, exportRef, asset
   assetsState: 'loading' | 'ready' | 'error';
 }) {
   const payload = businessCardQrPayload(document);
+  const qrPresentation = document.qr?.mode === 'static'
+    ? document.qr.presentation ?? DEFAULT_BUSINESS_CARD_QR_PRESENTATION
+    : DEFAULT_BUSINESS_CARD_QR_PRESENTATION;
   const { identity, visibility, brand } = document;
   const unsupportedQr = visibility.qr && document.qr?.mode === 'managed' && document.sides.back.composition !== 'contact';
   const initials = identity.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'WR';
@@ -78,7 +81,25 @@ function BusinessCardFace({ document, side, avatarUrl, logoUrl, exportRef, asset
       <div ref={exportRef} data-assets-state={assetsState} data-qr-state={unsupportedQr ? 'unsupported' : 'ready'} className={`bc-face bc-back bc-back-${document.sides.back.composition} bc-template-${document.templateKey}${exportRef ? ' bc-export-face' : ''}`} style={{ '--bc-primary': brand.primaryColor, '--bc-secondary': brand.secondaryColor || '#E7E9E1' } as React.CSSProperties}>
         <div className="bc-back-mark" aria-hidden="true">{identity.company || initials}</div>
         {(document.sides.back.composition === 'qr' || document.sides.back.composition === 'contact-qr') && visibility.qr && payload && (
-          <div className="bc-preview-qr"><QRCodeSVG value={payload} size={100} level="M" includeMargin /></div>
+          <div
+            className="bc-preview-qr"
+            data-frame={qrPresentation.frame}
+            style={{
+              backgroundColor: qrPresentation.backgroundColor,
+              borderRadius: qrPresentation.frame === 'soft' ? 7 : 2,
+              borderColor: qrPresentation.foregroundColor,
+            }}
+          >
+            <QRCodeSVG
+              value={payload}
+              size={document.sides.back.composition === 'qr' ? 108 : 84}
+              level="M"
+              includeMargin
+              fgColor={qrPresentation.foregroundColor}
+              bgColor={qrPresentation.backgroundColor}
+              title="QR statique avec zone de silence préservée"
+            />
+          </div>
         )}
         {document.sides.back.composition !== 'qr' && <CardIdentity document={document} avatarUrl={avatarUrl} logoUrl={logoUrl} />}
         {document.sides.back.composition === 'qr' && payload && <p className="bc-back-caption">{document.qr?.mode === 'static' && document.qr.type === 'vcard' ? 'Scannez pour enregistrer le contact' : 'Scannez pour consulter le contenu'}</p>}
@@ -96,7 +117,7 @@ function BusinessCardFace({ document, side, avatarUrl, logoUrl, exportRef, asset
           {visibility.companyLogo && logoUrl && <img className="bc-preview-logo" src={logoUrl} alt="" />}
           {visibility.company && identity.company && <strong>{identity.company}</strong>}
           <span>{visibility.fullName ? identity.fullName : ''}</span>
-          {visibility.website && identity.website && <small>{identity.website.replace(/^https?:\/\//, '')}</small>}
+          {visibility.website && identity.website && <small className="bc-preview-website" title={identity.website} aria-label={`Site web : ${identity.website}`}>{identity.website.replace(/^https?:\/\//, '')}</small>}
         </div>
       ) : <CardIdentity document={document} avatarUrl={avatarUrl} logoUrl={logoUrl} />}
       <span className="bc-preview-edition" aria-hidden="true">WRX · {document.templateKey}</span>

@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react';
-import { ResourceTabs } from '../components/ProductPrimitives';
 import { useAuthStore } from '../stores/auth.store';
 
 type CharacterSet = 'uppercase' | 'lowercase' | 'numbers' | 'symbols';
@@ -37,7 +36,7 @@ const DEFAULT_OPTIONS: PasswordOptions = {
 
 function strengthFor(bits: number) {
   if (bits < 40) return { label: 'Faible', tone: 'weak', level: 1 };
-  if (bits < 70) return { label: 'Correcte', tone: 'fair', level: 2 };
+  if (bits < 70) return { label: 'Moyenne', tone: 'fair', level: 2 };
   if (bits < 100) return { label: 'Forte', tone: 'strong', level: 3 };
   return { label: 'Très forte', tone: 'excellent', level: 4 };
 }
@@ -234,7 +233,7 @@ export function PasswordGeneratorPage() {
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Prochain mot de passe</p>
             <p className="text-sm font-semibold"><span className="wrx-strength-label">{configuredStrength.label}</span><span className="ml-2 font-mono text-xs text-slate-500">{entropy} bits estimés</span></p>
           </div>
-          <div className="mt-2 grid grid-cols-4 gap-1" role="progressbar" aria-valuemin={0} aria-valuemax={4} aria-valuenow={configuredStrength.level} aria-label="Force estimée du prochain mot de passe">
+          <div className="mt-2 grid grid-cols-4 gap-1" role="progressbar" aria-valuemin={0} aria-valuemax={4} aria-valuenow={configuredStrength.level} aria-valuetext={`${configuredStrength.label}, ${configuredStrength.level} sur 4`} aria-label="Force estimée du prochain mot de passe" data-strength={configuredStrength.tone}>
             {[1, 2, 3, 4].map((segment) => <span key={segment} className="wrx-strength-segment" data-filled={segment <= configuredStrength.level} />)}
           </div>
           <p className="mt-2 text-xs text-slate-500">Estimation selon la longueur et les caractères sélectionnés.</p>
@@ -249,7 +248,6 @@ export function PasswordGeneratorPage() {
         {!storageAvailable && <p role="status" className="text-sm text-amber-700">Le stockage local est indisponible : cet historique ne sera conservé que pendant cette visite.</p>}
       </section>
 
-      <ResourceTabs />
       <section className="password-history card" aria-labelledby="history-title">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div><h2 id="history-title" className="text-lg font-semibold text-slate-900">Historique des mots de passe</h2><p className="text-sm text-slate-500">Les 50 dernières générations sur cet appareil · {history.length}</p></div>

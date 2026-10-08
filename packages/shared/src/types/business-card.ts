@@ -24,6 +24,12 @@ export const BUSINESS_CARD_QR_TYPES = [
 ] as const;
 export type BusinessCardQrType = (typeof BUSINESS_CARD_QR_TYPES)[number];
 
+export interface BusinessCardQrPresentation {
+  foregroundColor: string;
+  backgroundColor: string;
+  frame: 'sharp' | 'soft';
+}
+
 export interface BusinessCardIdentitySnapshot {
   fullName: string;
   jobTitle?: string | null;
@@ -72,6 +78,7 @@ export interface BusinessCardDocument {
         mode: 'static';
         type: BusinessCardQrType;
         content: string;
+        presentation?: BusinessCardQrPresentation;
         /** Metadata for the selected owner-owned Digital Card; the QR payload remains static. */
         digitalCardSource?: { id: string; slug: string };
       }

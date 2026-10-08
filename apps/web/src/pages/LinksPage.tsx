@@ -1,6 +1,5 @@
-import { ResourceTabs } from '../components/ProductPrimitives';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLinks, useDeleteLink } from '../hooks/useLinks';
 import { LinkCard } from '../components/LinkCard';
 import { Modal } from '../components/Modal';
@@ -8,6 +7,7 @@ import { Plus, Search, Filter, SortAsc, SortDesc, Link as LinkIcon } from 'lucid
 import type { Link as LinkType } from '@wrx/shared';
 
 export function LinksPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState<'createdAt' | 'clicks' | 'title'>('createdAt');
@@ -25,7 +25,7 @@ export function LinksPage() {
     sortOrder,
   });
 
-  const { mutate: deleteLink, isPending: isDeleting } = useDeleteLink();
+  const { mutate: deleteLink, isPending: isDeleting, error: deleteError, reset: resetDelete } = useDeleteLink();
 
   const handleDelete = () => {
     if (deleteModal) {
@@ -48,8 +48,11 @@ export function LinksPage() {
   };
 
   const handleGenerateQR = (link: LinkType) => {
-    // Navigate to QR generation with link prefilled
-    window.location.href = `/qr-codes/new?url=${encodeURIComponent(link.originalUrl)}`;
+    navigate(`/qr-codes/new?url=${encodeURIComponent(link.originalUrl)}`);
+  };
+
+  const handleCreateManagedQR = (link: LinkType) => {
+    navigate(`/qr-codes/new?linkId=${encodeURIComponent(link.id)}`);
   };
 
   return (
@@ -66,7 +69,6 @@ export function LinksPage() {
         </Link>
       </div>
 
-      <ResourceTabs />
       {/* Filters */}
       <div className="card">
         <div className="flex flex-col gap-4 md:flex-row">
@@ -172,8 +174,9 @@ export function LinksPage() {
                 link={link}
                 onCopy={handleCopy}
                 onEdit={handleEdit}
-                onDelete={setDeleteModal}
+                onDelete={(link) => { resetDelete(); setDeleteModal(link); }}
                 onGenerateQR={handleGenerateQR}
+                onCreateManagedQR={handleCreateManagedQR}
                 />
               </div>
             ))}
@@ -217,6 +220,18 @@ export function LinksPage() {
         <p className="text-gray-600">
           Êtes-vous sûr de vouloir supprimer ce lien ? Cette action est irréversible.
         </p>
+        {deleteError && (
+          <div role="alert" className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            {deleteError.message.includes('HTTP 409')
+              ? 'Ce lien est associé à un ou plusieurs QR gérés. Réassociez ou détachez ces QR avant de supprimer le lien.'
+              : 'La suppression a échoué. Vérifiez votre connexion puis réessayez.'}
+            {deleteError.message.includes('HTTP 409') && (
+              <Link to="/qr-codes" onClick={() => setDeleteModal(null)} className="mt-2 inline-flex min-h-11 items-center font-semibold underline">
+                Ouvrir mes QR Codes
+              </Link>
+            )}
+          </div>
+        )}
         <div className="mt-6 flex justify-end gap-3">
           <button onClick={() => setDeleteModal(null)} className="btn btn-outline">
             Annuler
