@@ -51,9 +51,10 @@ describe('LinkCard Component', () => {
     const copyButton = screen.getByTitle('Copier le lien');
     fireEvent.click(copyButton);
 
-    // Wait for the async operation
-    await vi.waitFor(() => {
+    // Wait for the async clipboard write and its accessible success state.
+    await waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalled();
+      expect(copyButton).toHaveAccessibleName('Lien copié');
     });
   });
 

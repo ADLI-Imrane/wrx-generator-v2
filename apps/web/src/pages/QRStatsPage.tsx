@@ -55,7 +55,7 @@ export function QRStatsPage() {
   const { id } = useParams<{ id: string }>();
   const { data: qrCode, isLoading: isLoadingQR, error: qrError } = useQRCode(id!);
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
-  const { data: stats, isLoading: isLoadingStats } = useQRCodeStats(id!, timeRange);
+  const { data: stats, isLoading: isLoadingStats, error: statsError, refetch } = useQRCodeStats(id!, timeRange);
 
   const handleDownload = () => {
     if (qrCode?.imageUrl) {
@@ -88,7 +88,7 @@ export function QRStatsPage() {
     );
   }
 
-  const mockStats: QRStatsData = stats || {
+  const scanStats: QRStatsData = stats || {
     totalScans: 0,
     uniqueScanners: 0,
     scansByDay: [],
@@ -98,7 +98,7 @@ export function QRStatsPage() {
     scanLocations: [],
   };
 
-  const maxDailyScans = Math.max(...mockStats.scansByDay.map((d) => d.scans), 1);
+  const maxDailyScans = Math.max(...scanStats.scansByDay.map((d) => d.scans), 1);
 
   const deviceIcons: Record<string, React.ReactNode> = {
     Mobile: <DevicePhoneMobileIcon className="h-5 w-5" />,
@@ -117,7 +117,7 @@ export function QRStatsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="resource-stats qr-stats mx-auto max-w-6xl">
       {/* Header */}
       <div className="mb-6">
         <div className="mb-4 flex items-start gap-4">
@@ -171,6 +171,7 @@ export function QRStatsPage() {
           ].map((option) => (
             <button
               key={option.value}
+              aria-pressed={timeRange === option.value}
               onClick={() => setTimeRange(option.value as TimeRange)}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 timeRange === option.value
@@ -184,7 +185,7 @@ export function QRStatsPage() {
         </div>
       </div>
 
-      {isLoadingStats ? (
+      {statsError ? <div role="alert" className="rounded-lg bg-red-50 p-6 text-red-800"><p>Impossible de charger les statistiques.</p><button className="mt-2 underline" onClick={() => void refetch()}>Réessayer</button></div> : isLoadingStats ? (
         <div className="flex min-h-[200px] items-center justify-center">
           <div className="border-primary-500 h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
         </div>
@@ -194,19 +195,19 @@ export function QRStatsPage() {
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <p className="text-sm text-gray-500">Total des scans</p>
-              <p className="mt-1 text-3xl font-bold text-gray-900">{mockStats.totalScans}</p>
+              <p className="mt-1 text-3xl font-bold text-gray-900">{scanStats.totalScans}</p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <p className="text-sm text-gray-500">Scanneurs uniques</p>
-              <p className="mt-1 text-3xl font-bold text-gray-900">{mockStats.uniqueScanners}</p>
+              <p className="mt-1 text-3xl font-bold text-gray-900">{scanStats.uniqueScanners}</p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <p className="text-sm text-gray-500">Scans / jour (moy.)</p>
               <p className="mt-1 text-3xl font-bold text-gray-900">
-                {mockStats.scansByDay.length > 0
+                {scanStats.scansByDay.length > 0
                   ? Math.round(
-                      mockStats.scansByDay.reduce((acc, d) => acc + d.scans, 0) /
-                        mockStats.scansByDay.length
+                      scanStats.scansByDay.reduce((acc, d) => acc + d.scans, 0) /
+                        scanStats.scansByDay.length
                     )
                   : 0}
               </p>
@@ -214,10 +215,10 @@ export function QRStatsPage() {
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <p className="text-sm text-gray-500">Taux mobile</p>
               <p className="mt-1 text-3xl font-bold text-gray-900">
-                {mockStats.totalScans > 0
+                {scanStats.totalScans > 0
                   ? Math.round(
-                      ((mockStats.scansByDevice.find((d) => d.device === 'Mobile')?.scans || 0) /
-                        mockStats.totalScans) *
+                      ((scanStats.scansByDevice.find((d) => d.device === 'Mobile')?.scans || 0) /
+                        scanStats.totalScans) *
                         100
                     )
                   : 0}
@@ -229,19 +230,23 @@ export function QRStatsPage() {
           {/* Scans Over Time */}
           <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Scans par jour</h2>
-            <div className="h-48">
+            {scanStats.totalScans === 0 && <p className="py-8 text-center text-sm text-gray-500">Aucun scan enregistré sur cette période.</p>}
+            <div className={scanStats.totalScans === 0 ? "hidden" : "h-48"}>
               <div className="flex h-full items-end gap-1">
-                {mockStats.scansByDay.map((day, index) => (
+                {scanStats.scansByDay.map((day, index) => (
                   <div
                     key={index}
-                    className="group relative flex-1"
+                    className="group relative h-full flex-1"
+                    tabIndex={0}
+                    role="img"
+                    aria-label={`${day.date} : ${day.scans} scans`}
                     title={`${day.date}: ${day.scans} scans`}
                   >
                     <div
                       className="bg-primary-500 hover:bg-primary-600 w-full rounded-t transition-all"
-                      style={{ height: `${(day.scans / maxDailyScans) * 100}%`, minHeight: '2px' }}
+                      style={{ height: `${(day.scans / maxDailyScans) * 100}%`, minHeight: day.scans > 0 ? '2px' : 0 }}
                     />
-                    <div className="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white group-hover:block">
+                    <div className="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white group-hover:block group-focus:block">
                       {day.date}: {day.scans}
                     </div>
                   </div>
@@ -249,8 +254,8 @@ export function QRStatsPage() {
               </div>
             </div>
             <div className="mt-2 flex justify-between text-xs text-gray-500">
-              <span>{mockStats.scansByDay[0]?.date}</span>
-              <span>{mockStats.scansByDay[mockStats.scansByDay.length - 1]?.date}</span>
+              <span>{scanStats.scansByDay[0]?.date}</span>
+              <span>{scanStats.scansByDay[scanStats.scansByDay.length - 1]?.date}</span>
             </div>
           </div>
 
@@ -263,9 +268,9 @@ export function QRStatsPage() {
                 Par pays
               </h2>
               <div className="space-y-3">
-                {mockStats.scansByCountry.map((item) => {
+                {scanStats.scansByCountry.map((item) => {
                   const percentage =
-                    mockStats.totalScans > 0 ? (item.scans / mockStats.totalScans) * 100 : 0;
+                    scanStats.totalScans > 0 ? (item.scans / scanStats.totalScans) * 100 : 0;
                   return (
                     <div key={item.code}>
                       <div className="mb-1 flex justify-between text-sm">
@@ -294,9 +299,9 @@ export function QRStatsPage() {
                 Par appareil
               </h2>
               <div className="space-y-3">
-                {mockStats.scansByDevice.map((item) => {
+                {scanStats.scansByDevice.map((item) => {
                   const percentage =
-                    mockStats.totalScans > 0 ? (item.scans / mockStats.totalScans) * 100 : 0;
+                    scanStats.totalScans > 0 ? (item.scans / scanStats.totalScans) * 100 : 0;
                   return (
                     <div key={item.device}>
                       <div className="mb-1 flex justify-between text-sm">
@@ -326,9 +331,9 @@ export function QRStatsPage() {
                 Par système d'exploitation
               </h2>
               <div className="space-y-3">
-                {mockStats.scansByOS.map((item) => {
+                {scanStats.scansByOS.map((item) => {
                   const percentage =
-                    mockStats.totalScans > 0 ? (item.scans / mockStats.totalScans) * 100 : 0;
+                    scanStats.totalScans > 0 ? (item.scans / scanStats.totalScans) * 100 : 0;
                   return (
                     <div key={item.os}>
                       <div className="mb-1 flex justify-between text-sm">
@@ -353,9 +358,9 @@ export function QRStatsPage() {
             <div className="rounded-lg border border-gray-200 bg-white p-6">
               <h2 className="mb-4 text-lg font-semibold text-gray-900">Top villes</h2>
               <div className="space-y-3">
-                {mockStats.scanLocations.map((item, index) => {
+                {scanStats.scanLocations.map((item, index) => {
                   const percentage =
-                    mockStats.totalScans > 0 ? (item.scans / mockStats.totalScans) * 100 : 0;
+                    scanStats.totalScans > 0 ? (item.scans / scanStats.totalScans) * 100 : 0;
                   return (
                     <div key={index}>
                       <div className="mb-1 flex justify-between text-sm">

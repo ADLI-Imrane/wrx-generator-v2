@@ -1,3 +1,4 @@
+import { ResourceTabs } from '../components/ProductPrimitives';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQRCodes, useDeleteQR, useDownloadQR, useDuplicateQR } from '../hooks/useQR';
@@ -68,7 +69,7 @@ export function QRCodesPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="resource-page space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -81,6 +82,7 @@ export function QRCodesPage() {
         </Link>
       </div>
 
+      <ResourceTabs />
       {/* Filters */}
       <div className="card">
         <div className="flex flex-col gap-4 md:flex-row">
@@ -131,7 +133,8 @@ export function QRCodesPage() {
             </select>
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+              className="wrx-sort-control rounded-lg p-2 transition-colors hover:bg-gray-100"
+              aria-label={`Tri ${sortOrder === 'asc' ? 'ascendant' : 'descendant'}`}
             >
               {sortOrder === 'asc' ? (
                 <SortAsc size={18} className="text-gray-600" />
@@ -158,11 +161,19 @@ export function QRCodesPage() {
           <QrCode className="mx-auto text-gray-300" size={64} />
           <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun QR code trouvé</h3>
           <p className="mt-2 text-gray-500">
-            {search
-              ? 'Aucun QR code ne correspond à votre recherche.'
+            {search || typeFilter !== 'all'
+              ? 'Aucun QR code ne correspond aux filtres sélectionnés.'
               : 'Commencez par créer votre premier QR code.'}
           </p>
-          {!search && (
+          {search || typeFilter !== 'all' ? (
+            <button
+              type="button"
+              className="btn btn-outline mt-6"
+              onClick={() => { setSearch(''); setTypeFilter('all'); setPage(1); }}
+            >
+              Effacer les filtres
+            </button>
+          ) : (
             <Link
               to="/qr-codes/new"
               className="btn btn-primary mt-6 inline-flex items-center gap-2"
@@ -174,16 +185,17 @@ export function QRCodesPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {data?.data?.map((qr) => (
-              <QRCard
-                key={qr.id}
+          <div key={data?.data?.map((item) => item.id).join(':')} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {data?.data?.map((qr, index) => (
+              <div key={qr.id} className="wrx-resource-enter" style={{ '--wrx-entry-index': index } as React.CSSProperties}>
+                <QRCard
                 qr={qr}
                 onDownload={handleDownload}
                 onEdit={handleEdit}
                 onDelete={setDeleteModal}
                 onDuplicate={handleDuplicate}
-              />
+                />
+              </div>
             ))}
           </div>
 

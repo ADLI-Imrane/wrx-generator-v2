@@ -1,3 +1,4 @@
+import { AuthFrame } from '../components/AuthFrame';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -37,7 +38,7 @@ export function AuthCallbackPage() {
   }, [navigate]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <AuthFrame>
       <div className="w-full max-w-md text-center">
         {status === 'loading' && (
           <>
@@ -72,6 +73,6 @@ export function AuthCallbackPage() {
           </>
         )}
       </div>
-    </div>
+    </AuthFrame>
   );
 }

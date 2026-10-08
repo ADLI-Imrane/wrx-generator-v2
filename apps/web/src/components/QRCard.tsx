@@ -43,7 +43,7 @@ export function QRCard({ qr, onDownload, onEdit, onDelete, onDuplicate }: QRCard
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md">
+    <div className="wrx-resource-card rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex gap-4">
         {/* Aperçu QR */}
         <div className="flex-shrink-0">
@@ -81,6 +81,8 @@ export function QRCard({ qr, onDownload, onEdit, onDelete, onDuplicate }: QRCard
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Actions du QR code"
+                aria-expanded={isMenuOpen}
                 className="rounded-lg p-2 transition-colors hover:bg-gray-100"
               >
                 <MoreVertical size={18} className="text-gray-500" />
