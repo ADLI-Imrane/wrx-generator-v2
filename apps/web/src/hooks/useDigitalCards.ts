@@ -16,11 +16,19 @@ export function useDigitalCards(options?: { staleTime?: number; refetchOnWindowF
   });
 }
 
-export function useDigitalCard(id: string) {
+export function useDigitalCard(
+  id: string,
+  options?: {
+    staleTime?: number;
+    refetchOnWindowFocus?: boolean;
+    refetchOnMount?: boolean | 'always';
+  }
+) {
   return useQuery({
     queryKey: digitalCardKeys.detail(id),
     queryFn: () => api.get<DigitalCardRecord>(`/digital-cards/${id}`),
     enabled: !!id,
+    ...options,
   });
 }
 

@@ -103,7 +103,7 @@ export function DigitalCardPreview({
         <span>
           <i>＋</i> Enregistrer le contact
         </span>
-        <small>APERÇU · DISPONIBLE EN PHASE 3D</small>
+        <small>APERÇU · DISPONIBLE POUR LES CARTES PUBLIÉES</small>
       </div>
       <div className="dc-contact-list">
         {visibility.phone && contact.phone && (

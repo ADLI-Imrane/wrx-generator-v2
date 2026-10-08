@@ -27,6 +27,7 @@ import { BusinessCardsPage } from './pages/BusinessCardsPage';
 import { BusinessCardEditorPage } from './pages/BusinessCardEditorPage';
 import { DigitalCardsPage } from './pages/DigitalCardsPage';
 import { DigitalCardEditorPage } from './pages/DigitalCardEditorPage';
+import { DigitalCardShareRoute } from './pages/DigitalCardShareRoute';
 import { PublicDigitalCardPage } from './pages/PublicDigitalCardPage';
 import { EmailSignaturesPage } from './pages/EmailSignaturesPage';
 import { EmailSignatureEditorPage } from './pages/EmailSignatureEditorPage';
@@ -133,6 +134,7 @@ export const router = createBrowserRouter([
           { index: true, element: <DigitalCardsPage /> },
           { path: 'new', element: <DigitalCardEditorPage /> },
           { path: ':id/edit', element: <DigitalCardEditorPage /> },
+          { path: ':id/share', element: <DigitalCardShareRoute /> },
         ],
       },
       {

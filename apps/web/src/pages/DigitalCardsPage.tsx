@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, ContactRound, Globe2, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowUpRight, ContactRound, Globe2, Plus, QrCode, RefreshCw, Trash2 } from 'lucide-react';
 import type { DigitalCardRecord } from '@wrx/shared';
 import { Modal } from '../components/Modal';
 import {
@@ -134,11 +134,16 @@ export function DigitalCardsPage() {
                 {card.status === 'published' && (
                   <code className="dc-public-address">
                     {window.location.origin}/c/{card.slug}{' '}
-                    <span>· page publique en préparation</span>
+                    <span>· accès public actif</span>
                   </code>
                 )}
               </div>
               <div className="dc-row-actions">
+                {card.status === 'published' && (
+                  <Link className="dc-text-button dc-share-entry" to={`/digital-cards/${card.id}/share`}>
+                    <QrCode size={14} aria-hidden="true" /> Afficher le QR
+                  </Link>
+                )}
                 <Link className="dc-text-button" to={`/digital-cards/${card.id}/edit`}>
                   Modifier <ArrowUpRight size={14} />
                 </Link>
@@ -200,8 +205,8 @@ export function DigitalCardsPage() {
               ))}
             </ul>
             <p className="dc-phase-note">
-              La page publique sera activée dans une prochaine étape. Vous pourrez dépublier cette
-              carte à tout moment.
+              Cette adresse reste accessible tant que la carte est publiée. Vous pourrez la
+              dépublier à tout moment.
             </p>
           </div>
         ) : (

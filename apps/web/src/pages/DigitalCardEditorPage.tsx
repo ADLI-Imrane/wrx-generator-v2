@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Eye, EyeOff, LoaderCircle, Save, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Check, Eye, EyeOff, LoaderCircle, QrCode, Save, ShieldCheck } from 'lucide-react';
 import {
   DIGITAL_CARD_SOCIAL_PLATFORMS,
   assertDigitalCardPublishable,
@@ -171,12 +171,12 @@ export function DigitalCardEditorPage() {
         navigate(`/digital-cards/${saved.id}/edit`, { replace: true });
         await publish.mutateAsync({ id: saved.id });
         setPublishOpen(false);
-        setNotice('Carte publiée. La page publique sera disponible dans la prochaine étape.');
+        setNotice('Carte publiée. L’adresse publique de votre carte est active.');
         return;
       }
       await publish.mutateAsync({ id });
       setPublishOpen(false);
-      setNotice('Carte publiée. La page publique sera disponible dans la prochaine étape.');
+      setNotice('Carte publiée. L’adresse publique de votre carte est active.');
     } catch (cause) {
       setPublishError(
         readableApiError(
@@ -239,9 +239,16 @@ export function DigitalCardEditorPage() {
           <p>Une copie indépendante : vos changements ici ne modifient pas votre profil.</p>
         </div>
         {editing && (
-          <span className={`dc-status dc-status-${cardQuery.data?.status}`}>
-            {cardQuery.data?.status === 'published' ? 'Publiée' : 'Brouillon'}
-          </span>
+          <div className="dc-editor-state-actions">
+            {cardQuery.data?.status === 'published' && (
+              <Link className="dc-text-button dc-share-entry" to={`/digital-cards/${cardQuery.data.id}/share`}>
+                <QrCode size={14} aria-hidden="true" /> Afficher le QR
+              </Link>
+            )}
+            <span className={`dc-status dc-status-${cardQuery.data?.status}`}>
+              {cardQuery.data?.status === 'published' ? 'Publiée' : 'Brouillon'}
+            </span>
+          </div>
         )}
       </header>
 
@@ -642,7 +649,7 @@ export function DigitalCardEditorPage() {
               </div>
               <DigitalCardPreview document={document} title={title} />
               <p className="dc-preview-caption">
-                La page publique et l’action Enregistrer le contact seront disponibles en Phase 3D.
+                La page publique et l’action Enregistrer le contact sont disponibles lorsque la carte est publiée.
               </p>
             </aside>
           </div>
@@ -665,7 +672,7 @@ export function DigitalCardEditorPage() {
             ))}
           </ul>
           <p className="dc-phase-note">
-            La page publique arrive en Phase 3D. Vous pourrez dépublier à tout moment.
+            La carte sera accessible à son adresse publique après publication. Vous pourrez la dépublier à tout moment.
           </p>
         </div>
         {publishError && (

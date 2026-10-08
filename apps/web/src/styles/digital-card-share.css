@@ -1,0 +1,373 @@
+.digital-card-share {
+  --dc-share-blue: #4e83ff;
+  --dc-share-ink: #141c20;
+  --dc-share-muted: #aab7bf;
+  min-width: 0;
+}
+
+.dc-share-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 20px;
+}
+
+.dc-share-back {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  color: #52616c;
+  font-size: 0.86rem;
+  text-decoration: none;
+}
+
+.dc-share-back:hover,
+.dc-share-open:hover {
+  color: #235ee7;
+}
+
+.dc-share-stage {
+  --dc-share-accent: #4e83ff;
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid #303d43;
+  border-radius: 3px;
+  background: var(--dc-share-ink);
+  color: #f2f5f4;
+  box-shadow: 0 20px 55px rgb(12 24 29 / 12%);
+}
+
+.dc-share-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 16px;
+  padding: 0 0 24px;
+  border-bottom: 1px solid #303d43;
+}
+
+.dc-share-avatar {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--dc-share-accent) 55%, #34434a);
+  border-radius: 50%;
+  background: #202b30;
+  color: #f5f7f8;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.dc-share-avatar img,
+.dc-share-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dc-share-identity-copy {
+  min-width: 0;
+  border-left: 2px solid var(--dc-share-accent);
+  padding-left: 14px;
+}
+
+.dc-share-overline {
+  margin: 0 0 5px;
+  color: #9baab2;
+  font: 600 0.66rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+}
+
+.dc-share-identity h1 {
+  margin: 0;
+  color: #f5f7f8 !important;
+  font-size: clamp(1.35rem, 2.5vw, 2rem) !important;
+  line-height: 1.15 !important;
+  overflow-wrap: anywhere;
+}
+
+.dc-share-role {
+  margin: 6px 0 0;
+  color: #c0cbd0;
+  font-size: 0.94rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.dc-share-logo {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  margin-left: auto;
+  object-fit: contain;
+  padding: 5px;
+  border: 1px solid #3a484e;
+  background: #f7f8f7;
+}
+
+.dc-share-presentation {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(250px, 0.8fr);
+  align-items: center;
+  justify-content: center;
+  gap: clamp(30px, 6vw, 80px);
+  padding: 30px 0;
+}
+
+.dc-share-qr-column {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  gap: 13px;
+}
+
+.dc-share-qr-frame {
+  display: grid;
+  width: min(100%, 344px);
+  aspect-ratio: 1;
+  place-items: center;
+  padding: 17px;
+  background: #fff;
+  border: 1px solid #e5e9e7;
+}
+
+.dc-share-qr-frame svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 310px;
+}
+
+.dc-share-scan-prompt {
+  margin: 0;
+  color: #f2f5f4;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.dc-share-url {
+  max-width: 100%;
+  color: #acbac2;
+  font: 0.72rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.dc-share-actions {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.dc-share-primary,
+.dc-share-secondary,
+.dc-share-open {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 11px 16px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: 0.91rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+.dc-share-primary {
+  background: #2f68e8;
+  color: #fff;
+}
+
+.dc-share-primary:hover {
+  background: #3d75f3;
+}
+
+.dc-share-secondary,
+.dc-share-open {
+  border-color: #46545a;
+  background: transparent;
+  color: #edf2f3;
+}
+
+.dc-share-secondary:hover,
+.dc-share-open:hover {
+  border-color: #8394a0;
+  color: #fff;
+}
+
+.dc-share-primary:focus-visible,
+.dc-share-secondary:focus-visible,
+.dc-share-open:focus-visible,
+.dc-share-back:focus-visible,
+.dc-share-entry:focus-visible {
+  outline: 2px solid #82aaff;
+  outline-offset: 3px;
+}
+
+.dc-share-notice {
+  min-height: 1.4em;
+  margin: 2px 0 0;
+  color: #c8d2d7;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.dc-share-footline {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 15px;
+  border-top: 1px solid #303d43;
+  color: #9baab2;
+  font: 600 0.64rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.06em;
+}
+
+.dc-share-footline span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dc-share-state {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid #d9dfdc;
+  background: #fff;
+  color: #51605d;
+}
+
+.dc-share-state-error {
+  border-color: #e5c7c7;
+  color: #8f3838;
+}
+
+.dc-editor-state-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dc-share-entry {
+  min-height: 42px;
+  gap: 7px;
+  padding: 4px 8px;
+  border: 1px solid #d9dfdc;
+  color: #244fba;
+  white-space: nowrap;
+}
+
+.dc-share-entry:hover {
+  border-color: #a5b9e8;
+  color: #1747b4;
+}
+
+@media (max-width: 700px) {
+  .dc-share-topline {
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .dc-share-topline .dc-kicker {
+    padding-top: 14px;
+    text-align: right;
+    font-size: 0.58rem;
+  }
+
+  .dc-share-stage {
+    padding: 20px 16px 16px;
+  }
+
+  .dc-share-identity {
+    gap: 11px;
+    padding-bottom: 17px;
+  }
+
+  .dc-share-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .dc-share-identity-copy {
+    padding-left: 10px;
+  }
+
+  .dc-share-overline {
+    font-size: 0.59rem;
+  }
+
+  .dc-share-role {
+    font-size: 0.86rem;
+  }
+
+  .dc-share-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .dc-share-presentation {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 20px 0 16px;
+  }
+
+  .dc-share-qr-frame {
+    width: min(100%, 260px);
+    padding: 12px;
+  }
+
+  .dc-share-actions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .dc-share-primary,
+  .dc-share-secondary,
+  .dc-share-open {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .dc-share-footline {
+    flex-wrap: wrap;
+    font-size: 0.58rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .dc-share-stage {
+    padding-inline: 12px;
+  }
+
+  .dc-share-qr-frame {
+    width: min(100%, 270px);
+    padding: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dc-share-primary,
+  .dc-share-secondary,
+  .dc-share-open {
+    transition: none;
+  }
+}
