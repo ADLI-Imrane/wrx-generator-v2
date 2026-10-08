@@ -71,6 +71,14 @@
 .bc-color-input code { color: #596459; font: 10px var(--mono); }
 .bc-color-fields { margin-bottom: 20px; }
 .bc-qr-config { display: grid; gap: 14px; padding: 14px; margin-top: 5px; border-left: 2px solid #a8874c; background: #f2eee5; }
+.bc-qr-digital-source { display: grid; min-width: 0; gap: 12px; }
+.bc-qr-digital-source > .bc-help-note a { color: var(--blue); text-decoration: underline; text-underline-offset: 2px; }
+.bc-qr-source-summary { display: grid; min-width: 0; gap: 5px; padding-top: 10px; border-top: 1px solid var(--rule); }
+.bc-qr-source-summary strong { font-size: 12px; }
+.bc-qr-source-summary code { overflow-wrap: anywhere; color: var(--blue); font: 10px/1.55 var(--mono); }
+.bc-qr-source-summary p { color: var(--muted); font-size: 10px; line-height: 1.55; }
+.bc-qr-source-warning { display: grid; min-width: 0; gap: 6px; padding: 10px 12px; border: 1px solid #e5bdb5; background: #fbefec; color: #873a33; font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; }
+.bc-qr-source-warning .bc-text-button { justify-self: start; }
 .bc-help-note { color: var(--muted); font-size: 11px; line-height: 1.6; }
 .bc-template-list { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 7px; }
 .bc-template-list button { position: relative; min-width: 0; min-height: 103px; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding: 11px 9px; border: 1px solid var(--rule); background: var(--surface); text-align: left; }

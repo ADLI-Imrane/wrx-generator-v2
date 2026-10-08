@@ -3,10 +3,12 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import type { BusinessCardDocument, BusinessCardRecord } from '@wrx/shared';
+import type { BusinessCardDocument, BusinessCardRecord, DigitalCardRecord } from '@wrx/shared';
 import { parseBusinessCardDocument } from '@wrx/shared';
 import { BusinessCardEditorPage } from './BusinessCardEditorPage';
 import { BusinessCardsPage } from './BusinessCardsPage';
+import { businessCardQrPayload } from '../components/businessCardPreview.data';
+import { publicDigitalCardUrl } from '../lib/digital-card-vcard';
 
 const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() }));
 const profile = vi.hoisted(() => ({
@@ -16,6 +18,7 @@ const profile = vi.hoisted(() => ({
   primaryBrandColor: '#235EE7', secondaryBrandColor: '#E7E9E1',
 }));
 vi.mock('../lib/api', () => ({ api: mocks }));
+vi.mock('../lib/supabase', () => ({ supabase: { storage: { from: () => ({ createSignedUrl: vi.fn() }) } } }));
 vi.mock('../hooks/useAuth', () => ({ useProfile: () => ({ data: profile, isSuccess: true, isError: false }) }));
 vi.mock('../stores/auth.store', () => ({ useAuthStore: () => ({ user: { id: 'owner', email: profile.email } }) }));
 
@@ -30,12 +33,31 @@ function documentFixture(): BusinessCardDocument {
 }
 
 const cards = new Map<string, BusinessCardRecord>();
+const digitalCards = new Map<string, DigitalCardRecord>();
 function record(id: string, document = documentFixture(), title = 'Carte enregistrée'): BusinessCardRecord {
   return { id, userId: 'owner', title, templateKey: document.templateKey, schemaVersion: 1, document, createdAt: '2026-10-05T10:00:00Z', updatedAt: '2026-10-05T10:00:00Z' };
 }
 
-function renderFlow(path = '/business-cards') {
+function digitalCardRecord(id: string, status: 'draft' | 'published', title = 'Carte Amina', slug = 'amina-2026'): DigitalCardRecord {
+  return {
+    id, userId: 'owner', title, slug, status, schemaVersion: 1,
+    document: {
+      schemaVersion: 1,
+      identity: { fullName: 'Amina El Idrissi', jobTitle: null, company: null, avatarPath: null, companyLogoPath: null },
+      contact: { email: null, phone: null, website: null, address: null },
+      socialLinks: {},
+      visibility: { fullName: true, jobTitle: false, company: false, avatar: false, companyLogo: false, email: false, phone: false, website: false, address: false, linkedin: false, github: false, instagram: false, x: false },
+      brand: { primaryColor: '#235EE7', secondaryColor: null },
+      presentation: { style: 'light' },
+    },
+    createdAt: '2026-10-05T10:00:00Z', updatedAt: '2026-10-05T10:00:00Z',
+    publishedAt: status === 'published' ? '2026-10-05T10:00:00Z' : null,
+  };
+}
+
+function renderFlow(path = '/business-cards', cachedDigitalCards?: DigitalCardRecord[]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  if (cachedDigitalCards) client.setQueryData(['digital-cards', 'list'], cachedDigitalCards);
   let navigate: ReturnType<typeof useNavigate> = () => undefined;
   function TestRoutes() {
     const currentNavigate = useNavigate();
@@ -51,9 +73,11 @@ function renderFlow(path = '/business-cards') {
 
 beforeEach(() => {
   cards.clear();
+  digitalCards.clear();
   vi.clearAllMocks();
   mocks.get.mockImplementation(async (url: string) => {
     if (url === '/business-cards') return [...cards.values()];
+    if (url === '/digital-cards') return [...digitalCards.values()];
     const card = cards.get(url.split('/').at(-1) ?? '');
     if (!card) throw new Error('HTTP 404');
     return structuredClone(card);
@@ -150,6 +174,127 @@ describe('Business Card editor integration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer les changements' }));
     await screen.findByRole('heading', { name: /^Cartes de visite/, level: 1 });
     expect(cards.get('one')?.document.qr).toEqual({ mode: 'static', type: 'url', content: 'https://example.com/contact' });
+  });
+
+  it('offers published Digital Cards only and saves/reloads the stable URL as a static QR source', async () => {
+    const published = digitalCardRecord('c1aa99cc-6f9d-4130-8a61-f20d12aa47e1', 'published', 'Amina publique', 'amina_public-2026');
+    digitalCards.set(published.id, published);
+    digitalCards.set('c1aa99cc-6f9d-4130-8a61-f20d12aa47e2', digitalCardRecord('c1aa99cc-6f9d-4130-8a61-f20d12aa47e2', 'draft', 'Amina brouillon', 'amina-draft'));
+    const expectedUrl = publicDigitalCardUrl(published.slug);
+
+    const createView = renderFlow('/business-cards/new');
+    await screen.findByLabelText('Nom complet');
+    fireEvent.click(screen.getByLabelText('Afficher le QR statique'));
+    fireEvent.change(screen.getByLabelText('Destination du QR'), { target: { value: 'digital-card' } });
+    const sourceSelect = await screen.findByLabelText('Carte numérique publiée');
+    expect(screen.queryByRole('option', { name: /Amina brouillon/ })).not.toBeInTheDocument();
+    fireEvent.change(sourceSelect, { target: { value: published.id } });
+    expect(sourceSelect).toHaveValue(published.id);
+    expect(screen.getByText(expectedUrl)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la carte' }));
+    await screen.findByRole('heading', { name: /^Cartes de visite/, level: 1 });
+    const saved = cards.get('created')?.document;
+    expect(saved?.qr).toEqual({
+      mode: 'static', type: 'url', content: expectedUrl,
+      digitalCardSource: { id: published.id, slug: published.slug },
+    });
+    expect(businessCardQrPayload(saved!)).toBe(expectedUrl);
+
+    createView.unmount();
+    renderFlow('/business-cards/created/edit');
+    await waitFor(() => expect(screen.getByLabelText('Destination du QR')).toHaveValue('digital-card'));
+    expect(await screen.findByLabelText('Carte numérique publiée')).toHaveValue(published.id);
+    expect(screen.getByText(expectedUrl)).toBeInTheDocument();
+  });
+
+  it('hides and blocks an unpublished source, then safely returns to editable manual QR', async () => {
+    const unavailable = digitalCardRecord('c1aa99cc-6f9d-4130-8a61-f20d12aa47e3', 'draft', 'Amina brouillon', 'amina-draft');
+    digitalCards.set(unavailable.id, unavailable);
+    const document = documentFixture();
+    document.sides.back.composition = 'contact-qr';
+    document.qr = {
+      mode: 'static', type: 'url', content: publicDigitalCardUrl(unavailable.slug),
+      digitalCardSource: { id: unavailable.id, slug: unavailable.slug },
+    };
+    cards.set('saved', record('saved', document));
+    const view = renderFlow('/business-cards/saved/edit');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('n’est plus publiée');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Verso' })[0]!);
+    expect(view.container.querySelectorAll('.bc-preview-qr')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'PNG verso' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Imprimer / Enregistrer PDF' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer la sélection' }));
+    expect(screen.getByLabelText('Destination du QR')).toHaveValue('manual');
+    fireEvent.change(screen.getByLabelText('Contenu encodé'), { target: { value: 'https://contact.example/amina' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer les changements' }));
+    await screen.findByRole('heading', { name: /^Cartes de visite/, level: 1 });
+    expect(cards.get('saved')?.document.qr).toEqual({ mode: 'static', type: 'url', content: 'https://contact.example/amina' });
+  });
+
+  it.each([
+    ['still published', 'published', true],
+    ['now unpublished', 'draft', false],
+  ] as const)('fails closed during cached Digital Card refetch, then handles the fresh %s result', async (_label, freshStatus, remainsPublished) => {
+    const stalePublished = digitalCardRecord('c1aa99cc-6f9d-4130-8a61-f20d12aa47e4', 'published', 'Carte source', 'source-2026');
+    const document = documentFixture();
+    document.sides.back.composition = 'contact-qr';
+    document.qr = {
+      mode: 'static', type: 'url', content: publicDigitalCardUrl(stalePublished.slug),
+      digitalCardSource: { id: stalePublished.id, slug: stalePublished.slug },
+    };
+    cards.set('cached', record('cached', document));
+
+    let resolveDigitalCards!: (result: DigitalCardRecord[]) => void;
+    mocks.get.mockImplementation(async (url: string) => {
+      if (url === '/digital-cards') return new Promise<DigitalCardRecord[]>((resolve) => { resolveDigitalCards = resolve; });
+      const card = cards.get(url.split('/').at(-1) ?? '');
+      if (!card) throw new Error('HTTP 404');
+      return structuredClone(card);
+    });
+
+    const view = renderFlow('/business-cards/cached/edit', [stalePublished]);
+    await screen.findByRole('button', { name: 'Enregistrer les changements' });
+    expect(await screen.findByText('Vérification des Cartes numériques publiées…')).toHaveAttribute('role', 'status');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Verso' })[0]!);
+    expect(screen.getByRole('button', { name: 'PNG verso' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Imprimer / Enregistrer PDF' })).toBeDisabled();
+    expect(view.container.querySelectorAll('.bc-preview-qr')).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer les changements' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Vérifiez, remplacez ou retirez');
+    expect(mocks.put).not.toHaveBeenCalled();
+
+    const freshCard = digitalCardRecord(stalePublished.id, freshStatus, 'Carte source', stalePublished.slug);
+    await act(async () => { resolveDigitalCards([freshCard]); });
+
+    if (remainsPublished) {
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'PNG verso' })).toBeEnabled();
+        expect(screen.getByRole('button', { name: 'Imprimer / Enregistrer PDF' })).toBeEnabled();
+        expect(view.container.querySelector('.bc-preview-qr')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer les changements' }));
+      await waitFor(() => expect(mocks.put).toHaveBeenCalledTimes(1));
+    } else {
+      expect(await screen.findByText(/n’est plus publiée/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'PNG verso' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Imprimer / Enregistrer PDF' })).toBeDisabled();
+      expect(view.container.querySelectorAll('.bc-preview-qr')).toHaveLength(0);
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer les changements' }));
+      expect(mocks.put).not.toHaveBeenCalled();
+    }
+  });
+
+  it('keeps a manually entered static QR destination unchanged when the source mode stays manual', async () => {
+    renderFlow('/business-cards/new');
+    await screen.findByLabelText('Nom complet');
+    fireEvent.click(screen.getByLabelText('Afficher le QR statique'));
+    fireEvent.change(screen.getByLabelText('Contenu encodé'), { target: { value: 'https://manual.example/path' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la carte' }));
+    await screen.findByRole('heading', { name: /^Cartes de visite/, level: 1 });
+    expect(cards.get('created')?.document.qr).toEqual({ mode: 'static', type: 'url', content: 'https://manual.example/path' });
   });
 
   it('shows a safe error for a missing/foreign card and exposes no editable document', async () => {

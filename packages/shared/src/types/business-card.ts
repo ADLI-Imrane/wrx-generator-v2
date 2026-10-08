@@ -68,7 +68,13 @@ export interface BusinessCardDocument {
     back: { enabled: boolean; composition: 'contact' | 'qr' | 'contact-qr' };
   };
   qr?:
-    | { mode: 'static'; type: BusinessCardQrType; content: string }
+    | {
+        mode: 'static';
+        type: BusinessCardQrType;
+        content: string;
+        /** Metadata for the selected owner-owned Digital Card; the QR payload remains static. */
+        digitalCardSource?: { id: string; slug: string };
+      }
     | { mode: 'managed'; qrCodeId: string };
 }
 

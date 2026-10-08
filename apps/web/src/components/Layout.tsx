@@ -13,7 +13,7 @@ export function Layout() {
   }, [location.pathname, closeSidebar]);
 
   const section = location.pathname.split('/')[1] || 'dashboard';
-  const chapter: Record<string, string> = { dashboard: '00 / Espace de travail', links: '01 / Liens & destinations', 'qr-codes': '02 / Codes & contenus', 'business-cards': '03 / Identité professionnelle', analytics: '05 / Signaux & activité', passwords: '04 / Utilitaire local', billing: '06 / Votre abonnement', settings: '07 / Préférences', help: '08 / Guide WRX' };
+  const chapter: Record<string, string> = { dashboard: '00 / Espace de travail', links: '01 / Liens & destinations', 'qr-codes': '02 / Codes & contenus', 'business-cards': '03 / Identité professionnelle', 'digital-cards': '04 / Identité numérique', passwords: '05 / Utilitaire local', analytics: '06 / Signaux & activité', billing: '07 / Votre abonnement', settings: '08 / Préférences', help: '09 / Guide WRX' };
 
   return (
     <div className="wrx-app min-h-screen" data-page={section}>

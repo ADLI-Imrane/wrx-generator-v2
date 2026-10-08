@@ -110,14 +110,19 @@ function ProfileColorField({
 }
 
 export function SettingsPage() {
-  const { user, profile } = useAuthStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
 
   // Billing data
   const { data: subscription, isLoading: isLoadingSubscription } = useSubscription();
   const { data: usage, isLoading: isLoadingUsage } = useUsage();
-  const { isLoading: isLoadingProfile, isError: isProfileError, refetch: refetchProfile } = useProfile();
+  const {
+    data: profile,
+    isLoading: isLoadingProfile,
+    isError: isProfileError,
+    refetch: refetchProfile,
+  } = useProfile();
   const isProfileReady = !!user && profile?.id === user.id && !isLoadingProfile && !isProfileError;
 
   // Profile form

@@ -13,13 +13,14 @@ import {
   X,
   KeyRound,
 } from 'lucide-react';
-import { ContactRound } from 'lucide-react';
+import { ContactRound, Contact } from 'lucide-react';
 
 const navGroups = [
   { label: 'Créer & partager', items: [
     { to: '/links', icon: LinkIcon, label: 'Liens courts' },
     { to: '/qr-codes', icon: QrCode, label: 'QR Codes' },
     { to: '/business-cards', icon: ContactRound, label: 'Cartes de visite' },
+    { to: '/digital-cards', icon: Contact, label: 'Cartes numériques' },
   ] },
   { label: 'Mesurer', items: [
     { to: '/analytics', icon: BarChart3, label: 'Analytics' },
@@ -110,7 +111,11 @@ export function Sidebar() {
   }, [location.pathname, sidebarOpen]);
 
   return (
-    <aside ref={asideRef} id="studio-navigation" aria-label="Navigation de l’espace" aria-hidden={isMobile && !sidebarOpen ? true : undefined}
+    <aside
+      ref={asideRef}
+      id="studio-navigation"
+      aria-label="Navigation de l’espace"
+      aria-hidden={isMobile && !sidebarOpen ? true : undefined}
       className={`studio-sidebar ${sidebarOpen ? 'is-expanded' : 'is-collapsed'} fixed left-0 top-16 z-40 h-[calc(100dvh-4rem)] transition-[width,transform] duration-200 ${sidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full lg:w-16 lg:translate-x-0'} `}
     >
       {/* Mobile close button */}

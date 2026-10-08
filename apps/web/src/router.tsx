@@ -25,6 +25,9 @@ import {
 } from './pages';
 import { BusinessCardsPage } from './pages/BusinessCardsPage';
 import { BusinessCardEditorPage } from './pages/BusinessCardEditorPage';
+import { DigitalCardsPage } from './pages/DigitalCardsPage';
+import { DigitalCardEditorPage } from './pages/DigitalCardEditorPage';
+import { PublicDigitalCardPage } from './pages/PublicDigitalCardPage';
 
 const HomepageConcept = lazy(() => import('./pages/homepage-concept/HomepageConcept'));
 const approvedHomepage = (
@@ -36,6 +39,7 @@ const approvedHomepage = (
 export const router = createBrowserRouter([
   { path: '/', element: approvedHomepage },
   { path: '/homepage-concept', element: approvedHomepage },
+  { path: '/c/:slug', element: <PublicDigitalCardPage /> },
   // Routes publiques
   {
     path: '/login',
@@ -122,6 +126,14 @@ export const router = createBrowserRouter([
         ],
       },
       {
+        path: 'digital-cards',
+        children: [
+          { index: true, element: <DigitalCardsPage /> },
+          { path: 'new', element: <DigitalCardEditorPage /> },
+          { path: ':id/edit', element: <DigitalCardEditorPage /> },
+        ],
+      },
+      {
         path: 'analytics',
         element: <AnalyticsPage />,
       },
@@ -153,9 +165,7 @@ export const router = createBrowserRouter([
           <p className="eyebrow mb-4">Destination introuvable / 404</p>
           <h2 className="text-4xl font-bold text-gray-900">Ce chemin s’arrête ici.</h2>
           <p className="mt-4 text-xl text-gray-600">Page non trouvée</p>
-          <a href="/dashboard" className="btn btn-primary mt-6 inline-block">
-            Retour au dashboard
-          </a>
+          <a href="/dashboard" className="btn btn-primary mt-6 inline-block">Retour au dashboard</a>
         </div>
       </AuthFrame>
     ),

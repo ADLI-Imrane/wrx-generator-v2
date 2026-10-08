@@ -46,7 +46,7 @@ export function Navbar() {
           </Link>
         </div>
 
-        <div className="workspace-trail"><span>Espace personnel</span><span>/</span><strong>{location.pathname.startsWith('/qr-codes') ? 'QR Codes' : location.pathname.startsWith('/links') ? 'Liens courts' : location.pathname.startsWith('/business-cards') ? 'Cartes de visite' : location.pathname === '/analytics' ? 'Analytics' : location.pathname === '/passwords' ? 'Mots de passe' : location.pathname === '/billing' ? 'Facturation' : location.pathname.startsWith('/settings') ? 'Paramètres' : location.pathname === '/help' ? 'Aide' : 'Vue d’ensemble'}</strong></div>
+        <div className="workspace-trail"><span>Espace personnel</span><span>/</span><strong>{location.pathname.startsWith('/qr-codes') ? 'QR Codes' : location.pathname.startsWith('/links') ? 'Liens courts' : location.pathname.startsWith('/business-cards') ? 'Cartes de visite' : location.pathname.startsWith('/digital-cards') ? 'Cartes numériques' : location.pathname === '/analytics' ? 'Analytics' : location.pathname === '/passwords' ? 'Mots de passe' : location.pathname === '/billing' ? 'Facturation' : location.pathname.startsWith('/settings') ? 'Paramètres' : location.pathname === '/help' ? 'Aide' : 'Vue d’ensemble'}</strong></div>
 
         {/* Actions */}
         <div className="flex items-center gap-1 sm:gap-2">
