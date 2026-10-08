@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DigitalCardRecord } from '@wrx/shared';
@@ -7,6 +7,13 @@ import { DigitalCardShareRoute } from './DigitalCardShareRoute';
 
 const api = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock('../lib/api', () => ({ api }));
+vi.mock('../lib/supabase', () => ({
+  supabase: {
+    storage: {
+      from: () => ({ createSignedUrl: vi.fn().mockResolvedValue({ data: { signedUrl: 'https://signed.example/image' }, error: null }) }),
+    },
+  },
+}));
 
 const publishedCard: DigitalCardRecord = {
   id: 'owned-card-42',
@@ -52,8 +59,11 @@ describe('authenticated Digital Card share route boundary', () => {
   it('loads the selected owner card by route ID and exposes the minimal published route shell', async () => {
     api.get.mockResolvedValue(publishedCard);
     renderRoute(publishedCard.id);
-    expect(await screen.findByRole('heading', { name: /Mode de partage/ })).toBeInTheDocument();
-    expect(screen.getByText('Nora Benali')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Nora Benali' })).toBeInTheDocument();
+    expect(await screen.findByTestId('digital-card-share-qr')).toHaveAttribute(
+      'data-qr-payload',
+      `http://${window.location.host}/c/${publishedCard.slug}`
+    );
     expect(screen.getByRole('link', { name: 'Ouvrir la carte publique' })).toHaveAttribute(
       'href',
       `/c/${publishedCard.slug}`
@@ -71,6 +81,7 @@ describe('authenticated Digital Card share route boundary', () => {
       'href',
       `/digital-cards/${publishedCard.id}/edit`
     );
+    expect(screen.queryByTestId('digital-card-share-qr')).not.toBeInTheDocument();
   });
 
   it('handles a missing owner card without revealing its state', async () => {
@@ -80,5 +91,47 @@ describe('authenticated Digital Card share route boundary', () => {
       'Cette carte est introuvable ou vous n’y avez pas accès.'
     );
     expect(screen.queryByText(publishedCard.title)).not.toBeInTheDocument();
+  });
+
+  it('uses native share when available and gives a truthful copy fallback otherwise', async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'share', { configurable: true, value: share });
+    api.get.mockResolvedValue(publishedCard);
+    const view = renderRoute(publishedCard.id);
+    await screen.findByTestId('digital-card-share-qr');
+    fireEvent.click(screen.getByRole('button', { name: 'Partager' }));
+    await waitFor(() => expect(share).toHaveBeenCalledWith({
+      title: 'Nora Benali',
+      text: 'Carte numérique',
+      url: `http://${window.location.host}/c/${publishedCard.slug}`,
+    }));
+
+    view.unmount();
+    Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    api.get.mockResolvedValue(publishedCard);
+    renderRoute(publishedCard.id);
+    await screen.findByTestId('digital-card-share-qr');
+    fireEvent.click(screen.getByRole('button', { name: 'Copier le lien' }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(
+      `http://${window.location.host}/c/${publishedCard.slug}`
+    ));
+    expect(await screen.findByRole('status')).toHaveTextContent('Lien copié.');
+  });
+
+  it('does not reveal identity fields hidden in the Digital Card document', async () => {
+    api.get.mockResolvedValue({
+      ...publishedCard,
+      document: {
+        ...publishedCard.document,
+        identity: { ...publishedCard.document.identity, fullName: 'Hidden Owner', jobTitle: 'Hidden Role', company: 'Hidden Company' },
+        visibility: { ...publishedCard.document.visibility, fullName: false, jobTitle: false, company: false },
+      },
+    });
+    renderRoute(publishedCard.id);
+    await screen.findByTestId('digital-card-share-qr');
+    expect(screen.getByRole('heading', { name: 'Votre carte numérique' })).toBeInTheDocument();
+    expect(screen.queryByText(/Hidden Owner|Hidden Role|Hidden Company/)).not.toBeInTheDocument();
   });
 });

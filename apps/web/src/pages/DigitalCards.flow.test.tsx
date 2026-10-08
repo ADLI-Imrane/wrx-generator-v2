@@ -362,9 +362,23 @@ describe('Digital Card owner experience', () => {
     renderFlow('/digital-cards');
     expect(await screen.findByText('Brouillon')).toBeInTheDocument();
     expect(screen.getByText('Publiée', { selector: '.dc-status' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Afficher le QR' })).toHaveLength(1);
+    expect(screen.getByRole('link', { name: 'Afficher le QR' })).toHaveAttribute(
+      'href',
+      '/digital-cards/public-1/share'
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer Brouillon' }));
     fireEvent.click(screen.getByRole('button', { name: /^Supprimer$/ }));
     await waitFor(() => expect(records.has(draft.id)).toBe(false));
+  });
+
+  it('offers Share Mode from the editor only for a published card', async () => {
+    records.set('published-editor', record('published-editor', validDocument(), 'Publiée', 'published'));
+    renderFlow('/digital-cards/published-editor/edit');
+    expect(await screen.findByRole('link', { name: 'Afficher le QR' })).toHaveAttribute(
+      'href',
+      '/digital-cards/published-editor/share'
+    );
   });
 
   it('shows an empty state and an accessible create action', async () => {

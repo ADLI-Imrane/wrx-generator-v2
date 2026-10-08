@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Eye, EyeOff, LoaderCircle, Save, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Check, Eye, EyeOff, LoaderCircle, QrCode, Save, ShieldCheck } from 'lucide-react';
 import {
   DIGITAL_CARD_SOCIAL_PLATFORMS,
   assertDigitalCardPublishable,
@@ -239,9 +239,16 @@ export function DigitalCardEditorPage() {
           <p>Une copie indépendante : vos changements ici ne modifient pas votre profil.</p>
         </div>
         {editing && (
-          <span className={`dc-status dc-status-${cardQuery.data?.status}`}>
-            {cardQuery.data?.status === 'published' ? 'Publiée' : 'Brouillon'}
-          </span>
+          <div className="dc-editor-state-actions">
+            {cardQuery.data?.status === 'published' && (
+              <Link className="dc-text-button dc-share-entry" to={`/digital-cards/${cardQuery.data.id}/share`}>
+                <QrCode size={14} aria-hidden="true" /> Afficher le QR
+              </Link>
+            )}
+            <span className={`dc-status dc-status-${cardQuery.data?.status}`}>
+              {cardQuery.data?.status === 'published' ? 'Publiée' : 'Brouillon'}
+            </span>
+          </div>
         )}
       </header>
 
