@@ -25,7 +25,7 @@ class ApiClient {
     const { token, skipAuth, ...fetchOptions } = options;
 
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      ...(fetchOptions.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     };
 
@@ -95,6 +95,10 @@ class ApiClient {
       body: JSON.stringify(data),
       token,
     });
+  }
+
+  async postForm<T>(endpoint: string, data: FormData, token?: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'POST', body: data, token });
   }
 
   async put<T>(endpoint: string, data: unknown, token?: string): Promise<T> {

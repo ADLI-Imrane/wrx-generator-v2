@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { ArrowUpRight, BarChart3, Contact, ContactRound, KeyRound, Link2, QrCode } from 'lucide-react';
+import { ArrowUpRight, BarChart3, Contact, ContactRound, KeyRound, Link2, QrCode, Mail } from 'lucide-react';
 
 const toolGroups = [
   {
@@ -9,6 +9,7 @@ const toolGroups = [
       { id: '02', name: 'QR Codes', detail: 'Encoder un lien ou un contenu.', to: '/qr-codes/new', icon: QrCode, tone: 'qr' },
       { id: '03', name: 'Cartes de visite', detail: 'Composer, enregistrer et imprimer.', to: '/business-cards', icon: ContactRound, tone: 'identity' },
       { id: '04', name: 'Cartes numériques', detail: 'Créer une identité numérique partageable.', to: '/digital-cards', icon: Contact, tone: 'identity' },
+      { id: '05', name: 'Signatures email', detail: 'Décliner votre identité dans vos messages.', to: '/email-signatures', icon: Mail, tone: 'identity' },
     ],
   },
   {
@@ -37,7 +38,7 @@ export function ToolDirectory() {
   return <section className="tool-directory" aria-labelledby="tool-directory-title">
     <div className="tool-directory-heading">
       <div><span className="eyebrow">OUTILS DISPONIBLES</span><h2 id="tool-directory-title">Choisir un point de départ</h2></div>
-      <span className="tool-directory-count">06 / ACTIFS</span>
+      <span className="tool-directory-count">07 / ACTIFS</span>
     </div>
     <div className="tool-directory-groups">
       {toolGroups.map((group, groupIndex) => <section className="tool-directory-group" key={group.label} aria-label={group.label}>

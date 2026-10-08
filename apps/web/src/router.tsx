@@ -28,6 +28,8 @@ import { BusinessCardEditorPage } from './pages/BusinessCardEditorPage';
 import { DigitalCardsPage } from './pages/DigitalCardsPage';
 import { DigitalCardEditorPage } from './pages/DigitalCardEditorPage';
 import { PublicDigitalCardPage } from './pages/PublicDigitalCardPage';
+import { EmailSignaturesPage } from './pages/EmailSignaturesPage';
+import { EmailSignatureEditorPage } from './pages/EmailSignatureEditorPage';
 
 const HomepageConcept = lazy(() => import('./pages/homepage-concept/HomepageConcept'));
 const approvedHomepage = (
@@ -131,6 +133,14 @@ export const router = createBrowserRouter([
           { index: true, element: <DigitalCardsPage /> },
           { path: 'new', element: <DigitalCardEditorPage /> },
           { path: ':id/edit', element: <DigitalCardEditorPage /> },
+        ],
+      },
+      {
+        path: 'email-signatures',
+        children: [
+          { index: true, element: <EmailSignaturesPage /> },
+          { path: 'new', element: <EmailSignatureEditorPage /> },
+          { path: ':id/edit', element: <EmailSignatureEditorPage /> },
         ],
       },
       {

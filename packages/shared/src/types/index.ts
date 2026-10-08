@@ -4,4 +4,5 @@ export * from './link';
 export * from './qr';
 export * from './business-card';
 export * from './digital-card';
+export * from './email-signature';
 export * from './api';
