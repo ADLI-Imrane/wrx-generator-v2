@@ -1,3 +1,4 @@
+import { Modal } from '../components/Modal';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQRCode, useUpdateQRCode, useDeleteQRCode } from '../hooks/useQR';
@@ -180,7 +181,7 @@ END:VCARD`;
   };
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="tool-page qr-tool">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -206,11 +207,11 @@ END:VCARD`;
         </button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="qr-composer grid gap-6 lg:grid-cols-2">
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Info */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <div className="card">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Informations</h2>
 
             <div className="mb-4">
@@ -629,7 +630,7 @@ END:VCARD`;
         </form>
 
         {/* Preview */}
-        <div className="lg:sticky lg:top-6">
+        <div className="qr-preview-panel">
           <div className="rounded-lg border border-gray-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Aperçu</h2>
@@ -642,7 +643,7 @@ END:VCARD`;
             </div>
 
             <div
-              className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-gray-200"
+              className="wrx-qr-preview-frame flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-gray-200"
               style={{ backgroundColor: formData.backgroundColor }}
             >
               {previewUrl ? (
@@ -660,10 +661,7 @@ END:VCARD`;
       </div>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Supprimer le QR Code ?</h3>
+      <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Supprimer le QR Code ?" size="sm">
             <p className="mt-2 text-gray-600">
               Cette action est irréversible. Toutes les statistiques associées seront également
               supprimées.
@@ -683,9 +681,7 @@ END:VCARD`;
                 {deleteQRCode.isPending ? 'Suppression...' : 'Supprimer'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

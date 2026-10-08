@@ -18,11 +18,11 @@ test.describe('Authentication Flow', () => {
     await expect(emailInput).toBeVisible();
 
     // Check for password input
-    const passwordInput = page.getByLabel(/password/i).or(page.getByPlaceholder(/password/i));
+    const passwordInput = page.getByLabel(/^Mot de passe$/i).or(page.getByPlaceholder(/^Mot de passe$/i));
     await expect(passwordInput).toBeVisible();
 
     // Check for submit button
-    const submitButton = page.getByRole('button', { name: /sign in|login|connexion/i });
+    const submitButton = page.getByRole('button', { name: /se connecter/i });
     await expect(submitButton).toBeVisible();
   });
 
@@ -30,27 +30,28 @@ test.describe('Authentication Flow', () => {
     await page.goto('/login');
 
     // Try to submit empty form
-    const submitButton = page.getByRole('button', { name: /sign in|login|connexion/i });
+    const submitButton = page.getByRole('button', { name: /se connecter/i });
     await submitButton.click();
 
     // Should show validation error
-    await expect(page.locator('text=/required|obligatoire|invalid/i').first()).toBeVisible({
-      timeout: 5000,
-    });
+    expect(await page.getByLabel('Email', { exact: true }).evaluate((node: HTMLInputElement) => node.validity.valueMissing)).toBe(true);
+    await expect(page).toHaveURL(/login/);
   });
 
   test('should show error for invalid credentials', async ({ page }) => {
     await page.goto('/login');
 
+    await page.route('**/auth/v1/token**', route => route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'invalid_grant', error_description: 'Invalid login credentials' }) }));
+    // Use a deterministic API failure; do not send dummy credentials to the live service.
     // Fill in invalid credentials
     const emailInput = page.getByLabel(/email/i).or(page.getByPlaceholder(/email/i));
-    const passwordInput = page.getByLabel(/password/i).or(page.getByPlaceholder(/password/i));
+    const passwordInput = page.getByLabel(/^Mot de passe$/i).or(page.getByPlaceholder(/^Mot de passe$/i));
 
     await emailInput.fill('invalid@example.com');
     await passwordInput.fill('wrongpassword');
 
     // Submit form
-    const submitButton = page.getByRole('button', { name: /sign in|login|connexion/i });
+    const submitButton = page.getByRole('button', { name: /se connecter/i });
     await submitButton.click();
 
     // Should show error message (wait for API response)
@@ -93,7 +94,7 @@ test.describe('Register Flow', () => {
     await expect(emailInput).toBeVisible();
 
     // Check for password input
-    const passwordInput = page.getByLabel(/password/i).or(page.getByPlaceholder(/password/i));
+    const passwordInput = page.getByLabel(/^Mot de passe$/i).or(page.getByPlaceholder(/^Mot de passe$/i));
     await expect(passwordInput).toBeVisible();
 
     // Check for submit button
@@ -109,7 +110,7 @@ test.describe('Register Flow', () => {
     await emailInput.blur();
 
     // Check for validation
-    const passwordInput = page.getByLabel(/password/i).or(page.getByPlaceholder(/password/i));
+    const passwordInput = page.getByLabel(/^Mot de passe$/i).or(page.getByPlaceholder(/^Mot de passe$/i));
     await passwordInput.fill('validpassword123');
 
     const submitButton = page.getByRole('button', { name: /sign up|register|créer/i });
@@ -121,7 +122,7 @@ test.describe('Register Flow', () => {
 
   test('should navigate to login page', async ({ page }) => {
     // Click on login link
-    const loginLink = page.getByRole('link', { name: /sign in|login|connexion|already have/i });
+    const loginLink = page.getByRole('link', { name: /se connecter/i });
     await loginLink.click();
 
     // Should be on login page
