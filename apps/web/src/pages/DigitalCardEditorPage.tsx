@@ -171,12 +171,12 @@ export function DigitalCardEditorPage() {
         navigate(`/digital-cards/${saved.id}/edit`, { replace: true });
         await publish.mutateAsync({ id: saved.id });
         setPublishOpen(false);
-        setNotice('Carte publiée. La page publique sera disponible dans la prochaine étape.');
+        setNotice('Carte publiée. L’adresse publique de votre carte est active.');
         return;
       }
       await publish.mutateAsync({ id });
       setPublishOpen(false);
-      setNotice('Carte publiée. La page publique sera disponible dans la prochaine étape.');
+      setNotice('Carte publiée. L’adresse publique de votre carte est active.');
     } catch (cause) {
       setPublishError(
         readableApiError(
@@ -649,7 +649,7 @@ export function DigitalCardEditorPage() {
               </div>
               <DigitalCardPreview document={document} title={title} />
               <p className="dc-preview-caption">
-                La page publique et l’action Enregistrer le contact seront disponibles en Phase 3D.
+                La page publique et l’action Enregistrer le contact sont disponibles lorsque la carte est publiée.
               </p>
             </aside>
           </div>
@@ -672,7 +672,7 @@ export function DigitalCardEditorPage() {
             ))}
           </ul>
           <p className="dc-phase-note">
-            La page publique arrive en Phase 3D. Vous pourrez dépublier à tout moment.
+            La carte sera accessible à son adresse publique après publication. Vous pourrez la dépublier à tout moment.
           </p>
         </div>
         {publishError && (

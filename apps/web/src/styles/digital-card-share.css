@@ -331,8 +331,8 @@
   }
 
   .dc-share-qr-frame {
-    width: min(100%, 300px);
-    padding: 14px;
+    width: min(100%, 260px);
+    padding: 12px;
   }
 
   .dc-share-actions {
