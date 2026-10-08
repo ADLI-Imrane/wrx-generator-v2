@@ -17,4 +17,6 @@ export { SettingsPage } from './SettingsPage';
 export { HelpPage } from './HelpPage';
 export { BillingPage } from './BillingPage';
 export { PasswordGeneratorPage } from './PasswordGeneratorPage';
+export { EmailSignaturesPage } from './EmailSignaturesPage';
+export { EmailSignatureEditorPage } from './EmailSignatureEditorPage';
 export { LandingPage } from './LandingPage';

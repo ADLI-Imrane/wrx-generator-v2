@@ -12,6 +12,7 @@ import {
   CreditCard,
   X,
   KeyRound,
+  Mail,
 } from 'lucide-react';
 import { ContactRound, Contact } from 'lucide-react';
 
@@ -21,6 +22,7 @@ const navGroups = [
     { to: '/qr-codes', icon: QrCode, label: 'QR Codes' },
     { to: '/business-cards', icon: ContactRound, label: 'Cartes de visite' },
     { to: '/digital-cards', icon: Contact, label: 'Cartes numériques' },
+    { to: '/email-signatures', icon: Mail, label: 'Signatures email' },
   ] },
   { label: 'Mesurer', items: [
     { to: '/analytics', icon: BarChart3, label: 'Analytics' },
