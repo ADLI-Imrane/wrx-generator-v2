@@ -1,36 +1,26 @@
 import type { CSSProperties } from 'react';
 import type { EmailSignatureAssetRecord, EmailSignatureDocumentV1 } from '@wrx/shared';
+import { buildEmailSignaturePresentation, type EmailSignaturePresentationItem } from '../lib/email-signature-presentation';
 
-const labels = { email: 'Email', phone: 'Téléphone', website: 'Site web', address: 'Adresse' } as const;
-const socials = { linkedin: 'LinkedIn', github: 'GitHub', instagram: 'Instagram', x: 'X' } as const;
+const styleFor = (accentColor: string): CSSProperties => ({ '--signature-accent': accentColor } as CSSProperties);
 
 export function EmailSignatureArtwork({ document, assets = [], compact = false }: { document: EmailSignatureDocumentV1; assets?: EmailSignatureAssetRecord[]; compact?: boolean }) {
-  const imageUrl = (kind: 'avatar' | 'companyLogo') => {
-    const ref = document.images[kind];
-    return ref && document.visibility[kind] ? assets.find((asset) => asset.id === ref.assetId)?.publicUrl : undefined;
-  };
-  const fields = (Object.keys(labels) as Array<keyof typeof labels>).filter((key) => document.visibility[key] && document.contact[key]);
-  const socialFields = (Object.keys(socials) as Array<keyof typeof socials>).filter((key) => document.visibility[key] && document.socialLinks[key]);
-  const style = { '--signature-accent': document.brand.accentColor ?? '#235EE7' } as CSSProperties;
-  const avatar = imageUrl('avatar');
-  const logo = imageUrl('companyLogo');
-  const content = <>
-    <div className="es-identity">
-      {avatar && <img className="es-avatar" src={avatar} alt={document.images.avatar?.altText ?? ''} />}
-      <div className="es-name-block">
-        {document.visibility.fullName && <strong className="es-name">{document.identity.fullName || 'Votre nom'}</strong>}
-        {(document.visibility.jobTitle && document.identity.jobTitle) && <span>{document.identity.jobTitle}</span>}
-        {(document.visibility.company && document.identity.company) && <span className="es-company">{document.identity.company}</span>}
-      </div>
-      {logo && <img className="es-logo" src={logo} alt={document.images.companyLogo?.altText ?? ''} />}
+  const presentation = buildEmailSignaturePresentation(document, assets);
+  const identity = <div className="es-identity">
+    {presentation.avatar && <img className="es-avatar" width={presentation.avatar.width} height={presentation.avatar.height} src={presentation.avatar.src} alt={presentation.avatar.alt} />}
+    <div className="es-name-block">
+      <strong className="es-name">{presentation.identity.fullName || 'Votre nom'}</strong>
+      {presentation.identity.jobTitle && <span>{presentation.identity.jobTitle}</span>}
+      {presentation.identity.company && <span className="es-company">{presentation.identity.company}</span>}
     </div>
-    {(fields.length > 0 || socialFields.length > 0) && <div className="es-contact">
-      {fields.map((key) => <span key={key}><b>{labels[key]}</b> {document.contact[key]}</span>)}
-      {socialFields.map((key) => <span key={key}><b>{socials[key]}</b> {document.socialLinks[key]}</span>)}
-    </div>}
-  </>;
+    {presentation.companyLogo && <img className="es-logo" width={presentation.companyLogo.width} height={presentation.companyLogo.height} src={presentation.companyLogo.src} alt={presentation.companyLogo.alt} />}
+  </div>;
+  const items = [...presentation.contact, ...presentation.socials];
+  const detail = (item: EmailSignaturePresentationItem) => <span key={item.key}><b>{item.label}</b>{' '}{item.href ? <a href={item.href} onClick={(event) => event.preventDefault()}>{item.text}</a> : item.text}</span>;
 
-  return <div className={`email-signature-art es-template-${document.templateId}${compact ? ' is-compact' : ''}`} style={style}>
-    {document.templateId === 'inline' ? <div className="es-inline">{content}</div> : content}
+  return <div className={`email-signature-art es-template-${presentation.templateId}${compact ? ' is-compact' : ''}`} style={styleFor(presentation.accentColor)}>
+    {presentation.templateId === 'inline'
+      ? <div className="es-inline"><div className="es-inline-identity">{identity}</div>{items.length > 0 && <div className="es-contact">{items.map(detail)}</div>}</div>
+      : <>{identity}{items.length > 0 && <div className="es-contact">{items.map(detail)}</div>}</>}
   </div>;
 }

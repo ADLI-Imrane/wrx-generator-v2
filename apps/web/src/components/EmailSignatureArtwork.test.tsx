@@ -16,12 +16,13 @@ describe('EmailSignatureArtwork', () => {
     signature.images.avatar = { assetId: 'asset-1', altText: 'Ada portrait' };
     signature.visibility.avatar = true;
     signature.templateId = 'compact';
-    const { container } = render(<EmailSignatureArtwork document={signature} assets={[{ id: 'asset-1', kind: 'avatar', contentType: 'image/png', byteSize: 123, publicUrl: 'https://assets.example/ada.png', createdAt: '' }]} />);
+    const publicUrl = `https://project.supabase.co/storage/v1/object/public/email-signature-assets/v1/${'a'.repeat(64)}.png`;
+    const { container } = render(<EmailSignatureArtwork document={signature} assets={[{ id: 'asset-1', kind: 'avatar', contentType: 'image/png', byteSize: 123, publicUrl, createdAt: '' }]} />);
     expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
     expect(screen.getByText('ada@example.com')).toBeInTheDocument();
     expect(screen.getByText('https://linkedin.com/in/ada')).toBeInTheDocument();
     expect(screen.queryByText('Engines')).not.toBeInTheDocument();
-    expect(screen.getByAltText('Ada portrait')).toHaveAttribute('src', 'https://assets.example/ada.png');
+    expect(screen.getByAltText('Ada portrait')).toHaveAttribute('src', publicUrl);
     expect(container.querySelector('.es-template-compact')).toBeInTheDocument();
   });
 });

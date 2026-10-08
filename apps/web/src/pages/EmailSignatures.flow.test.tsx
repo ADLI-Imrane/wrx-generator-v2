@@ -7,12 +7,14 @@ import { EmailSignaturesPage } from './EmailSignaturesPage';
 import { EmailSignatureEditorPage } from './EmailSignatureEditorPage';
 
 const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), postForm: vi.fn(), put: vi.fn(), delete: vi.fn() }));
+const clipboardMocks = vi.hoisted(() => ({ copyEmailSignature: vi.fn(), copyEmailSignatureHtml: vi.fn() }));
 const profile = vi.hoisted(() => ({
   fullName: 'Nora Benali', jobTitle: 'Designer', company: 'Studio Nord', email: 'nora@example.com',
   phone: '+212600000000', website: 'https://example.com', linkedinUrl: 'https://linkedin.com/in/nora',
   avatarUrl: 'https://private.test/avatar?token=secret', companyLogoUrl: undefined, primaryBrandColor: '#3456AB',
 }));
 vi.mock('../lib/api', () => ({ api: mocks }));
+vi.mock('../lib/email-signature-clipboard', () => clipboardMocks);
 vi.mock('../hooks/useAuth', () => ({ useProfile: () => ({ data: profile, isLoading: false }) }));
 vi.mock('../stores/auth.store', () => ({ useAuthStore: () => ({ user: { id: 'owner-id', email: 'nora@example.com' } }) }));
 
@@ -30,6 +32,8 @@ function renderAt(path: string) {
 
 beforeEach(() => {
   vi.clearAllMocks(); list = [];
+  clipboardMocks.copyEmailSignature.mockResolvedValue('rich');
+  clipboardMocks.copyEmailSignatureHtml.mockResolvedValue(undefined);
   mocks.get.mockImplementation(async (path: string) => {
     if (path === '/email-signatures') return structuredClone(list);
     if (path === '/email-signatures/assets') return [savedAsset, uploadedAsset];
@@ -175,5 +179,26 @@ describe('Email Signature owner flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Publier la copie' }));
     await waitFor(() => expect(mocks.postForm).toHaveBeenCalledTimes(1));
     expect(await screen.findByText('Image publiée · 2 Ko')).toBeInTheDocument();
+  });
+
+  it('reports rich-copy success, keeps HTML source secondary, and surfaces clipboard failure', async () => {
+    renderAt('/email-signatures/new');
+    fireEvent.click(screen.getByRole('button', { name: 'Commencer à blanc' }));
+    fireEvent.change(screen.getByLabelText('Nom complet'), { target: { value: 'Nora Benali' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Copier la signature' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Signature copiée avec mise en forme.');
+    expect(clipboardMocks.copyEmailSignature).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Copier le code HTML' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Code HTML autonome copié.');
+    expect(clipboardMocks.copyEmailSignatureHtml).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByText('Instructions d’installation'));
+    expect(screen.getByText(/Paramètres → Voir tous les paramètres/)).toBeInTheDocument();
+    expect(screen.getByText(/Outlook/)).toBeInTheDocument();
+    expect(screen.getByText(/Mail → Réglages → Signatures/)).toBeInTheDocument();
+    expect(screen.getByText(/Les espacements et polices peuvent varier/)).toBeInTheDocument();
+
+    clipboardMocks.copyEmailSignature.mockRejectedValueOnce(new Error('Clipboard is unavailable'));
+    fireEvent.click(screen.getByRole('button', { name: 'Copier la signature' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Copie impossible.');
   });
 });

@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Eye, EyeOff, ImagePlus, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Code2, Copy, Eye, EyeOff, ImagePlus, Save, Trash2 } from 'lucide-react';
 import { EMAIL_SIGNATURE_TEMPLATE_IDS, parseEmailSignatureDocument, type EmailSignatureDocumentV1, type EmailSignatureImageKind } from '@wrx/shared';
 import { Modal } from '../components/Modal';
 import { EmailSignatureArtwork } from '../components/EmailSignatureArtwork';
@@ -11,6 +11,9 @@ import {
   usePublishProfileSignatureImage, useUpdateEmailSignature, useUploadEmailSignatureImage,
 } from '../hooks/useEmailSignatures';
 import { blankEmailSignatureDocument, emailSignatureFromProfile } from '../lib/email-signature-mapping';
+import { buildEmailSignaturePresentation } from '../lib/email-signature-presentation';
+import { copyEmailSignature, copyEmailSignatureHtml } from '../lib/email-signature-clipboard';
+import { renderEmailSignatureHtml, renderEmailSignaturePlainText } from '../lib/email-signature-renderer';
 import '../styles/email-signatures.css';
 
 const templateNames = { signal: 'Signal', compact: 'Compact', inline: 'Inline' } as const;
@@ -36,11 +39,12 @@ export function EmailSignatureEditorPage() {
   const [hydratedId, setHydratedId] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [copyFeedback, setCopyFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [pendingImagePublication, setPendingImagePublication] = useState<PendingImagePublication | null>(null);
   const saving = create.isPending || update.isPending;
 
   useEffect(() => {
-    setTitle('Signature principale'); setDocument(blankEmailSignatureDocument()); setError(''); setNotice('');
+    setTitle('Signature principale'); setDocument(blankEmailSignatureDocument()); setError(''); setNotice(''); setCopyFeedback(null);
     setSourceChosen(false); setHydratedId('');
     if (!editing) setSourceChosen(false);
   }, [id, editing]);
@@ -51,6 +55,28 @@ export function EmailSignatureEditorPage() {
   }, [editing, id, record.data]);
 
   const previewAssets = assets.data ?? [];
+  const copySignature = async () => {
+    setCopyFeedback(null);
+    try {
+      const validated = parseEmailSignatureDocument(document);
+      const model = buildEmailSignaturePresentation(validated, previewAssets, { strict: true });
+      const mode = await copyEmailSignature(renderEmailSignatureHtml(model), renderEmailSignaturePlainText(model));
+      setCopyFeedback({ type: 'success', message: mode === 'rich' ? 'Signature copiée avec mise en forme.' : 'Texte copié. Le formatage riche n’est pas disponible dans ce navigateur.' });
+    } catch {
+      setCopyFeedback({ type: 'error', message: 'Copie impossible. Vérifiez les champs et les permissions du presse-papiers.' });
+    }
+  };
+  const copyHtmlSource = async () => {
+    setCopyFeedback(null);
+    try {
+      const validated = parseEmailSignatureDocument(document);
+      const model = buildEmailSignaturePresentation(validated, previewAssets, { strict: true });
+      await copyEmailSignatureHtml(renderEmailSignatureHtml(model));
+      setCopyFeedback({ type: 'success', message: 'Code HTML autonome copié.' });
+    } catch {
+      setCopyFeedback({ type: 'error', message: 'Copie HTML impossible. Vérifiez les champs et les permissions du presse-papiers.' });
+    }
+  };
   const busy = saving || publishProfileImage.isPending || uploadImage.isPending || deleteAsset.isPending;
   const setIdentity = (key: keyof EmailSignatureDocumentV1['identity'], value: string | null) => setDocument((old) => ({ ...old, identity: { ...old.identity, [key]: value } }));
   const setContact = (key: keyof EmailSignatureDocumentV1['contact'], value: string | null) => setDocument((old) => ({ ...old, contact: { ...old.contact, [key]: value } }));
@@ -133,8 +159,17 @@ export function EmailSignatureEditorPage() {
           </section>
           <section className="es-form-section"><SectionTitle number="05" title="Composition"/><div className="es-template-options">{EMAIL_SIGNATURE_TEMPLATE_IDS.map((template) => <button type="button" key={template} aria-pressed={document.templateId === template} className={`es-template-option ${document.templateId === template ? 'is-selected' : ''}`} onClick={() => setDocument((old) => ({ ...old, templateId: template }))}><span className={`es-template-glyph glyph-${template}`} aria-hidden="true"/><strong>{templateNames[template]}</strong><small>{template === 'signal' ? 'Repère vertical et hiérarchie nette' : template === 'compact' ? 'Signature dense, sans perte de lecture' : 'Identité et contact sur une ligne'}</small></button>)}</div><Field label="Couleur d’accent"><div className="es-color-field"><input aria-label="Couleur d’accent" type="color" value={document.brand.accentColor ?? '#235EE7'} onChange={(e) => setDocument((old) => ({ ...old, brand: { accentColor: e.target.value.toUpperCase() } }))}/><code>{document.brand.accentColor ?? '#235EE7'}</code></div></Field></section>
         </div>
-        <aside className="es-preview-column"><div className="es-preview-sticky"><div className="es-preview-label"><span className="es-kicker">APERÇU DE SIGNATURE</span><span><Eye size={14}/> Champs visibles</span></div><EmailSignatureArtwork document={document} assets={previewAssets}/><p className="es-preview-caption">Aperçu d’édition. Le rendu final et les outils de copie seront préparés dans la phase suivante.</p></div></aside>
+        <aside className="es-preview-column"><div className="es-preview-sticky"><div className="es-preview-label"><span className="es-kicker">APERÇU DE SIGNATURE</span><span><Eye size={14}/> Champs visibles</span></div><EmailSignatureArtwork document={document} assets={previewAssets}/><p className="es-preview-caption">Le rendu copié reprend cette composition avec des tableaux et styles intégrés pour les messageries.</p></div></aside>
       </div>
+      <section className="es-export-panel" aria-labelledby="es-export-title">
+        <div className="es-export-heading"><div><span className="es-kicker">UTILISER VOTRE SIGNATURE</span><h2 id="es-export-title">Copier puis installer</h2><p>Les champs masqués ne seront pas copiés.</p></div><div className="es-export-actions"><button className="btn btn-primary" type="button" onClick={() => void copySignature()}><Copy size={16}/> Copier la signature</button><button className="btn btn-outline" type="button" onClick={() => void copyHtmlSource()}><Code2 size={16}/> Copier le code HTML</button></div></div>
+        {copyFeedback && <p className={copyFeedback.type === 'error' ? 'es-error' : 'es-notice'} role={copyFeedback.type === 'error' ? 'alert' : 'status'}>{copyFeedback.message}</p>}
+        <details className="es-install-guide"><summary>Instructions d’installation</summary><div className="es-client-guides">
+          <section><h3>Gmail</h3><p>Ouvrez Paramètres → Voir tous les paramètres → Général → Signature. Créez ou sélectionnez une signature, collez dans l’éditeur, puis enregistrez les modifications.</p></section>
+          <section><h3>Outlook</h3><p>Ouvrez Paramètres → Comptes → Signatures (ou Courrier → Rédiger et répondre selon la version). Créez une signature, collez dans l’éditeur, puis enregistrez.</p></section>
+          <section><h3>Apple Mail</h3><p>Ouvrez Mail → Réglages → Signatures. Choisissez le compte, ajoutez une signature et collez dans son aperçu.</p></section>
+        </div><p className="es-install-note">Les espacements et polices peuvent varier selon le client. Les images hébergées peuvent nécessiter l’autorisation de chargement du destinataire. Supprimer une image WRX publiée peut aussi la retirer des anciens emails qui la référencent.</p></details>
+      </section>
       <div className="es-save-bar"><span>{editing ? 'Modifications enregistrées uniquement dans cette signature.' : 'Enregistrez pour conserver votre signature.'}</span><button className="btn btn-primary" type="submit" disabled={busy}>{saving ? 'Enregistrement…' : <><Save size={16}/> Enregistrer</>}</button></div>
     </form>}
     <Modal isOpen={!!pendingImagePublication} onClose={() => !busy && setPendingImagePublication(null)} title="Publier une image de signature ?">
