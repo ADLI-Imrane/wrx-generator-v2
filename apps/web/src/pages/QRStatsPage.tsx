@@ -315,7 +315,7 @@ export function QRStatsPage() {
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-gray-100">
                         <div
-                          className="h-full rounded-full bg-green-500"
+                          className="workspace-accent-fill h-full rounded-full"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -344,7 +344,7 @@ export function QRStatsPage() {
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-gray-100">
                         <div
-                          className="h-full rounded-full bg-blue-500"
+                          className="workspace-accent-fill h-full rounded-full"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -374,7 +374,7 @@ export function QRStatsPage() {
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-gray-100">
                         <div
-                          className="h-full rounded-full bg-purple-500"
+                          className="workspace-qr-fill h-full rounded-full"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>

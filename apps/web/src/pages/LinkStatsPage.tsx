@@ -13,7 +13,7 @@ function BreakdownList({ title, values, icon: Icon }: { title: string; values: B
     {rows.length === 0 ? <p className="text-sm text-slate-500">Aucune donnée pour le moment.</p> : <ul className="space-y-3">
       {rows.map(([label, count]) => <li key={label}>
         <div className="mb-1 flex justify-between gap-3 text-sm"><span className="truncate">{label}</span><span className="font-medium tabular-nums">{count} <span className="text-slate-500">({total ? Math.round(count / total * 100) : 0}%)</span></span></div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-cyan-700" style={{ width: `${total ? count / total * 100 : 0}%` }} /></div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="workspace-accent-fill h-full rounded-full" style={{ width: `${total ? count / total * 100 : 0}%` }} /></div>
       </li>)}
     </ul>}
   </section>;
@@ -56,7 +56,7 @@ export function LinkStatsPage() {
           <p className="text-sm text-slate-500">Statistiques du lien</p>
           <h1 className="truncate text-2xl font-bold text-slate-900">{link.title || link.slug}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
-            <code className="rounded bg-slate-100 px-2 py-1 text-cyan-800">{link.shortUrl}</code>
+            <code className="workspace-accent-link rounded bg-slate-100 px-2 py-1">{link.shortUrl}</code>
             <button type="button" aria-label={copied ? "Lien copié" : "Copier le lien court"} className="rounded p-1 text-slate-500 hover:bg-slate-100" onClick={() => void copy()}>{copied ? <Check size={16} /> : <Clipboard size={16} />}</button>
             <a href={link.originalUrl} target="_blank" rel="noopener noreferrer" aria-label="Ouvrir la destination" className="rounded p-1 text-slate-500 hover:bg-slate-100"><ArrowUpRight size={16} /></a>
           </div>
@@ -78,7 +78,7 @@ export function LinkStatsPage() {
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2"><h2 className="font-semibold text-slate-900">Activité récente</h2><p className="text-xs text-slate-500">Jusqu’aux 100 clics les plus récents · heure du clic</p></div>
         {statsLoading ? <p className="text-sm text-slate-500">Chargement…</p> : dailyRows.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">Aucun clic enregistré.</p> : <>
           <div className="flex h-44 items-end gap-1" role="img" aria-label="Nombre de clics récents par jour">
-            {dailyRows.map(([day, count]) => <div key={day} className="group relative h-full flex-1" title={`${day} : ${count} clics`}><div className="w-full rounded-t bg-cyan-700" style={{ height: `${count / maxDay * 100}%`, minHeight: 3 }} /><span className="absolute bottom-full left-1/2 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-2 py-1 text-xs text-white group-hover:block">{day} · {count}</span></div>)}
+            {dailyRows.map(([day, count]) => <div key={day} className="group relative h-full flex-1" title={`${day} : ${count} clics`}><div className="workspace-accent-fill w-full rounded-t" style={{ height: `${count / maxDay * 100}%`, minHeight: 3 }} /><span className="absolute bottom-full left-1/2 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-2 py-1 text-xs text-white group-hover:block">{day} · {count}</span></div>)}
           </div>
           <div className="mt-2 flex justify-between text-xs text-slate-500"><span>{dailyRows[0]?.[0]}</span><span>{dailyRows[dailyRows.length - 1]?.[0]}</span></div>
         </>}

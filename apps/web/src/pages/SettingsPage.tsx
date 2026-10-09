@@ -19,10 +19,13 @@ import {
   CreditCard,
   ExternalLink,
   Loader2,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
+import { useWorkspacePreferencesStore } from '../stores/workspace-preferences.store';
+import { workspaceAccentOptions, type WorkspaceAccent, type WorkspaceAppearance, type WorkspaceNavigationMode } from '../lib/workspace-preferences';
 
-type SettingsTab = 'profile' | 'security' | 'notifications' | 'billing' | 'danger';
+type SettingsTab = 'profile' | 'appearance' | 'security' | 'notifications' | 'billing' | 'danger';
 
 type ProfileForm = Omit<UserProfileUpdate, 'avatarPath' | 'companyLogoPath'>;
 
@@ -111,6 +114,7 @@ function ProfileColorField({
 
 export function SettingsPage() {
   const { user } = useAuthStore();
+  const { navigationMode, accent, appearance, setNavigationMode, setAccent, setAppearance } = useWorkspacePreferencesStore();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
 
@@ -276,6 +280,7 @@ export function SettingsPage() {
 
   const tabs = [
     { id: 'profile', label: 'Profil', icon: User },
+    { id: 'appearance', label: 'Espace de travail', icon: SlidersHorizontal },
     { id: 'security', label: 'Sécurité', icon: Shield },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'billing', label: 'Facturation', icon: CreditCard },
@@ -397,6 +402,54 @@ export function SettingsPage() {
                 </div>
               </form>
             </div>
+          )}
+
+          {activeTab === 'appearance' && (
+            <section className="card workspace-preferences-panel" aria-labelledby="workspace-preferences-title">
+              <div>
+                <h2 id="workspace-preferences-title" className="text-lg font-semibold text-gray-900">Votre espace de travail</h2>
+                <p className="mt-1 text-sm text-gray-600">Choisissez votre navigation, une couleur d’accent et l’apparence de l’espace.</p>
+              </div>
+              <fieldset className="workspace-preference-group">
+                <legend>Mode de navigation</legend>
+                <div className="workspace-choice-list">
+                  {([
+                    ['sidebar', 'Latérale', 'Navigation complète dans une colonne latérale.'],
+                    ['dock', 'Dock', 'Accès rapide fixe aux outils principaux.'],
+                    ['launcher', 'Lanceur', 'Ouvrez les outils à la demande depuis le menu.'],
+                  ] as const satisfies readonly [WorkspaceNavigationMode, string, string][]).map(([value, label, description]) => (
+                    <button key={value} type="button" className="workspace-choice" aria-pressed={navigationMode === value} onClick={() => setNavigationMode(value)}>
+                      <span className="workspace-choice-preview" data-mode={value} aria-hidden="true"><i /><i /><i /></span>
+                      <span><strong>{label}</strong><small>{description}</small></span>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset className="workspace-preference-group" style={{ '--workspace-accent': workspaceAccentOptions[accent].color, '--workspace-accent-soft': workspaceAccentOptions[accent].soft, '--workspace-accent-surface': workspaceAccentOptions[accent].surface, '--workspace-accent-border': workspaceAccentOptions[accent].border } as React.CSSProperties}>
+                <legend>Couleur d’accent</legend>
+                <div className="workspace-accent-options">
+                  {(Object.entries(workspaceAccentOptions) as [WorkspaceAccent, typeof workspaceAccentOptions[WorkspaceAccent]][]).map(([value, option]) => (
+                    <button key={value} type="button" className="workspace-accent-choice" aria-pressed={accent === value} onClick={() => setAccent(value)}>
+                      <span style={{ '--swatch': option.color } as React.CSSProperties} aria-hidden="true" />{option.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset className="workspace-preference-group">
+                <legend>Apparence</legend>
+                <div className="workspace-appearance-options" role="group" aria-label="Apparence de l’espace de travail">
+                  {([
+                    ['light', 'Clair'], ['dark', 'Sombre'], ['system', 'Système'],
+                  ] as const satisfies readonly [WorkspaceAppearance, string][]).map(([value, label]) => (
+                    <button key={value} type="button" className="workspace-appearance-choice" aria-pressed={appearance === value} onClick={() => setAppearance(value)}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="workspace-preference-help">Le mode Système suit l’apparence de votre appareil.</p>
+              </fieldset>
+              <p className="workspace-preferences-note">Ces préférences sont enregistrées dans ce navigateur pour votre compte. Elles ne modifient pas votre Profil et ne sont pas synchronisées entre appareils.</p>
+            </section>
           )}
 
           {/* Security Tab */}
@@ -654,7 +707,7 @@ export function SettingsPage() {
                       </div>
                       <div className="mt-1 h-2 rounded-full bg-gray-200">
                         <div
-                          className="h-2 rounded-full bg-purple-600 transition-all"
+                          className="workspace-qr-fill h-2 rounded-full transition-all"
                           style={{ width: `${Math.min(usage?.qrCodes?.percentage ?? 0, 100)}%` }}
                         />
                       </div>

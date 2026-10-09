@@ -1,6 +1,6 @@
 /* Phase 2B — Business Card editor and library */
 .business-card-library, .business-card-editor { max-width: 1240px; }
-.business-card-library, .business-card-editor { --ink: #1d2a2a; --muted: #6d7970; --surface: #f8f8f3; --rule: #dcded5; --blue: #235ee7; --mono: 'JetBrains Mono', ui-monospace, monospace; color: var(--ink); }
+.business-card-library, .business-card-editor { --ink: #1d2a2a; --muted: #6d7970; --surface: #f8f8f3; --rule: #dcded5; --blue: var(--workspace-accent); --mono: 'JetBrains Mono', ui-monospace, monospace; color: var(--ink); }
 .business-card-library > .studio-page-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 32px; }
 .business-card-library h1, .business-card-editor h1 { color: var(--ink); font-size: clamp(30px,4vw,47px); font-weight: 600; letter-spacing: -.045em; line-height: 1.08; }
 .business-card-library h1 span, .business-card-editor h1 span { color: var(--muted); }
@@ -49,7 +49,7 @@
 .bc-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; color: #4a544b; font-size: 11px; font-weight: 600; }
 .bc-field input:not([type=color]), .bc-field textarea, .bc-field select { display: block; width: 100%; min-width: 0; min-height: 43px; padding: 10px 11px; border: 1px solid #d6dacf; border-radius: 2px; outline: none; background: #fffef9; color: var(--ink); font-size: 12px; font-weight: 400; }
 .bc-field textarea { resize: vertical; line-height: 1.55; }
-.bc-field input:focus, .bc-field textarea:focus, .bc-field select:focus { border-color: #6d8fcc; box-shadow: 0 0 0 3px #235ee71a; }
+.bc-field input:focus, .bc-field textarea:focus, .bc-field select:focus { border-color: var(--workspace-accent); box-shadow: 0 0 0 3px var(--workspace-accent-focus); }
 .bc-field small { color: var(--muted); font-size: 10px; font-weight: 400; }
 .bc-disclosure { margin-top: 17px; border-top: 1px solid var(--rule); }
 .bc-disclosure summary { min-height: 45px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; list-style: none; color: var(--blue); font-size: 11px; font-weight: 600; }

@@ -3,11 +3,14 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useAuthStore } from '../stores/auth.store';
 import { PasswordGeneratorPage } from './PasswordGeneratorPage';
 import { MemoryRouter } from 'react-router-dom';
+import { defaultWorkspacePreferences } from '../lib/workspace-preferences';
+import { useWorkspacePreferencesStore } from '../stores/workspace-preferences.store';
 
 describe('PasswordGeneratorPage', () => {
   beforeEach(() => {
     localStorage.clear();
     useAuthStore.setState({ user: { id: 'user-a' } as never });
+    useWorkspacePreferencesStore.setState({ ...defaultWorkspacePreferences, userId: 'user-a' });
   });
 
   it('generates a password with the selected default character sets and saves local history', () => {
@@ -26,6 +29,7 @@ describe('PasswordGeneratorPage', () => {
     const stored = JSON.parse(localStorage.getItem('wrx:password-history:v1:user-a') || '[]');
     expect(stored).toHaveLength(1);
     expect(stored[0].value).toBe(value);
+    expect(screen.getByRole('button', { name: 'Tout effacer' })).toHaveClass('text-red-700');
   });
 
   it('does not allow turning off the only selected character set', () => {
@@ -61,16 +65,23 @@ describe('PasswordGeneratorPage', () => {
     expect(screen.queryByRole('navigation', { name: 'Outils de création' })).not.toBeInTheDocument();
   });
 
-  it('shows progressively stronger colored segments and updates with length and character sets', () => {
+  it('uses the selected accent family while strength progresses by label, bits, and segment count', () => {
+    useWorkspacePreferencesStore.getState().setAccent('purple');
     render(<PasswordGeneratorPage />, { wrapper: MemoryRouter });
 
     const meter = screen.getByRole('progressbar', { name: 'Force estimée du prochain mot de passe' });
+    const outputSurface = document.querySelector('.password-output');
+    const console = screen.getByRole('region', { name: 'Votre mot de passe' });
+    expect(outputSurface).toHaveAttribute('data-accent', 'purple');
+    expect(console).toHaveStyle({ '--workspace-accent-dark': '#342448', '--workspace-accent-contrast': '#faf7ff' });
     const expectStrength = (tone: string, label: string, level: number) => {
+      expect(screen.getByRole('region', { name: 'Votre mot de passe' })).toHaveAttribute('data-accent', 'purple');
       expect(meter).toHaveAttribute('data-strength', tone);
       expect(meter).toHaveAttribute('aria-valuenow', String(level));
       expect(meter).toHaveAttribute('aria-valuetext', `${label}, ${level} sur 4`);
       expect(meter.querySelectorAll('[data-filled="true"]')).toHaveLength(level);
       expect(screen.getByText(label)).toBeInTheDocument();
+      expect(screen.getByText(/^\d+ bits estimés$/)).toBeInTheDocument();
     };
     const setLength = (value: number) => fireEvent.change(screen.getByRole('slider', { name: 'Longueur' }), { target: { value: String(value) } });
 
@@ -94,5 +105,8 @@ describe('PasswordGeneratorPage', () => {
     expectStrength('strong', 'Forte', 3);
     setLength(17);
     expectStrength('excellent', 'Très forte', 4);
+    act(() => useWorkspacePreferencesStore.getState().setAccent('red'));
+    expect(outputSurface).toHaveAttribute('data-accent', 'red');
+    expect(console).toHaveStyle({ '--workspace-accent-dark': '#482228', '--workspace-accent-contrast': '#fff7f8' });
   });
 });

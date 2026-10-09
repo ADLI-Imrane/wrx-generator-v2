@@ -3,7 +3,7 @@
   --es-ink: #182222;
   --es-muted: #687573;
   --es-rule: #d9dfdc;
-  --es-blue: #235ee7;
+  --es-blue: var(--workspace-accent);
   color: var(--es-ink);
 }
 

@@ -106,7 +106,7 @@ export function AnalyticsPage() {
               {option.label}
             </button>
           ))}
-          {isFetching && !isLoading && <span role="status" className="self-center text-xs text-cyan-800">Actualisation…</span>}
+          {isFetching && !isLoading && <span role="status" className="workspace-accent-link self-center text-xs">Actualisation…</span>}
         </div>
       </div>
 
@@ -120,8 +120,8 @@ export function AnalyticsPage() {
           <div className="analytics-metrics grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border border-gray-200 bg-white p-5">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 p-2">
-                  <LinkIcon className="h-5 w-5 text-blue-600" />
+                <div className="workspace-accent-surface rounded-lg p-2">
+                  <LinkIcon className="h-5 w-5 workspace-accent-link" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Liens créés</p>
@@ -132,8 +132,8 @@ export function AnalyticsPage() {
 
             <div className="rounded-lg border border-gray-200 bg-white p-5">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-purple-100 p-2">
-                  <QrCodeIcon className="h-5 w-5 text-purple-600" />
+                <div className="workspace-qr-surface rounded-lg p-2">
+                  <QrCodeIcon className="h-5 w-5 workspace-qr-link" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">QR Codes</p>
@@ -146,8 +146,8 @@ export function AnalyticsPage() {
 
             <div className="rounded-lg border border-gray-200 bg-white p-5">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-green-100 p-2">
-                  <ChartBarIcon className="h-5 w-5 text-green-600" />
+                <div className="workspace-accent-surface rounded-lg p-2">
+                  <ChartBarIcon className="h-5 w-5 workspace-accent-link" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-500">Total clics</p>
@@ -396,7 +396,7 @@ export function AnalyticsPage() {
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
                         <div
-                          className="h-full rounded-full bg-green-500"
+                          className="workspace-accent-fill h-full rounded-full"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -424,7 +424,7 @@ export function AnalyticsPage() {
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
                         <div
-                          className="h-full rounded-full bg-purple-500"
+                          className="workspace-accent-fill h-full rounded-full"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>

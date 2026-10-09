@@ -2,43 +2,9 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useUIStore } from '../stores/ui.store';
 import { useSubscription, useUsage } from '../hooks/useBilling';
-import {
-  LayoutDashboard,
-  Link as LinkIcon,
-  QrCode,
-  BarChart3,
-  Settings,
-  HelpCircle,
-  CreditCard,
-  X,
-  KeyRound,
-  Mail,
-} from 'lucide-react';
-import { ContactRound, Contact } from 'lucide-react';
-
-const navGroups = [
-  { label: 'Créer & partager', items: [
-    { to: '/links', icon: LinkIcon, label: 'Liens courts' },
-    { to: '/qr-codes', icon: QrCode, label: 'QR Codes' },
-    { to: '/business-cards', icon: ContactRound, label: 'Cartes de visite' },
-    { to: '/digital-cards', icon: Contact, label: 'Cartes numériques' },
-    { to: '/email-signatures', icon: Mail, label: 'Signatures email' },
-  ] },
-  { label: 'Mesurer', items: [
-    { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-  ] },
-  { label: 'Utilitaires locaux', items: [
-    { to: '/passwords', icon: KeyRound, label: 'Mots de passe' },
-  ] },
-];
-
-const overviewItem = { to: '/dashboard', icon: LayoutDashboard, label: 'Vue d’ensemble' };
-
-const bottomItems = [
-  { to: '/billing', icon: CreditCard, label: 'Facturation' },
-  { to: '/settings', icon: Settings, label: 'Paramètres' },
-  { to: '/help', icon: HelpCircle, label: 'Aide' },
-];
+import { X } from 'lucide-react';
+import { workspaceNavigationGroups, workspaceOverview, workspaceUtilityItems } from '../lib/workspace-navigation';
+import { useWorkspacePreferencesStore } from '../stores/workspace-preferences.store';
 
 const planNames: Record<string, string> = {
   free: 'Plan Gratuit',
@@ -48,6 +14,7 @@ const planNames: Record<string, string> = {
 
 export function Sidebar() {
   const { sidebarOpen, closeSidebar } = useUIStore();
+  const navigationMode = useWorkspacePreferencesStore((state) => state.navigationMode);
   const navigate = useNavigate();
   const location = useLocation();
   const asideRef = useRef<HTMLElement>(null);
@@ -73,14 +40,12 @@ export function Sidebar() {
     const aside = asideRef.current;
     if (!aside) return;
     aside.inert = isMobile && !sidebarOpen;
-    if (!isMobile || !sidebarOpen) return;
+    if (navigationMode !== 'sidebar' || !isMobile || !sidebarOpen) return;
     const previous = document.activeElement as HTMLElement | null;
     const main = document.querySelector<HTMLElement>('.wrx-app main');
-    const dock = document.querySelector<HTMLElement>('.mobile-tool-dock');
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     if (main) main.inert = true;
-    if (dock) dock.inert = true;
     aside.querySelector<HTMLButtonElement>('button')?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeSidebar();
@@ -94,11 +59,10 @@ export function Sidebar() {
     return () => {
       document.body.style.overflow = overflow;
       if (main) main.inert = false;
-      if (dock) dock.inert = false;
       document.removeEventListener('keydown', onKey);
       previous?.focus();
     };
-  }, [isMobile, sidebarOpen, closeSidebar]);
+  }, [isMobile, sidebarOpen, navigationMode, closeSidebar]);
 
   useLayoutEffect(() => {
     const updateRails = () => {
@@ -111,6 +75,8 @@ export function Sidebar() {
     window.addEventListener('resize', updateRails);
     return () => window.removeEventListener('resize', updateRails);
   }, [location.pathname, sidebarOpen]);
+
+  if (navigationMode !== 'sidebar') return null;
 
   return (
     <aside
@@ -134,16 +100,16 @@ export function Sidebar() {
         <div ref={mainNavRef} className="relative flex-1 space-y-3 overflow-y-auto px-2">
           <span aria-hidden="true" className="wrx-nav-rail" style={{ height: navRails[0]?.height, transform: `translateY(${navRails[0]?.top}px)`, opacity: navRails[0]?.height ? 1 : 0 }} />
           <NavLink
-            to={overviewItem.to}
-            aria-label={overviewItem.label}
-            title={overviewItem.label}
+            to={workspaceOverview.to}
+            aria-label={workspaceOverview.label}
+            title={workspaceOverview.label}
             onClick={() => window.innerWidth < 1024 && closeSidebar()}
             className={({ isActive }) => `wrx-nav-link relative flex items-center gap-3 rounded-lg px-3 py-2.5 ${isActive ? 'font-medium' : ''} ${!sidebarOpen ? 'lg:justify-center' : ''}`}
           >
-            <overviewItem.icon size={20} className="flex-shrink-0" />
-            <span className={`${!sidebarOpen ? 'lg:hidden' : ''}`}>{overviewItem.label}</span>
+            <workspaceOverview.icon size={20} className="flex-shrink-0" />
+            <span className={`${!sidebarOpen ? 'lg:hidden' : ''}`}>{workspaceOverview.label}</span>
           </NavLink>
-          {navGroups.map((group) => <section className="sidebar-nav-group" key={group.label} aria-label={group.label}>
+          {workspaceNavigationGroups.map((group) => <section className="sidebar-nav-group" key={group.label} aria-label={group.label}>
             {sidebarOpen && <p className="sidebar-group-label eyebrow">{group.label}</p>}
             <div className="space-y-1">
               {group.items.map((item) => <NavLink
@@ -167,7 +133,7 @@ export function Sidebar() {
         {/* Navigation secondaire */}
         <nav ref={bottomNavRef} className="relative space-y-1 px-2">
           <span aria-hidden="true" className="wrx-nav-rail" style={{ height: navRails[1]?.height, transform: `translateY(${navRails[1]?.top}px)`, opacity: navRails[1]?.height ? 1 : 0 }} />
-          {bottomItems.map((item) => (
+          {workspaceUtilityItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -175,11 +141,7 @@ export function Sidebar() {
               title={item.label}
               onClick={() => window.innerWidth < 1024 && closeSidebar()}
               className={({ isActive }) =>
-                `wrx-nav-link relative flex items-center gap-3 rounded-lg px-3 py-2.5 ${
-                  isActive
-                    ? 'bg-cyan-50 font-medium text-cyan-900'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950'
-                } ${!sidebarOpen ? 'lg:justify-center' : ''}`
+                `wrx-nav-link relative flex items-center gap-3 rounded-lg px-3 py-2.5 ${isActive ? 'font-medium' : ''} ${!sidebarOpen ? 'lg:justify-center' : ''}`
               }
             >
               <item.icon size={20} className="flex-shrink-0" />

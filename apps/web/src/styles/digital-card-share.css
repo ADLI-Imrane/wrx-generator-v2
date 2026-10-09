@@ -1,5 +1,5 @@
 .digital-card-share {
-  --dc-share-blue: #4e83ff;
+  --dc-share-blue: var(--workspace-accent);
   --dc-share-ink: #141c20;
   --dc-share-muted: #aab7bf;
   min-width: 0;
@@ -25,7 +25,7 @@
 
 .dc-share-back:hover,
 .dc-share-open:hover {
-  color: #235ee7;
+  color: var(--workspace-accent);
 }
 
 .dc-share-stage {
@@ -190,12 +190,12 @@
 }
 
 .dc-share-primary {
-  background: #2f68e8;
+  background: var(--workspace-accent);
   color: #fff;
 }
 
 .dc-share-primary:hover {
-  background: #3d75f3;
+  background: var(--workspace-accent-strong);
 }
 
 .dc-share-secondary,
@@ -216,7 +216,7 @@
 .dc-share-open:focus-visible,
 .dc-share-back:focus-visible,
 .dc-share-entry:focus-visible {
-  outline: 2px solid #82aaff;
+  outline: 2px solid var(--workspace-accent-on-dark);
   outline-offset: 3px;
 }
 
@@ -272,13 +272,13 @@
   gap: 7px;
   padding: 4px 8px;
   border: 1px solid #d9dfdc;
-  color: #244fba;
+  color: var(--workspace-accent-strong);
   white-space: nowrap;
 }
 
 .dc-share-entry:hover {
-  border-color: #a5b9e8;
-  color: #1747b4;
+  border-color: var(--workspace-accent);
+  color: var(--workspace-accent-strong);
 }
 
 @media (max-width: 700px) {

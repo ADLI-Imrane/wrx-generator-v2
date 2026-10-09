@@ -108,7 +108,7 @@ export function CreateLinkPage() {
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Destination</p>
             <p className="wrx-link-source mt-2 truncate font-mono text-sm text-slate-600" title={createdLink.originalUrl}>{createdLink.originalUrl}</p>
             <div aria-hidden="true" className="wrx-link-route my-4"><span className="wrx-link-route-packet" /><ArrowRight size={17} /></div>
-            <label htmlFor="created-short-link" className="text-xs font-semibold uppercase tracking-wider text-cyan-800">Lien WRX</label>
+            <label htmlFor="created-short-link" className="text-xs font-semibold uppercase tracking-wider workspace-accent-link">Lien WRX</label>
             <p className="wrx-link-resolved mt-2 break-all font-mono text-xl font-semibold text-slate-950 sm:text-2xl">{createdLink.shortUrl}</p>
             <div className="mt-5 flex items-center gap-2">
               <input
@@ -196,7 +196,7 @@ export function CreateLinkPage() {
             required
             className="input w-full"
           />
-          {destinationHost && <p role="status" className="wrx-input-recognized mt-3 flex items-center gap-2 text-xs font-medium text-cyan-800"><span className="wrx-input-pulse" /> Destination détectée · {destinationHost}</p>}
+          {destinationHost && <p role="status" className="wrx-input-recognized workspace-accent-link mt-3 flex items-center gap-2 text-xs font-medium"><span className="wrx-input-pulse" /> Destination détectée · {destinationHost}</p>}
         </div>
 
         {/* Titre (optionnel) */}

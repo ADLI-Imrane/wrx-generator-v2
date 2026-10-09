@@ -5,8 +5,10 @@ import { Menu, User, Settings, LogOut, ArrowUpRight } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../stores/auth.store';
 import { BrandLogo } from './BrandLogo';
+import type { WorkspaceNavigationMode } from '../lib/workspace-preferences';
+import { WorkspaceDock } from './WorkspaceDock';
 
-export function Navbar() {
+export function Navbar({ navigationMode, onOpenLauncher }: { navigationMode: WorkspaceNavigationMode; onOpenLauncher: () => void }) {
   const { toggleSidebar, sidebarOpen } = useUIStore();
   const location = useLocation();
   const { user, profile } = useAuthStore();
@@ -28,15 +30,15 @@ export function Navbar() {
 
   return (
     <header className="studio-navbar sticky top-0 z-50">
-      <div className="flex h-16 items-center justify-between px-3 sm:px-4">
+      <div className={`studio-navbar-inner flex h-16 items-center justify-between px-3 sm:px-4${navigationMode === 'dock' ? ' has-workspace-dock' : ''}`}>
         {/* Logo et toggle sidebar */}
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="studio-navbar-left flex min-w-0 items-center gap-2 sm:gap-4">
           <button
-            onClick={toggleSidebar}
+            onClick={navigationMode === 'sidebar' ? toggleSidebar : onOpenLauncher}
             className="rounded-xl p-2 transition-colors hover:bg-slate-100"
-            aria-label="Menu"
-            aria-expanded={sidebarOpen}
-            aria-controls="studio-navigation"
+            aria-label={navigationMode === 'sidebar' ? 'Ouvrir ou réduire la navigation latérale' : 'Ouvrir le lanceur d’outils'}
+            aria-expanded={navigationMode === 'sidebar' ? sidebarOpen : undefined}
+            aria-controls={navigationMode === 'sidebar' ? 'studio-navigation' : 'workspace-launcher'}
           >
             <Menu size={20} />
           </button>
@@ -44,12 +46,13 @@ export function Navbar() {
             <BrandLogo size="compact" alt="" />
             <span>WRX<small>GENERATOR / V2</small></span>
           </Link>
+          <div className="workspace-trail"><span>Espace personnel</span><span>/</span><strong>{location.pathname.startsWith('/qr-codes') ? 'QR Codes' : location.pathname.startsWith('/links') ? 'Liens courts' : location.pathname.startsWith('/business-cards') ? 'Cartes de visite' : location.pathname.startsWith('/digital-cards') ? 'Cartes numériques' : location.pathname === '/analytics' ? 'Analytics' : location.pathname === '/passwords' ? 'Mots de passe' : location.pathname === '/billing' ? 'Facturation' : location.pathname.startsWith('/settings') ? 'Paramètres' : location.pathname === '/help' ? 'Aide' : 'Vue d’ensemble'}</strong></div>
         </div>
 
-        <div className="workspace-trail"><span>Espace personnel</span><span>/</span><strong>{location.pathname.startsWith('/qr-codes') ? 'QR Codes' : location.pathname.startsWith('/links') ? 'Liens courts' : location.pathname.startsWith('/business-cards') ? 'Cartes de visite' : location.pathname.startsWith('/digital-cards') ? 'Cartes numériques' : location.pathname === '/analytics' ? 'Analytics' : location.pathname === '/passwords' ? 'Mots de passe' : location.pathname === '/billing' ? 'Facturation' : location.pathname.startsWith('/settings') ? 'Paramètres' : location.pathname === '/help' ? 'Aide' : 'Vue d’ensemble'}</strong></div>
+        {navigationMode === 'dock' && <WorkspaceDock />}
 
         {/* Actions */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="studio-navbar-actions flex items-center justify-self-end gap-1 sm:gap-2">
           <Link to="/" className="navbar-public">Découvrir WRX <ArrowUpRight size={14} /></Link>
 
           {/* Menu profil */}
@@ -61,7 +64,7 @@ export function Navbar() {
               onKeyDown={(event) => { if (event.key === 'Escape') setIsProfileOpen(false); }}
               className="flex items-center gap-2 rounded-xl p-2 transition-colors hover:bg-slate-100"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-50">
+              <div className="navbar-account-mark flex h-8 w-8 items-center justify-center rounded-full">
                 <User size={18} className="text-primary-600" />
               </div>
             </button>

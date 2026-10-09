@@ -153,8 +153,8 @@ export function HelpPage() {
           href="mailto:support@wrx-generator.com"
           className="hover:border-primary-300 hover:bg-primary-50 flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 transition-colors"
         >
-          <div className="rounded-lg bg-blue-100 p-3">
-            <EnvelopeIcon className="h-6 w-6 text-blue-600" />
+          <div className="workspace-accent-surface rounded-lg p-3">
+            <EnvelopeIcon className="h-6 w-6 workspace-accent-link" />
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">Email</h3>
@@ -166,8 +166,8 @@ export function HelpPage() {
           href="/links/new"
           className="hover:border-primary-300 hover:bg-primary-50 flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 transition-colors"
         >
-          <div className="rounded-lg bg-green-100 p-3">
-            <ChatBubbleLeftRightIcon className="h-6 w-6 text-green-600" />
+          <div className="workspace-accent-surface rounded-lg p-3">
+            <ChatBubbleLeftRightIcon className="h-6 w-6 workspace-accent-link" />
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">Créer un lien</h3>
@@ -179,8 +179,8 @@ export function HelpPage() {
           href="#help-questions"
           className="hover:border-primary-300 hover:bg-primary-50 flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 transition-colors"
         >
-          <div className="rounded-lg bg-purple-100 p-3">
-            <BookOpenIcon className="h-6 w-6 text-purple-600" />
+          <div className="workspace-accent-surface rounded-lg p-3">
+            <BookOpenIcon className="h-6 w-6 workspace-accent-link" />
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">Questions fréquentes</h3>

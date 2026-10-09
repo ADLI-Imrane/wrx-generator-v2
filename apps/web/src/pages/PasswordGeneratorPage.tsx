@@ -10,6 +10,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth.store';
+import { useWorkspacePreferencesStore } from '../stores/workspace-preferences.store';
+import { workspaceAccentVariables } from '../lib/workspace-preferences';
 
 type CharacterSet = 'uppercase' | 'lowercase' | 'numbers' | 'symbols';
 type PasswordOptions = Record<CharacterSet, boolean>;
@@ -86,6 +88,7 @@ function readHistory(key: string): PasswordEntry[] {
 export function PasswordGeneratorPage() {
   const outputRef = useRef<HTMLOutputElement>(null);
   const userId = useAuthStore((state) => state.user?.id);
+  const accent = useWorkspacePreferencesStore((state) => state.accent);
   const storageKey = userId ? `${STORAGE_PREFIX}${userId}` : null;
   const [length, setLength] = useState(20);
   const [options, setOptions] = useState(DEFAULT_OPTIONS);
@@ -179,7 +182,7 @@ export function PasswordGeneratorPage() {
     <div className="password-workspace mx-auto space-y-6">
       <header>
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-cyan-100 p-2.5 text-cyan-800"><KeyRound size={22} /></div>
+          <div className="password-accent-mark rounded-xl p-2.5"><KeyRound size={22} /></div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Le hasard, bien réglé.</h1>
             <p className="text-sm text-slate-600">Créez des mots de passe forts, directement sur cet appareil.</p>
@@ -187,13 +190,13 @@ export function PasswordGeneratorPage() {
         </div>
       </header>
 
-      <section className="card password-console" aria-labelledby="password-output-title">
+      <section className="card password-console" aria-labelledby="password-output-title" data-accent={accent} style={workspaceAccentVariables(accent)}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="password-output-title" className="text-lg font-semibold text-slate-900">Votre mot de passe</h2>
-          {passwordStrength && <span className="inline-flex items-center gap-1.5 text-sm text-emerald-700"><ShieldCheck size={16} /> {passwordStrength.label} · {generatedEntropy} bits estimés</span>}
+          {passwordStrength && <span className="workspace-accent-link inline-flex items-center gap-1.5 text-sm"><ShieldCheck size={16} /> {passwordStrength.label} · {generatedEntropy} bits estimés</span>}
         </div>
 
-        <div className="password-output flex min-h-16 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 sm:p-3">
+        <div className="password-output flex min-h-16 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 sm:p-3" data-accent={accent}>
           <output ref={outputRef} aria-live="polite" className="min-w-0 flex-1 break-all px-2 font-mono text-lg tracking-wide text-slate-900 sm:text-xl">
             {password && visible ? (
               <span key={outputRevision} className="wrx-password-resolve">
@@ -204,7 +207,7 @@ export function PasswordGeneratorPage() {
             ) : <span>{password ? '•'.repeat(password.length) : 'Cliquez sur Générer'}</span>}
           </output>
           {password && <>
-            <button type="button" aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'} className="rounded-lg p-2 text-slate-500 hover:bg-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-700" onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+            <button type="button" aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'} className="rounded-lg p-2 text-slate-500 hover:bg-slate-200 focus-visible:outline focus-visible:outline-2" onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={18} /> : <Eye size={18} />}</button>
             <button type="button" className={`wrx-copy-action btn btn-outline flex shrink-0 items-center gap-2 ${copiedId === 'current' ? 'text-emerald-700' : ''}`} onClick={() => void copy(password, 'current')} aria-label={copiedId === 'current' ? 'Mot de passe copié' : 'Copier le mot de passe'} aria-live="polite" data-copied={copiedId === 'current'}>{copiedId === 'current' ? <Check size={17} /> : <Copy size={17} />}<span className="hidden sm:inline">{copiedId === 'current' ? 'Copié' : 'Copier'}</span></button>
           </>}
         </div>
@@ -222,7 +225,7 @@ export function PasswordGeneratorPage() {
             <legend className="mb-2 text-sm font-medium text-slate-800">Types de caractères</legend>
             <div className="grid grid-cols-2 gap-2">
               {SETS.map(({ key, label }) => <label key={key} data-enabled={options[key]} className="wrx-character-set flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm text-slate-700">
-                <input type="checkbox" checked={options[key]} disabled={options[key] && Object.values(options).filter(Boolean).length === 1} onChange={(event) => setOptions((current) => ({ ...current, [key]: event.target.checked }))} className="accent-cyan-700" />{label}
+                <input type="checkbox" checked={options[key]} disabled={options[key] && Object.values(options).filter(Boolean).length === 1} onChange={(event) => setOptions((current) => ({ ...current, [key]: event.target.checked }))} />{label}
               </label>)}
             </div>
           </fieldset>
@@ -242,7 +245,7 @@ export function PasswordGeneratorPage() {
         {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         <div className="password-action flex flex-wrap items-center gap-3">
           <button type="button" className="btn btn-primary wrx-generate-button inline-flex w-full items-center justify-center gap-2 sm:w-auto" data-generated={justGenerated} onClick={generate}>{justGenerated ? <Check size={17} /> : <RefreshCw size={17} />} {justGenerated ? 'Mot de passe généré' : 'Générer un mot de passe'}</button>
-          {settingsChanged && <span role="status" className="wrx-config-changed text-xs font-medium text-cyan-800">Réglages modifiés · générez à nouveau</span>}
+          {settingsChanged && <span role="status" className="wrx-config-changed text-xs font-medium">Réglages modifiés · générez à nouveau</span>}
         </div>
         <p className="text-xs leading-relaxed text-slate-500">Le mot de passe est généré dans votre navigateur et n’est jamais envoyé à WRX. L’historique est enregistré localement dans ce navigateur pour ce compte; il n’est pas chiffré et ne se synchronise pas entre appareils.</p>
         {!storageAvailable && <p role="status" className="text-sm text-amber-700">Le stockage local est indisponible : cet historique ne sera conservé que pendant cette visite.</p>}
@@ -263,7 +266,7 @@ export function PasswordGeneratorPage() {
                 <p className="break-all font-mono text-sm text-slate-900">{historyVisible ? entry.value : '•'.repeat(entry.value.length)}</p>
                 <p className="mt-1 text-xs text-slate-500">{new Date(entry.createdAt).toLocaleString()} · {entry.value.length} caractères · {SETS.filter(({ key }) => entry.options[key]).map(({ label }) => label.toLowerCase()).join(', ')}</p>
               </div>
-              <button type="button" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-700" aria-label="Copier ce mot de passe" onClick={() => void copy(entry.value, entry.id)}>{copiedId === entry.id ? <Check size={17} className="text-emerald-700" /> : <Copy size={17} />}</button>
+              <button type="button" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2" aria-label="Copier ce mot de passe" onClick={() => void copy(entry.value, entry.id)}>{copiedId === entry.id ? <Check size={17} className="text-emerald-700" /> : <Copy size={17} />}</button>
               <button type="button" disabled={removingEntryId !== null} className="rounded-lg p-2 text-red-600 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-700 disabled:opacity-50" aria-label="Supprimer ce mot de passe" onClick={() => removeEntry(entry.id)}><Trash2 size={17} /></button>
             </li>)}
           </ul>}
