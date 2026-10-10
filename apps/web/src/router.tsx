@@ -33,6 +33,12 @@ import { EmailSignaturesPage } from './pages/EmailSignaturesPage';
 import { EmailSignatureEditorPage } from './pages/EmailSignatureEditorPage';
 
 const HomepageConcept = lazy(() => import('./pages/homepage-concept/HomepageConcept'));
+const Homepage = lazy(() => import('./pages/homepage/brand-hero/BrandHero'));
+const publicHomepage = (
+  <Suspense fallback={<p role="status">Chargement de WRX…</p>}>
+    <Homepage />
+  </Suspense>
+);
 const approvedHomepage = (
   <Suspense fallback={<p role="status">Chargement du concept WRX…</p>}>
     <HomepageConcept />
@@ -40,7 +46,7 @@ const approvedHomepage = (
 );
 
 export const router = createBrowserRouter([
-  { path: '/', element: approvedHomepage },
+  { path: '/', element: publicHomepage },
   { path: '/homepage-concept', element: approvedHomepage },
   { path: '/c/:slug', element: <PublicDigitalCardPage /> },
   // Routes publiques
