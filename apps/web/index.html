@@ -2,17 +2,50 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" sizes="64x64" href="/brand/wrx-favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="WRX Generator — Liens courts et QR codes. Un studio pour créer, organiser et suivre vos ressources." />
-    <meta name="theme-color" content="#0b1117" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <title>WRX Generator — Le studio de transformation</title>
+    <link rel="icon" type="image/png" sizes="64x64" href="/brand/wrx-favicon.png" />
+    <title>WRX — Imprimez une fois. Redirigez après.</title>
+    <meta
+      name="description"
+      content="Liens courts, QR codes gérés, cartes de visite, cartes digitales et signatures e-mail. Changez la destination sans réimprimer, et suivez clics et scans."
+    />
+    <meta name="theme-color" content="#f6f4ef" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="WRX — Imprimez une fois. Redirigez après." />
+    <meta
+      property="og:description"
+      content="Liens courts, QR codes gérés, cartes et signatures. Changez la destination sans réimprimer."
+    />
+    <meta property="og:locale" content="fr_FR" />
+    <!--home-head-->
+    <script>
+      (function () {
+        var p = location.pathname;
+        var h = document.documentElement;
+        var home = /^\/(index\.html)?$|^\/en(\/|\/index\.html)?$/.test(p);
+        if (!home) {
+          h.classList.add('is-app');
+          var l = document.createElement('link');
+          l.rel = 'stylesheet';
+          l.href =
+            'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap';
+          document.head.appendChild(l);
+        } else if (matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+          h.classList.add('motion');
+          setTimeout(function () {
+            if (!h.hasAttribute('data-home-ready')) h.classList.remove('motion');
+          }, 4000);
+        }
+      })();
+    </script>
+    <style>
+      .is-app #root > [data-home] {
+        display: none;
+      }
+    </style>
   </head>
   <body class="antialiased">
-    <div id="root"></div>
+    <div id="root"><!--home-ssr--></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

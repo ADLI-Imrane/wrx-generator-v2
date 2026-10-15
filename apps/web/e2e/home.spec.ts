@@ -106,14 +106,10 @@ test.describe('SEO and Accessibility', () => {
   test('should have proper heading hierarchy', async ({ page }) => {
     await page.goto('/');
 
-    // Should have at least one h1
-    const h1Count = await page.locator('h1').count();
-    // It's okay if landing page doesn't have h1, but check other pages
-    if (h1Count === 0) {
-      await page.goto('/login');
-      const loginH1 = await page.locator('h1, h2').count();
-      expect(loginH1).toBeGreaterThan(0);
-    }
+    // The homepage has exactly one h1 (prerendered in production, client-rendered in dev).
+    await expect(page.locator('h1')).toHaveCount(1);
+    await page.goto('/login');
+    await expect(page.locator('h1, h2').first()).toBeVisible();
   });
 });
 

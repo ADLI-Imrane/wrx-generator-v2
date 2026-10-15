@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { Layout, ProtectedRoute } from './components';
 import { AuthFrame } from './components/AuthFrame';
+import { PublicHomepageRedirect } from './components/PublicHomepageRedirect';
 import {
   LoginPage,
   RegisterPage,
@@ -33,12 +34,6 @@ import { EmailSignaturesPage } from './pages/EmailSignaturesPage';
 import { EmailSignatureEditorPage } from './pages/EmailSignatureEditorPage';
 
 const HomepageConcept = lazy(() => import('./pages/homepage-concept/HomepageConcept'));
-const Homepage = lazy(() => import('./pages/homepage/creative-v4/CreativeHomepage'));
-const publicHomepage = (
-  <Suspense fallback={<p role="status">Chargement de WRX…</p>}>
-    <Homepage />
-  </Suspense>
-);
 const approvedHomepage = (
   <Suspense fallback={<p role="status">Chargement du concept WRX…</p>}>
     <HomepageConcept />
@@ -46,7 +41,7 @@ const approvedHomepage = (
 );
 
 export const router = createBrowserRouter([
-  { path: '/', element: publicHomepage },
+  { path: '/', element: <PublicHomepageRedirect /> },
   { path: '/homepage-concept', element: approvedHomepage },
   { path: '/c/:slug', element: <PublicDigitalCardPage /> },
   // Routes publiques
@@ -183,7 +178,9 @@ export const router = createBrowserRouter([
           <p className="eyebrow mb-4">Destination introuvable / 404</p>
           <h2 className="text-4xl font-bold text-gray-900">Ce chemin s’arrête ici.</h2>
           <p className="mt-4 text-xl text-gray-600">Page non trouvée</p>
-          <a href="/dashboard" className="btn btn-primary mt-6 inline-block">Retour au dashboard</a>
+          <a href="/dashboard" className="btn btn-primary mt-6 inline-block">
+            Retour au dashboard
+          </a>
         </div>
       </AuthFrame>
     ),

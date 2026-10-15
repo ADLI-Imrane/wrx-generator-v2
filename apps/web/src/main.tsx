@@ -1,12 +1,10 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './styles/globals.css';
-import './styles/studio.css';
-import './styles/workspace-navigation.css';
+import { homeLangFromPath } from './home/route';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+const container = document.getElementById('root')!;
+const lang = homeLangFromPath(window.location.pathname);
+
+if (lang) {
+  void import('./home/mount').then(({ mountHome }) => mountHome(container, lang));
+} else {
+  void import('./app-entry').then(({ mountApp }) => mountApp(container));
+}

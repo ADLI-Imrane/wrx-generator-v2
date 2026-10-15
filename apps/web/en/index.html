@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/brand/wrx-favicon.png" />
+    <title>WRX — Print once. Redirect later.</title>
+    <meta
+      name="description"
+      content="Short links, managed QR codes, business cards, digital cards and email signatures. Change the destination without reprinting, and track clicks and scans."
+    />
+    <meta name="theme-color" content="#f6f4ef" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="WRX — Print once. Redirect later." />
+    <meta
+      property="og:description"
+      content="Short links, managed QR codes, cards and signatures. Change the destination without reprinting."
+    />
+    <meta property="og:locale" content="en_US" />
+    <!--home-head-->
+    <script>
+      (function () {
+        var p = location.pathname;
+        var h = document.documentElement;
+        var home = /^\/(index\.html)?$|^\/en(\/|\/index\.html)?$/.test(p);
+        if (!home) {
+          h.classList.add('is-app');
+          var l = document.createElement('link');
+          l.rel = 'stylesheet';
+          l.href =
+            'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap';
+          document.head.appendChild(l);
+        } else if (matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+          h.classList.add('motion');
+          setTimeout(function () {
+            if (!h.hasAttribute('data-home-ready')) h.classList.remove('motion');
+          }, 4000);
+        }
+      })();
+    </script>
+    <style>
+      .is-app #root > [data-home] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body class="antialiased">
+    <div id="root"><!--home-ssr--></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
