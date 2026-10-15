@@ -80,6 +80,7 @@ describe('Auth Store', () => {
     // Set initial profile
     setProfile({
       id: 'test-id',
+      email: 'test@example.com',
       fullName: 'Test User',
       tier: 'free',
       linksCreated: 0,
