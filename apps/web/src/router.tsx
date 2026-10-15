@@ -33,7 +33,7 @@ import { EmailSignaturesPage } from './pages/EmailSignaturesPage';
 import { EmailSignatureEditorPage } from './pages/EmailSignatureEditorPage';
 
 const HomepageConcept = lazy(() => import('./pages/homepage-concept/HomepageConcept'));
-const Homepage = lazy(() => import('./pages/homepage/brand-hero/BrandHero'));
+const Homepage = lazy(() => import('./pages/homepage/creative-v4/CreativeHomepage'));
 const publicHomepage = (
   <Suspense fallback={<p role="status">Chargement de WRX…</p>}>
     <Homepage />
