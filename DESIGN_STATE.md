@@ -1,26 +1,27 @@
 # WRX Generator — Durable Design State
 
-Evidence: `apps/web/src/pages/LandingPage.tsx`, `components/landing/DestinationWorkbench.tsx`, and `styles/landing.css`. Public homepage decisions do not automatically apply to every authenticated screen.
+Evidence: `apps/web/src/home/` (homepage), `apps/web/scripts/prerender.mjs`. Public homepage decisions do not automatically apply to every authenticated screen.
 
 ## Identity and composition
 
-WRX turns destinations into shareable links and scannable entry points. Its public experience is a practical publishing workbench with editorial character: let visitors make something before asking them to explore marketing content.
+WRX turns destinations into short links, QR codes, cards and signatures, and lets owners change where they lead. The public homepage tells that as a story around one rule: **print once, redirect later**.
 
-- Lead with a clear invitation and a working QR atelier. The input, preview and output form one continuous framed surface, like a printed production sheet.
-- Use warm paper, charcoal ink and fine rules; coral gives the default QR pass emphasis. Muted green and acid accents support previews and routing explanations.
-- Large, tightly tracked Arial/Helvetica display type establishes hierarchy. Georgia italics provide selective emphasis; monospace is reserved for process labels and metadata.
-- Signature: the QR destination pass, its meaningful reverse side, and a horizontal physical-support → destination → response story. Keep real QR readability and generous quiet zones.
-- Login and registration remain clear. Distinguish the free direct QR from account-based short links and dynamic QR management.
+- Metaphor: _la boucle_ — the logo's single ribbon folding into a W. On the page it is a continuous thread (left edge) and a glass W object (hero, dark chapter, final call to action).
+- Mood: luminous, tactile (print-shop precise), candid. Light editorial body with one dark chapter for the managed-QR rule.
+- Palette: Paper `#F6F4EF`, Ink `#0E1726`, Graphite `#5B6472`, Rule `#E3DFD6`, Night `#020A1E`; one accent, Ribbon blue `#1E63D6`, lifted to `#3BA9E0` only in the dark chapter.
+- Type: Schibsted Grotesk (display, tight tracking), Inter (reading), JetBrains Mono (small uppercase labels and figure captions). Self-hosted.
+- Motion: "thread & settle" — reveals arrive along the thread with a short blur-to-sharp, play once; scrubbed scenes are linear and reversible.
+- Proof is the product: interface pieces are rebuilt as components with labelled sample data. Client logos and testimonials have an empty slot (`src/home/proof.ts`).
 
 ## Behavior
 
-- The atelier validates HTTP(S) destinations locally, generates a real QR, changes its colors, reveals/copies the exact encoded destination and downloads the QR as SVG. Invitation text belongs to the on-page pass; the download is the QR itself.
-- A short entrance and the QR flip provide continuity. The QR stays still for scanning; no perpetual pointer tilt, orbit or marquee is needed.
-- Desktop story uses GSAP pin/scrub at ≥900px width and ≥650px height. Smaller/shorter screens and reduced-motion users get all scenes in normal vertical flow. Revert pinning on navigation.
-- Recompose the atelier vertically on phones. Preserve visible keyboard focus, labeled controls, feedback and adequate contrast.
+- French at `/`, English at `/en/`, both prerendered at build time; the app stays French and loads separately.
+- Pinned scenes (old way, dark rule, horizontal mechanism) run only at ≥900px wide, ≥600px tall and without reduced motion. Otherwise every scene is in normal vertical flow.
+- Same scroll position, same state. Text is never animated through partial opacity (WCAG AA holds at every scroll position).
+- The try-it QR is generated locally and encodes the address directly; the page says it cannot be edited or tracked, unlike a managed QR.
 
 ## Preserve / avoid
 
-Preserve functional QR interaction, paper/ink contrast, deliberate type hierarchy, meaningful campaign artifacts and the responsive horizontal story. Clearly label example destinations and illustrative charts.
+Preserve claims that match shipped behavior, one primary call to action (final beat + nav), labelled sample data, and the light/dark balance.
 
-Avoid agency/studio positioning that obscures WRX's purpose, duplicate campaign galleries, slogan-only sections, fake metrics, mismatched copy destinations, and decoration that makes a QR harder to scan. Design memory is a compass, not a requirement to preserve a weak composition.
+Avoid glowing objects in dark space, purple-blue tech gradients and glass-card soup, invented metrics, logos or customers, and claims for unbuilt features (geolocation, QR logos or styles, custom domains, API keys, data export, wallet passes, mobile app or extension).
