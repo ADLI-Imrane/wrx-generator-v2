@@ -19,4 +19,3 @@ export { BillingPage } from './BillingPage';
 export { PasswordGeneratorPage } from './PasswordGeneratorPage';
 export { EmailSignaturesPage } from './EmailSignaturesPage';
 export { EmailSignatureEditorPage } from './EmailSignatureEditorPage';
-export { LandingPage } from './LandingPage';

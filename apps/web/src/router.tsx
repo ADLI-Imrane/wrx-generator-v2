@@ -1,4 +1,3 @@
-import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { Layout, ProtectedRoute } from './components';
 import { AuthFrame } from './components/AuthFrame';
@@ -33,16 +32,8 @@ import { PublicDigitalCardPage } from './pages/PublicDigitalCardPage';
 import { EmailSignaturesPage } from './pages/EmailSignaturesPage';
 import { EmailSignatureEditorPage } from './pages/EmailSignatureEditorPage';
 
-const HomepageConcept = lazy(() => import('./pages/homepage-concept/HomepageConcept'));
-const approvedHomepage = (
-  <Suspense fallback={<p role="status">Chargement du concept WRX…</p>}>
-    <HomepageConcept />
-  </Suspense>
-);
-
 export const router = createBrowserRouter([
   { path: '/', element: <PublicHomepageRedirect /> },
-  { path: '/homepage-concept', element: approvedHomepage },
   { path: '/c/:slug', element: <PublicDigitalCardPage /> },
   // Routes publiques
   {
